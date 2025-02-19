@@ -4,8 +4,7 @@
 **Предполагаемый стек**: Python, ArangoDb, React.
 
 ## Видение того, как устроено приложение ##
-![image](https://github.com/user-attachments/assets/37b69bb5-d13f-46f2-8d6b-f786bad01ae4)
-
+![image](https://github.com/user-attachments/assets/21493523-f657-48b3-b18b-af618c4a21db)
 
 #### Бэкенд: ####
 Слой контроллеров - обрабатывает HTTP-запросы, валидирует данные, вызывает соответствующие сервисы и возвращает HTTP-ответы;
