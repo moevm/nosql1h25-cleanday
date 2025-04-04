@@ -1,0 +1,54 @@
+@startuml
+
+'skinparam linetype ortho
+
+entity "User" as user {
+first_name: string
+last_name: string
+middle_name: string
+sex: string
+login: string
+city: string
+about_me: string
+comment: string
+}
+
+entity "CleanDay" as cl_day {
+name: string
+city: string
+address: string
+begin_date: datetime
+end_date: datetime
+organization: string
+area: int
+status: string
+tags: string[]
+recommended_count: int
+comment: string
+}
+
+entity "Comment" as comm {
+text: string
+}
+
+user <----- cl_day
+note on link
+<b>HAS_PARTICIPANT</b>
+type: ParticipationType
+requirements: int[]
+stat: int
+end note
+
+cl_day ---> comm
+note on link
+<b>HAS_COMMENT</b>
+end note
+
+comm ---> user
+note on link
+<b>COMMENT_BY</b>
+end note
+
+
+
+@enduml
