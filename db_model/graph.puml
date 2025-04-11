@@ -1,6 +1,7 @@
 @startuml
 
 'skinparam linetype ortho
+left to right direction
 
 entity "User" as user {
 first_name: string
@@ -29,9 +30,16 @@ comment: string
 
 entity "Comment" as comm {
 text: string
+date: datetime
 }
 
-user <----- cl_day
+entity "Log" as log {
+date: datetime
+type: string
+description: string
+}
+
+user <---> cl_day
 note on link
 <b>HAS_PARTICIPANT</b>
 type: ParticipationType
@@ -44,9 +52,24 @@ note on link
 <b>HAS_COMMENT</b>
 end note
 
-comm ---> user
+comm <---> user
 note on link
 <b>COMMENT_BY</b>
+end note
+
+log ---> user
+note on link
+<b>RELATES_TO</b>
+end note
+
+log -l--> cl_day
+note on link
+<b>RELATES_TO</b>
+end note
+
+log ---> comm
+note on link
+<b>RELATES_TO</b>
 end note
 
 
