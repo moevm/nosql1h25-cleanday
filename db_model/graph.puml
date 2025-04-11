@@ -7,25 +7,21 @@ entity "User" as user {
 first_name: string
 last_name: string
 middle_name: string
-sex: string
+sex: Sex
 login: string
-city: string
 about_me: string
-comment: string
 }
 
 entity "CleanDay" as cl_day {
 name: string
-city: string
-address: string
 begin_date: datetime
 end_date: datetime
 organization: string
 area: int
-status: string
-tags: string[]
+status: CleanDayStatus
+tags: CleanDayStatus[]
 recommended_count: int
-comment: string
+description: string
 }
 
 entity "Comment" as comm {
@@ -39,39 +35,83 @@ type: string
 description: string
 }
 
-user <---> cl_day
-note on link
-<b>HAS_PARTICIPANT</b>
-type: ParticipationType
-requirements: int[]
-stat: int
-end note
+entity "Requirement" as rq {
+name: string
+}
 
-cl_day ---> comm
+entity "City" as city {
+name: string
+}
+
+entity "Participation" as pr {
+type: ParticipationType
+stat: int
+}
+
+entity "Location" as loc {
+address: string
+instructions: string
+photo: File
+}
+
+cl_day --> comm
 note on link
 <b>HAS_COMMENT</b>
 end note
 
-comm <---> user
+comm <--> pr
 note on link
-<b>COMMENT_BY</b>
+<b>AUTHORED</b>
 end note
 
-log ---> user
-note on link
-<b>RELATES_TO</b>
-end note
-
-log -l--> cl_day
+log --l> user
 note on link
 <b>RELATES_TO</b>
 end note
 
-log ---> comm
+log --> cl_day
 note on link
 <b>RELATES_TO</b>
 end note
 
+log --> comm
+note on link
+<b>RELATES_TO</b>
+end note
 
+cl_day --> rq
+note on link
+<b>HAS_REQUIREMENT</b>
+end note
+
+cl_day --> city
+note on link
+<b>TAKES_PLACE_IN</b>
+end note
+
+user -> city
+note on link
+<b>LIVES_IN</b>
+end note
+
+user --> pr
+note on link
+<b>HAS_PARTICIPATION</b>
+end note
+
+pr --> cl_day
+note on link
+<b>PARTICIPATION_IN</b>
+end note
+
+cl_day --> loc
+note on link
+<b>IN_LOCATION</b>
+end note
+
+pr -> rq
+note on link
+<b>FULFILLS_REQUIREMENT</b>
+end note
 
 @enduml
