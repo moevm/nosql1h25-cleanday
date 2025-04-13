@@ -19,7 +19,7 @@ end_date: datetime
 organization: string
 area: int
 status: CleanDayStatus
-tags: CleanDayStatus[]
+tags: CleanDayTag[]
 recommended_count: int
 description: string
 }
