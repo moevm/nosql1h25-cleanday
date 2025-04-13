@@ -70,21 +70,6 @@ note on link
 <b>AUTHORED</b>
 end note
 
-log --l> user
-note on link
-<b>RELATES_TO</b>
-end note
-
-log --> cl_day
-note on link
-<b>RELATES_TO</b>
-end note
-
-log --> comm
-note on link
-<b>RELATES_TO</b>
-end note
-
 cl_day --> rq
 note on link
 <b>HAS_REQUIREMENT</b>
@@ -100,7 +85,7 @@ note on link
 <b>LIVES_IN</b>
 end note
 
-user --> pr
+user -> pr
 note on link
 <b>HAS_PARTICIPATION</b>
 end note
