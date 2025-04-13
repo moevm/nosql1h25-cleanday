@@ -10,6 +10,8 @@ middle_name: string
 sex: Sex
 login: string
 about_me: string
+score: int
+level: int
 }
 
 entity "CleanDay" as cl_day {
@@ -51,6 +53,10 @@ stat: int
 entity "Location" as loc {
 address: string
 instructions: string
+}
+
+entity "Image" as img {
+description: string
 photo: File
 }
 
@@ -112,6 +118,21 @@ end note
 pr -> rq
 note on link
 <b>FULFILLS_REQUIREMENT</b>
+end note
+
+loc --> img
+note on link
+<b>LOCATION_IMAGE</b>
+end note
+
+cl_day --> img
+note on link
+<b>CLEANDAY_IMAGE</b>
+end note
+
+user --> img
+note on link
+<b>USER_AVATAR</b>
 end note
 
 @enduml
