@@ -9,6 +9,7 @@ last_name: string
 middle_name: string
 sex: Sex
 login: string
+password: string
 about_me: string
 score: int
 level: int
