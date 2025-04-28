@@ -1,9 +1,10 @@
+from datetime import datetime
 from enum import StrEnum, auto
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from data.entity import User
+from data.entity import User, Sex, CleanDayStatus, CleanDayTag
 
 
 class SortOrder(StrEnum):
@@ -23,7 +24,7 @@ class SortField(StrEnum):
     STAT = auto()
 
 
-class GetUserParams(BaseModel):
+class GetUsersParams(BaseModel):
     offset: Optional[int] = Field(None, ge=0)
     limit: Optional[int] = Field(None, ge=1, le=50)
     sort_by: Optional[SortField] = None
@@ -45,5 +46,42 @@ class GetUserParams(BaseModel):
     stat_to: Optional[int] = None
 
 
-class GetUserResponse(BaseModel):
-    users: list[User]
+class GetUser(BaseModel):
+    key: str
+    first_name: str
+    last_name: str
+    middle_name: str
+    sex: Sex
+    city: str
+    about_me: str
+    score: int
+    level: int
+    cleanday_count: int
+    organized_count: int
+    stat: int
+
+
+class UserListResponse(BaseModel):
+    users: list[GetUser]
+
+
+class GetCleandayRequirement(BaseModel):
+    key: str
+    name: str
+    users_amount: int
+
+
+class GetCleanday(BaseModel):
+    key: str
+    name: str
+    begin_date: datetime
+    end_date: datetime
+    organization: str
+    area: int
+    status: CleanDayStatus
+    tags: list[CleanDayTag]
+    requirements: list[GetCleandayRequirement]
+
+
+class CleandayListResponse(BaseModel):
+    cleandays: list[GetCleanday]
