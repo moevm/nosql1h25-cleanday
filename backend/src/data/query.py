@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement
+from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment
 
 
 class SortOrder(StrEnum):
@@ -123,3 +123,21 @@ class GetMembersParams(GetUsersParams):
 class PaginationParams(BaseModel):
     offset: int = Field(0, ge=0)
     limit: int = Field(20, ge=1, le=50)
+
+
+class CleandayLog(Log):
+    user: Optional[GetUser] = None
+    comment: Optional[Comment] = None
+    requirements: Optional[list[Requirement]] = None
+
+
+class CleandayLogListResponse(BaseModel):
+    logs: list[CleandayLog]
+
+
+class GetComment(Comment):
+    author: GetUser
+
+
+class CommentListResponse(BaseModel):
+    comments: list[GetComment]

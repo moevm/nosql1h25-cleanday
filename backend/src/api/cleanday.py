@@ -5,7 +5,8 @@ from pydantic import BaseModel
 from fastapi import APIRouter, Query
 
 from data.entity import CleanDayStatus
-from data.query import GetCleandaysParams, CleandayListResponse, GetCleanday, UserListResponse, GetMembersParams
+from data.query import GetCleandaysParams, CleandayListResponse, GetCleanday, UserListResponse, GetMembersParams, \
+    PaginationParams, CleandayLogListResponse, CommentListResponse
 
 router = APIRouter(prefix="/cleandays", tags=["cleanday"])
 
@@ -31,5 +32,15 @@ async def get_cleanday(cleanday_id: str) -> GetCleanday:
 
 
 @router.get("/{cleanday_id}/members")
-async def get_cleanday(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
+async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
     return UserListResponse(users=[])
+
+
+@router.get("/{cleanday_id}/logs")
+async def get_cleanday_logs(cleanday_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayLogListResponse:
+    return CleandayLogListResponse(logs=[])
+
+
+@router.get("/{cleanday_id}/comments")
+async def get_cleanday_comments(cleanday_id: str, query: Annotated[PaginationParams, Query()]) -> CommentListResponse:
+    return CommentListResponse(comments=[])
