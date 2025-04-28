@@ -13,7 +13,7 @@ async def get_users(query: Annotated[GetUsersParams, Query()]) -> UserListRespon
 
 
 @router.get("/{user_id}")
-async def get_user(user_id: int) -> GetUser:
+async def get_user(user_id: str) -> GetUser:
     return GetUser(
         key="1",
         first_name="Иван",
@@ -31,10 +31,10 @@ async def get_user(user_id: int) -> GetUser:
 
 
 @router.get("/{user_id}/cleandays")
-async def get_user_cleandays(user_id: int) -> CleandayListResponse:
+async def get_user_cleandays(user_id: str) -> CleandayListResponse:
     return CleandayListResponse(cleandays=[])
 
 
 @router.get("/{user_id}/organized")
-async def get_user_organized_cleandays(user_id: int) -> CleandayListResponse:
+async def get_user_organized_cleandays(user_id: str) -> CleandayListResponse:
     return CleandayListResponse(cleandays=[])
