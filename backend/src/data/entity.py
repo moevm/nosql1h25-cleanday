@@ -31,7 +31,20 @@ class CleanDayStatus(StrEnum):
 
 class CleanDayTag(StrEnum):
     TRASH_COLLECTING = "Сбор мусора"
-    # TODO add all values
+    TRASH_SORTING = "Сортировка мусора"
+    PLANTING = "Посадка растений"
+    FLOWER_BED_SETUP = "Разбитие клумб"
+    LAWN_SETUP = "Разбитие газонов"
+    WATERBODY_CLEANING = "Очистка водоемов"
+    SNOW_REMOVAL = "Уборка снега"
+    LEAF_CLEANING = "Уборка листьев"
+    PLANT_CARE = "Уход за растениями"
+    REPAIR = "Ремонт"
+    PAINTING = "Покраска"
+    FEEDER_INSTALLATION = "Установка кормушек"
+    MASTER_CLASSES = "Мастер-классы"
+    GAMES_AND_CONTESTS = "Игры и конкурсы"
+    PICNIC = "Пикник"
 
 
 class CleanDay(BaseModel):
