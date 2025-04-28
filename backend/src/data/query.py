@@ -25,8 +25,8 @@ class UserSortField(StrEnum):
 
 
 class GetUsersParams(BaseModel):
-    offset: Optional[int] = Field(None, ge=0)
-    limit: Optional[int] = Field(None, ge=1, le=50)
+    offset: int = Field(0, ge=0)
+    limit: int = Field(20, ge=1, le=50)
     sort_by: Optional[UserSortField] = None
     sort_order: Optional[SortOrder] = None
     search_query: Optional[str] = None
@@ -96,8 +96,8 @@ class CleandaySortField(StrEnum):
 
 
 class GetCleandaysParams(BaseModel):
-    offset: Optional[int] = Field(None, ge=0)
-    limit: Optional[int] = Field(None, ge=1, le=50)
+    offset: int = Field(0, ge=0)
+    limit: int = Field(20, ge=1, le=50)
     sort_by: Optional[UserSortField] = None
     sort_order: Optional[SortOrder] = None
     search_query: Optional[str] = None
