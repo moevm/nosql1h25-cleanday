@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 
-from data.query import GetUsersParams, UserListResponse, GetUser, CleandayListResponse
+from data.query import GetUsersParams, UserListResponse, GetUser, CleandayListResponse, PaginationParams
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -31,10 +31,10 @@ async def get_user(user_id: str) -> GetUser:
 
 
 @router.get("/{user_id}/cleandays")
-async def get_user_cleandays(user_id: str) -> CleandayListResponse:
+async def get_user_cleandays(user_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayListResponse:
     return CleandayListResponse(cleandays=[])
 
 
 @router.get("/{user_id}/organized")
-async def get_user_organized_cleandays(user_id: str) -> CleandayListResponse:
+async def get_user_organized_cleandays(user_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayListResponse:
     return CleandayListResponse(cleandays=[])

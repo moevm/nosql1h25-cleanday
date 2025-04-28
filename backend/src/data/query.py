@@ -119,3 +119,7 @@ class GetMembersParams(GetUsersParams):
     requirements: Optional[list[str]] = None
     participation_type: Optional[list[str]] = None
 
+
+class PaginationParams(BaseModel):
+    offset: int = Field(0, ge=0)
+    limit: int = Field(20, ge=1, le=50)
