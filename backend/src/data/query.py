@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from data.entity import User, Sex, CleanDayStatus, CleanDayTag
+from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement
 
 
 class SortOrder(StrEnum):
@@ -34,7 +34,7 @@ class GetUsersParams(BaseModel):
     last_name: Optional[str] = None
     middle_name: Optional[str] = None
     login: Optional[str] = None
-    sex: Optional[str] = None
+    sex: Optional[list[str]] = None
     city: Optional[str] = None
     level_from: Optional[int] = Field(None, ge=1)
     level_to: Optional[int] = None
@@ -65,9 +65,7 @@ class UserListResponse(BaseModel):
     users: list[GetUser]
 
 
-class GetCleandayRequirement(BaseModel):
-    key: str
-    name: str
+class GetCleandayRequirement(Requirement):
     users_amount: int
 
 
@@ -115,3 +113,9 @@ class GetCleandaysParams(BaseModel):
     count_from: Optional[int] = Field(None, ge=0)
     count_to: Optional[int] = None
     tags: Optional[list[str]] = None
+
+
+class GetMembersParams(GetUsersParams):
+    requirements: Optional[list[str]] = None
+    participation_type: Optional[list[str]] = None
+
