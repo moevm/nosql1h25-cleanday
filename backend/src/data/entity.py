@@ -79,24 +79,29 @@ class Participation(BaseModel):
 
 
 class City(BaseModel):
+    key: str
     name: str
 
 
 class Location(BaseModel):
+    key: str
     address: str
     instructions: str
 
 
 class Image(BaseModel):
+    key: str
     description: str
     photo: str
 
 
 class Log(BaseModel):
+    key: str
     date: datetime
     type: str
     description: str
 
 
 class Requirement(BaseModel):
+    key: str
     name: str
