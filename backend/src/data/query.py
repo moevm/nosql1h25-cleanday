@@ -12,7 +12,7 @@ class SortOrder(StrEnum):
     DESC = auto()
 
 
-class SortField(StrEnum):
+class UserSortField(StrEnum):
     FIRST_NAME = auto()
     LAST_NAME = auto()
     LOGIN = auto()
@@ -27,7 +27,7 @@ class SortField(StrEnum):
 class GetUsersParams(BaseModel):
     offset: Optional[int] = Field(None, ge=0)
     limit: Optional[int] = Field(None, ge=1, le=50)
-    sort_by: Optional[SortField] = None
+    sort_by: Optional[UserSortField] = None
     sort_order: Optional[SortOrder] = None
     search_query: Optional[str] = None
     first_name: Optional[str] = None
@@ -85,3 +85,33 @@ class GetCleanday(BaseModel):
 
 class CleandayListResponse(BaseModel):
     cleandays: list[GetCleanday]
+
+
+class CleandaySortField(StrEnum):
+    NAME = auto()
+    BEGIN_DATE = auto()
+    END_DATE = auto()
+    ORGANIZATION = auto()
+    AREA = auto()
+    STATUS = auto()
+    RECOMMENDED_COUNT = auto()
+
+
+class GetCleandaysParams(BaseModel):
+    offset: Optional[int] = Field(None, ge=0)
+    limit: Optional[int] = Field(None, ge=1, le=50)
+    sort_by: Optional[UserSortField] = None
+    sort_order: Optional[SortOrder] = None
+    search_query: Optional[str] = None
+    name: Optional[str] = None
+    organization: Optional[str] = None
+    statuses: Optional[list[str]] = None
+    begin_date_from: Optional[datetime] = None
+    begin_date_to: Optional[datetime] = None
+    end_date_from: Optional[int] = None
+    end_date_to: Optional[int] = None
+    area_from: Optional[int] = Field(None, ge=0)
+    area_to: Optional[int] = None
+    count_from: Optional[int] = Field(None, ge=0)
+    count_to: Optional[int] = None
+    tags: Optional[list[str]] = None
