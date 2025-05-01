@@ -1,28 +1,29 @@
+import './app.css';
 import * as React from 'react';
-import Button from '@mui/material/Button';
+
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Menu from './pages/Menu/Menu.tsx';
+import AppRoutes from './pages/routes.tsx';
+import { Box } from '@mui/material';
+import { AuthProvider } from './pages/Menu/Menu.tsx';
 
 function App() {
-    const [openModal, setOpenModal] = React.useState(false);
-    const [state, setState] = React.useState(false);
-
-    const handleOpenModal = () => {
-        setOpenModal(true);
-    };
-
-    const handleCloseModal = () => {
-        setOpenModal(false);
-    };
-
-    const handleRegister = (userData: any) => {
-        console.log('Данные:', userData);
-    };
-
     return (
-        <>
-            <Button variant="contained" onClick={handleOpenModal}>
-                Кнопка
-            </Button>
-        </>
+        <AuthProvider>
+            <Box sx={{
+                display: 'flex',
+                mx: '10px',
+                height: '100%',
+                width: '95vw',
+            }}>
+                <Router>
+                    <Routes>
+                        <Route path="/" element={<Menu />} />
+                        <Route path="*" element={<AppRoutes />} />
+                    </Routes>
+                </Router>
+            </Box>
+        </AuthProvider>
     );
 }
 
