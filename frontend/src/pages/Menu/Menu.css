@@ -1,0 +1,52 @@
+body {
+    margin: 0;
+}
+
+.menuContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+    width: 100vw;
+}
+
+.menuToolbar {
+    display: flex;
+    background-color: #F85E28;
+    width: 80%;
+    max-width: 1100px;
+    border-radius: 10px;
+    border: 11px solid #ffffff; /* Добавляем толстую черную обводку */
+}
+
+.toolbarContent {
+    text-align: center;
+    flex-grow: 1;
+    color: #f0f0f0;
+    padding: 1rem;
+}
+
+.buttonContainer {
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 80%;
+    max-width: 600px;
+}
+
+.menuButtons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.authButtons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
