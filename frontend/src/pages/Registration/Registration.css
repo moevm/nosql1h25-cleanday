@@ -1,0 +1,41 @@
+.registration-container
+.login-box {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.regToolbar {
+    display: flex;
+    background-color: #F85E28;
+    width: 100%;
+    border-radius: 20px;
+    margin: 0;
+}
+
+.registration-form {
+    margin-top: 5px;
+    width: 50vw;
+}
+
+.login-button {
+    margin-top: 20px;
+}
+
+.radio-gender {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+}
+
+.registration-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.remember-me-checkbox {
+    margin-bottom: 10px;
+    align-self: flex-start; /* Align checkbox to the left */
+}

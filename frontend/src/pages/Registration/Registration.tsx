@@ -1,0 +1,304 @@
+import './Registration.css'
+
+import * as React from 'react'
+
+import {
+    TextField,
+    Button,
+    FormControl,
+    FormControlLabel,
+    RadioGroup,
+    Radio,
+    Box, Typography, Toolbar,
+    Container, FormLabel,
+} from '@mui/material';
+import {Link} from "react-router-dom";
+
+import {CreateUser} from "../../models/User.ts"
+
+/**
+ * Registration: Функциональный компонент, представляющий форму регистрации пользователя.
+ *
+ *  Этот компонент включает в себя поля для ввода имени, фамилии, логина, города, выбора пола, ввода и подтверждения пароля.
+ *  Он также содержит валидацию пароля и отправляет данные на сервер при успешной регистрации.
+ *
+ * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий форму регистрации.
+ */
+const Registration = (): React.JSX.Element => {
+    const [confirmPassword, setConfirmPassword] = React.useState('');
+
+    const staticHelperText = "Пароль должен содержать не менее 8 символов, среди которых не менее 1 цифры, не менее 1 строчной буквы, не менее 1 прописной буквы, не менее 1 специального символа.";
+
+
+    const [formData, setFormData] = React.useState<CreateUser>({
+        firstname: '',
+        lastname: '',
+        login: '',
+        city: '',
+        gender: 'other',
+        password: '',
+    });
+
+    const [errors, setErrors] = React.useState({
+        firstname: false,
+        lastname: false,
+        login: false,
+        city: false,
+        password: '',
+    });
+
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
+        const {id, value, type, checked, name} = event.target;
+
+        const newValue = type === 'radio' ? name === 'gender' ? value : formData[name as keyof CreateUser] : type === 'checkbox' ? checked : value;
+
+
+        setFormData(prevState => {
+            const newFormData = {
+                ...prevState,
+                [id]: newValue,
+            };
+
+            if (id in errors) {
+                setErrors(prevErrors => ({
+                    ...prevErrors,
+                    [id]: id === 'password' ? validatePassword(value) : false,
+                }));
+            }
+
+            return newFormData;
+        });
+    };
+
+    const validatePassword = (password: string | undefined) => {
+        // Валидация пароля
+        if (!password || password.length < 8)
+            return "Пароль должен содержать не менее 8 символов.";
+        if (!/[0-9]/.test(password))
+            return "Пароль должен содержать не менее 1 цифры.";
+        if (!/[a-z]/.test(password))
+            return "Пароль должен содержать не менее 1 строчной буквы.";
+        if (!/[A-Z]/.test(password))
+            return "Пароль должен содержать не менее 1 прописной буквы.";
+        if (!/[*\-#]/.test(password))
+            return "Пароль должен содержать не менее 1 специального символа.";
+
+        return ''; // Возвращаем true, если ошибок нет
+    };
+
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        if (formData.password !== confirmPassword) {
+            alert("Пароли не совпадают");
+            return;
+        }
+
+
+        try {
+            const response = await fetch('POPA', { // Заменить endpoint
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
+
+            if (response.ok) {
+                console.log('Registration successful!');
+                alert("Регистрация прошла успешно!");
+                setFormData({
+                    firstname: '',
+                    lastname: '',
+                    login: '',
+                    city: '',
+                    gender: 'other',
+                    password: '',
+                })
+
+            } else {
+                console.error('Registration failed:', response.status);
+                const errorData = await response.json();
+                console.error("Error Data:", errorData);
+                alert(`Ошибка регистрации: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error during registration:', error);
+            alert("Произошла ошибка при регистрации. Попробуйте позже.");
+        }
+    };
+
+    const textFieldStyle = {
+        '& .MuiOutlinedInput-root': {
+            '& .MuiOutlinedInput-notchedOutline': {
+                borderWidth: '2px',
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#F85E28FF',
+            },
+        },
+        '& label.Mui-focused': {
+            color: '#F85E28FF',
+        },
+    };
+
+    return (
+        <Container className="registration-container">
+            <Box className="login-box">
+                <Toolbar className="regToolbar">
+                    <Box className="toolbarContent">
+                        <Typography variant="h2" component="div">
+                            Сервис организации субботников
+                        </Typography>
+                    </Box>
+                </Toolbar>
+                <form onSubmit={handleSubmit} className="registration-form">
+                    <TextField
+                        sx={textFieldStyle}
+                        required
+                        autoFocus
+                        id="firstname"
+                        label="Имя"
+                        variant="outlined"
+                        value={formData.firstname}
+                        onChange={handleInputChange}
+                        fullWidth
+                        margin="normal"
+                    />
+                    <TextField
+                        sx={textFieldStyle}
+                        required
+                        id="lastname"
+                        label="Фамилия"
+                        variant="outlined"
+                        value={formData.lastname}
+                        onChange={handleInputChange}
+                        fullWidth
+                        margin="normal"
+                    />
+
+                    <TextField
+                        sx={textFieldStyle}
+                        required
+                        id="login"
+                        label="Логин"
+                        variant="outlined"
+                        value={formData.login}
+                        onChange={handleInputChange}
+                        fullWidth
+                        margin="normal"
+                    />
+                    <TextField
+                        sx={textFieldStyle}
+                        required
+                        id="city"
+                        label="Город"
+                        variant="outlined"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        fullWidth
+                        margin="normal"
+                    />
+                    <FormControl component="fieldset" className="radio-gender">
+                        <FormLabel id="radio-buttons-group">Пол</FormLabel>
+                        <RadioGroup
+                            aria-label="gender"
+                            name="gender"
+                            value={formData.gender}
+                            onChange={handleInputChange}
+                            row
+                        >
+                            <FormControlLabel value="female" control={<Radio id="gender" name="gender"/>}
+                                              label="Женский"/>
+                            <FormControlLabel value="male" control={<Radio id="gender" name="gender"/>}
+                                              label="Мужской"/>
+                            <FormControlLabel value="other" control={<Radio id="gender" name="gender"/>}
+                                              label="Другое"/>
+                        </RadioGroup>
+                    </FormControl>
+                    <Box width="100%">
+                        <TextField
+                            sx={textFieldStyle}
+                            required
+                            id="password"
+                            label="Пароль"
+                            type="password"
+                            variant="outlined"
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            fullWidth
+                            margin="normal"
+                            error={!!errors.password}
+                            helperText={errors.password || staticHelperText}
+                        />
+                    </Box>
+
+                    <TextField
+                        sx={textFieldStyle}
+                        required
+                        label="Повторите пароль"
+                        type="password"
+                        variant="outlined"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        fullWidth
+                        margin="normal"
+                    />
+                    <Button
+                        sx={{
+                            backgroundColor: '#F85E28',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: '#ea5624',
+                            },
+                        }}
+                        type="submit"
+                        fullWidth
+                        variant="contained"
+                        className="login-button"
+                    >
+                        Зарегистрироваться
+                    </Button>
+                    <Box className="login-actions">
+                        <Button
+                            sx={{
+                                backgroundColor: '#3C6C5F',
+                                color: 'white',
+                                '&:hover': {
+                                    backgroundColor: '#345e51',
+                                },
+                            }}
+                            fullWidth
+                            component={Link}
+                            to="/"
+                            variant="contained"
+                        >
+                            На главную
+                        </Button>
+                        <Button
+                            sx={{
+                                backgroundColor: '#3C6C5F',
+                                color: 'white',
+                                '&:hover': {
+                                    backgroundColor: '#345e51',
+                                },
+                            }}
+                            fullWidth
+                            component={Link}
+                            to="/authorization"
+                            variant="contained"
+                            color="success"
+                        >
+                            Вход
+                        </Button>
+                    </Box>
+                </form>
+            </Box>
+        </Container>
+    );
+};
+
+export default Registration;
+
+
