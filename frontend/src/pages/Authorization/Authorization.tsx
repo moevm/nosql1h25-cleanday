@@ -1,6 +1,7 @@
 import './Authorization.css';
 
 import * as React from 'react';
+
 import {
     Container,
     Typography,
@@ -22,13 +23,13 @@ import {LogIn} from '../../models/User.ts';
  *
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий форму авторизации.
  */
-function Authorization() {
+export const Authorization = (): React.JSX.Element=> {
     const [username, setUsername] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [rememberMe, setRememberMe] = React.useState(false); // Я пока не понимаю, как с этим работать. Но вот кнопочка
     // Хук для навигации по страницам
     const navigate = useNavigate();
-    const {loginUT} = useAuth();
+    const {UserLoginToken} = useAuth();
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -50,7 +51,7 @@ function Authorization() {
             if (response.ok) {
                 const data = await response.json(); // API возвращает токен !!! Он должен совпадать с token в Меню
                 const token = data.token; // Извлекаем токен из ответа API
-                loginUT(token, username);
+                UserLoginToken(token, username);
                 navigate('/');
             } else {
                 console.error('Ошибка авторизации:', response.status);

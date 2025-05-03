@@ -1,13 +1,14 @@
 import './app.css';
+
 import * as React from 'react';
 
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Menu from './pages/Menu/Menu.tsx';
-import AppRoutes from './pages/routes.tsx';
+import AppRoutes from './pages/AppRoutes.tsx';
 import { Box } from '@mui/material';
 import { AuthProvider } from './pages/Menu/Menu.tsx';
 
-function App() {
+const App = () => {
     return (
         <AuthProvider>
             <Box sx={{

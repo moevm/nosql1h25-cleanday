@@ -24,7 +24,7 @@ import {CreateUser} from "../../models/User.ts"
  *
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий форму регистрации.
  */
-const Registration = () => {
+const Registration = (): React.JSX.Element => {
     const [confirmPassword, setConfirmPassword] = React.useState('');
 
     const staticHelperText = "Пароль должен содержать не менее 8 символов, среди которых не менее 1 цифры, не менее 1 строчной буквы, не менее 1 прописной буквы, не менее 1 специального символа.";
@@ -83,7 +83,7 @@ const Registration = () => {
         if (!/[*\-#]/.test(password))
             return "Пароль должен содержать не менее 1 специального символа.";
 
-        return ''; // Возвращаем true, если валиден, false если нет
+        return ''; // Возвращаем true, если ошибок нет
     };
 
 

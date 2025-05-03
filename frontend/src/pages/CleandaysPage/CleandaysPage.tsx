@@ -1,9 +1,10 @@
 import './CleandaysPage.css'
 
 import * as React from 'react'
+
 import Typography from '@mui/material/Typography';
 
-function CleandaysPage() {
+export const CleandaysPage = (): React.JSX.Element => {
     return (
         <Typography variant="h4">
             Страница "Субботники" (В разработке)

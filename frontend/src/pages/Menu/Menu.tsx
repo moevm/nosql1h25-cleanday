@@ -1,6 +1,7 @@
 import './Menu.css';
 
 import * as React from 'react';
+
 import {Link, useNavigate} from 'react-router-dom';
 import {Container, Typography, Box, Toolbar, Button, Avatar, AppBar, IconButton} from '@mui/material';
 
@@ -18,8 +19,8 @@ import {createContext, useContext} from 'react';
 interface AuthContextType {
     isLoggedIn: boolean;
     username: string;
-    loginUT: (token: string, username: string) => void;
-    logout: () => void;
+    UserLoginToken: (token: string, username: string) => void;
+    UserLogoutToken: () => void;
 }
 
 /**
@@ -30,9 +31,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
     isLoggedIn: false,
     username: '',
-    loginUT: () => {
+    UserLoginToken: () => {
     },
-    logout: () => {
+    UserLogoutToken: () => {
     },
 });
 
@@ -52,7 +53,7 @@ interface AuthProviderProps {
  * @param {AuthProviderProps} { children } -  children: React-элементы, которые необходимо "обернуть" данным провайдером.
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий AuthContext.Provider, который предоставляет значение контекста всем дочерним компонентам.
  */
-export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({children}: AuthProviderProps): React.JSX.Element => {
     const [isLoggedIn, setIsLoggedIn] = React.useState(!!localStorage.getItem('token'));
     const [username, setUsername] = React.useState(localStorage.getItem('username') || '');
 
@@ -73,8 +74,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
     const value: AuthContextType = {
         isLoggedIn,
         username,
-        loginUT: login,
-        logout,
+        UserLoginToken: login,
+        UserLogoutToken: logout,
     };
 
     return (
@@ -103,8 +104,9 @@ export const useAuth = () => {
  *
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий меню приложения.
  */
-function Menu() {
-    const {isLoggedIn, username, logout} = useAuth();
+
+export const Menu = (): React.JSX.Element => {
+    const {isLoggedIn, username, UserLogoutToken} = useAuth();
     const navigate = useNavigate(); // Используем useNavigate
 
     return (
@@ -131,7 +133,7 @@ function Menu() {
                             color="inherit"
                             sx={{'&:focus': {outline: 'none'},}}
                             onClick={() => {
-                                logout();
+                                UserLogoutToken();
                                 navigate('/');  // Перенаправляем на главную после логаута
                             }}
                         >

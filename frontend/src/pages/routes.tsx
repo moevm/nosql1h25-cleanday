@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Route, Routes } from 'react-router-dom';
+
 
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import PeopleIcon from "@mui/icons-material/People";
@@ -68,20 +68,4 @@ export const routes: RouteItem[] = [
     },
 ];
 
-/**
- * `AppRoutes`: Функциональный компонент, определяющий маршрутизацию приложения.
- * Использует `react-router-dom` для сопоставления URL-адресов с соответствующими компонентами.
- *
- * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий набор маршрутов, определенных в массиве `routes`.
- */
-const AppRoutes = () => {
-    return (
-        <Routes>
-            {routes.map((route) => (
-                <Route key={route.path} path={route.path} element={route.element} />
-            ))}
-        </Routes>
-    );
-};
 
-export default AppRoutes;

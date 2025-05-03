@@ -2,13 +2,7 @@ body {
     background-color: #A9E3D4;
 }
 
-.login-container {
-    margin-top: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
+.login-container,
 .login-box {
     margin-top: 8px;
     display: flex;
