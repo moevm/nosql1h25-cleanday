@@ -48,6 +48,7 @@ name: string
 
 entity "Participation" as pr {
 type: ParticipationType
+real_presence: bool
 stat: int
 }
 
