@@ -39,6 +39,15 @@ export const Authorization = (): React.JSX.Element=> {
             password: password,
         };
 
+        // Раскомментить для тестов, тогда логин - user, пароль - password.
+        // if (username === 'user' && password === 'password') {
+        //     const token = 'fake_token';
+        //     UserLoginToken(token, username);
+        //     navigate('/');
+        // } else {
+        //     alert('Неверный логин или пароль');
+        // }
+
         try {
             const response = await fetch('/api/login', { // Заменить на эндпоинтом API
                 method: 'POST',
