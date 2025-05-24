@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query
 
 from data.entity import CleanDayStatus
 from data.query import GetCleandaysParams, CleandayListResponse, GetCleanday, UserListResponse, GetMembersParams, \
-    PaginationParams, CleandayLogListResponse, CommentListResponse
+    PaginationParams, CleandayLogListResponse, CommentListResponse, UpdateCleanday
 
 router = APIRouter(prefix="/cleandays", tags=["cleanday"])
 
@@ -44,3 +44,8 @@ async def get_cleanday_logs(cleanday_id: str, query: Annotated[PaginationParams,
 @router.get("/{cleanday_id}/comments")
 async def get_cleanday_comments(cleanday_id: str, query: Annotated[PaginationParams, Query()]) -> CommentListResponse:
     return CommentListResponse(comments=[])
+
+
+@router.patch("/{cleanday_id}")
+async def create_new_cleanday(cleanday_id: str, cleanday: UpdateCleanday):
+    return
