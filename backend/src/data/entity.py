@@ -13,7 +13,7 @@ class User(BaseModel):
     key: str
     first_name: str
     last_name: str
-    middle_name: str
+    login: str
     sex: Sex
     password: str
     about_me: str
@@ -50,6 +50,8 @@ class CleanDayTag(StrEnum):
 class CleanDay(BaseModel):
     key: str
     name: str
+    description: str
+    recommended_count: int
     begin_date: datetime
     end_date: datetime
     organization: str
