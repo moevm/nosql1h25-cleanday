@@ -50,7 +50,7 @@ class GetUser(BaseModel):
     key: str
     first_name: str
     last_name: str
-    middle_name: str
+    login: str
     sex: Sex
     city: str
     about_me: str
@@ -141,3 +141,38 @@ class GetComment(Comment):
 
 class CommentListResponse(BaseModel):
     comments: list[GetComment]
+
+
+class UpdateUser(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    sex: Optional[Sex] = None
+    city_id: Optional[str] = None
+    about_me: Optional[str] = None
+
+
+class CreateCleanday(BaseModel):
+    name: str
+    city_id: str
+    location_id: str
+    begin_date: datetime
+    end_date: datetime
+    organization: str
+    area: int
+    description: str
+    recommended_count: int
+    tags: list[CleanDayTag]
+    requirements: list[str]
+
+
+class UpdateCleanday(BaseModel):
+    name: Optional[str] = None
+    city_id: Optional[str] = None
+    location_id: Optional[str] = None
+    begin_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    organization: Optional[str] = None
+    area: Optional[int] = None
+    description: Optional[str] = None
+    recommended_count: Optional[int] = None
+    tags: Optional[list[CleanDayTag]] = None
