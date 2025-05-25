@@ -149,6 +149,7 @@ class UpdateUser(BaseModel):
     sex: Optional[Sex] = None
     city_id: Optional[str] = None
     about_me: Optional[str] = None
+    password: Optional[str] = None
 
 
 class CreateCleanday(BaseModel):
