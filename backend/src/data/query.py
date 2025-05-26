@@ -34,7 +34,7 @@ class GetUsersParams(BaseModel):
     last_name: Optional[str] = None
     middle_name: Optional[str] = None
     login: Optional[str] = None
-    sex: Optional[list[str]] = None
+    sex: Optional[list[Sex]] = None
     city: Optional[str] = None
     level_from: Optional[int] = Field(None, ge=1)
     level_to: Optional[int] = None
