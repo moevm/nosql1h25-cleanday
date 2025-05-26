@@ -19,20 +19,19 @@ class UserSortField(StrEnum):
     SEX = auto()
     CITY = auto()
     LEVEL = auto()
-    CLEANDAYS = auto()
-    ORGANIZED = auto()
+    CLEANDAY_COUNT = auto()
+    ORGANIZED_COUNT = auto()
     STAT = auto()
 
 
 class GetUsersParams(BaseModel):
     offset: int = Field(0, ge=0)
     limit: int = Field(20, ge=1, le=50)
-    sort_by: Optional[UserSortField] = None
-    sort_order: Optional[SortOrder] = None
+    sort_by: UserSortField = UserSortField.LOGIN
+    sort_order: SortOrder = SortOrder.ASC
     search_query: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    middle_name: Optional[str] = None
     login: Optional[str] = None
     sex: Optional[list[Sex]] = None
     city: Optional[str] = None
