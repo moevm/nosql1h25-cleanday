@@ -101,6 +101,11 @@ async def cancel_cleanday(cleanday_id: str):
     return
 
 
+@router.post("/{cleanday_id}/end")
+async def end_cleanday(cleanday_id: str):
+    return
+
+
 @router.post("/{cleanday_id}/complete")
 async def complete_cleanday(cleanday_id: str):
     return
