@@ -49,6 +49,16 @@ async def update_user(user_id: str, payload: UpdateUser) -> GetUser:
     )
 
 
+@router.get("/{user_id}/picture")
+async def get_user_picture(user_id: str) -> None:
+    return None
+
+
+@router.post("/{user_id}/picture")
+async def upload_user_picture(user_id: str) -> None:
+    return None
+
+
 @router.get("/{user_id}/cleandays")
 async def get_user_cleandays(user_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayListResponse:
     return CleandayListResponse(cleandays=[])
@@ -57,3 +67,8 @@ async def get_user_cleandays(user_id: str, query: Annotated[PaginationParams, Qu
 @router.get("/{user_id}/organized")
 async def get_user_organized_cleandays(user_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayListResponse:
     return CleandayListResponse(cleandays=[])
+
+
+@router.get("/graph")
+async def get_users_graph(attribute_1: str, attribute_2: str) -> None:
+    return 

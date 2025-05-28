@@ -66,6 +66,16 @@ async def update_cleanday(cleanday_id: str, cleanday: UpdateCleanday) -> GetClea
     )
 
 
+@router.post("/{cleanday_id}/picture/{number}")
+async def upload_cleanday_picture(cleanday_id: str, number: int):
+    return {"message": "Picture uploaded successfully", "cleanday_id": cleanday_id, "picture_number": number}
+
+
+@router.get("/{cleanday_id}/picture/{number}")
+async def get_cleanday_picture(cleanday_id: str, number: int):
+    return {"message": "Picture retrieved successfully", "cleanday_id": cleanday_id, "picture_number": number}
+
+
 @router.get("/{cleanday_id}/members/total")
 async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
     return UserListResponse(users=[])
