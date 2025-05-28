@@ -256,24 +256,31 @@ class UserRepo:
             """, bind_vars=user.model_dump()
         )
 
-        user_dict = cursor.next()
-        user_dict['key'] = user_dict['_key']
+        return self._return_single(cursor)
 
-        return User.model_validate(user_dict)
+    def update(self, user_key: str, user: UpdateUser) -> Optional[User]:
+        if not self.get_raw_by_key(user_key):
+            return None
 
-    def update(self, user_key: str, user: UpdateUser) -> User:
-        pass
+        cursor = self.db.aql.execute(
+            """
+            UPDATE @user_key WITH @changes IN User
+            RETURN NEW
+            """,
+            bind_vars={"user_key": user_key, "changes": user.model_dump(exclude_none=True)},
+        )
+
+        return self._return_single(cursor)
 
     def set_city(self, user_key: str, city_key: str) -> bool:
         self.db.aql.execute(
             """
             LET userId = CONCAT("User/", @user_id)
-            LET cityId = CONCAT("City/", @city_id)
             
             FOR edge IN lives_in
               FILTER edge._from == userId
               REMOVE edge IN lives_in
-            """, bind_vars={"user_id": user_key, "city_id": city_key}
+            """, bind_vars={"user_id": user_key}
         )
 
         self.db.aql.execute(
