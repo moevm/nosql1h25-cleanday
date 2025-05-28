@@ -296,13 +296,200 @@ class UserRepo:
         )
 
     def get_cleandays(self, user_key: str, params: PaginationParams) -> (int, list[GetCleanday]):
-        pass
+        if not self.get_raw_by_key(user_key):
+            return None
+
+        cursor = self.db.aql.execute(
+            """
+            LET userId = CONCAT("User/", @user_key)
+            
+            LET cd_count = COUNT(
+                FOR p IN OUTBOUND userId has_participation
+                    FOR cl_day IN OUTBOUND p participation_in
+                        RETURN 1
+            )
+            
+            LET cleandays = (
+                FOR p IN OUTBOUND userId has_participation
+                    FOR cl_day IN OUTBOUND p participation_in
+                        LET cdId = cl_day._id
+                        
+                        LIMIT @offset, @limit
+                        
+                        LET city = FIRST(
+                            FOR city IN OUTBOUND cdId takes_place_in
+                              LIMIT 1
+                              RETURN city
+                        )
+                        
+                        LET participant_count = COUNT(
+                            FOR par IN INBOUND cdId participation_in
+                              FOR user IN INBOUND par has_participation
+                                LIMIT 1
+                                RETURN user
+                        )
+                        
+                        LET requirements = (
+                            FOR req IN OUTBOUND cdId has_requirement 
+                                LET fulfills = COUNT(
+                                    FOR par IN INBOUND req fullfills
+                                        RETURN 1
+                                )
+                                
+                                RETURN MERGE(req, {"users_amount": fulfills})    
+                        )
+                        
+                        RETURN MERGE(cl_day,
+                        {
+                            "key": cl_day._key,
+                            "city": city.name,
+                            "participant_count": participant_count,
+                            "requirements": requirements
+                        }
+                        )
+            )
+            RETURN {
+                "cleandays": cleandays,
+                "count": cd_count
+            }
+            """,
+            bind_vars={"user_key": user_key, "offset": params.offset, "limit": params.limit},
+        )
+        result_dict = cursor.next()
+        cleandays = list(map(lambda cd: GetCleanday.model_validate(cd), result_dict["cleandays"]))
+
+        return result_dict["count"], cleandays
 
     def get_organized(self, user_key: str, params: PaginationParams) -> (int, list[GetCleanday]):
+        if not self.get_raw_by_key(user_key):
+            return None
+
+        cursor = self.db.aql.execute(
+            """
+            LET userId = CONCAT("User/", @user_key)
+
+            LET cd_count = COUNT(
+                FOR p IN OUTBOUND userId has_participation
+                    FOR cl_day IN OUTBOUND p participation_in
+                        FILTER p.type == "organiser"
+                        RETURN 1
+            )
+
+            LET cleandays = (
+                FOR p IN OUTBOUND userId has_participation
+                    FOR cl_day IN OUTBOUND p participation_in
+                        FILTER p.type == "organiser"
+                        LET cdId = cl_day._id
+
+                        LIMIT @offset, @limit
+
+                        LET city = FIRST(
+                            FOR city IN OUTBOUND cdId takes_place_in
+                              LIMIT 1
+                              RETURN city
+                        )
+
+                        LET participant_count = COUNT(
+                            FOR par IN INBOUND cdId participation_in
+                              FOR user IN INBOUND par has_participation
+                                LIMIT 1
+                                RETURN user
+                        )
+
+                        LET requirements = (
+                            FOR req IN OUTBOUND cdId has_requirement 
+                                LET fulfills = COUNT(
+                                    FOR par IN INBOUND req fullfills
+                                        RETURN 1
+                                )
+
+                                RETURN MERGE(req, {"users_amount": fulfills})    
+                        )
+
+                        RETURN MERGE(cl_day,
+                        {
+                            "key": cl_day._key,
+                            "city": city.name,
+                            "participant_count": participant_count,
+                            "requirements": requirements
+                        }
+                        )
+            )
+            RETURN {
+                "cleandays": cleandays,
+                "count": cd_count
+            }
+            """,
+            bind_vars={"user_key": user_key, "offset": params.offset, "limit": params.limit},
+        )
+        result_dict = cursor.next()
+        cleandays = list(map(lambda cd: GetCleanday.model_validate(cd), result_dict["cleandays"]))
+
+        return result_dict["count"], cleandays
         pass
 
-    def set_image(self, user_key: str, image: Image) -> bool:
-        pass
+    def set_image(self, user_key: str, image_data: str):
+        if not self.get_raw_by_key(user_key):
+            return None
+
+        self.db.aql.execute(
+            """
+            LET userId = CONCAT("User/", @user_id)
+
+            FOR file IN 1..1 OUTBOUND userId user_avatar
+              UPDATE file WITH {
+                photo: @file
+              } IN File
+              RETURN NEW
+            """, bind_vars={"user_id": user_key, "file": image_data}
+        )
+
+    def create_image(self, user_key: str, image_data: str):
+
+        if not self.get_raw_by_key(user_key):
+            return
+
+        self.db.aql.execute(
+            """
+            LET img = FIRST(
+              INSERT {
+                description: "avatar",
+                photo: @file
+              } INTO Image
+              RETURN NEW
+            )
+            
+            INSERT {
+              _from: CONCAT("User/", @user_key),
+              _to: img._id
+            } INTO user_avatar
+            """,
+            bind_vars={"user_key": user_key, "file": image_data},
+        )
+
+    def get_image(self, user_key: str) -> Optional:
+
+        if not self.get_raw_by_key(user_key):
+            return None
+
+        cursor = self.db.aql.execute(
+            """
+            LET userId = CONCAT("User/", @user_key)
+            
+            FOR file IN OUTBOUND userId user_avatar
+              LIMIT 1
+              RETURN file
+            """,
+            bind_vars={"user_key": user_key},
+        )
+
+        if not cursor.has_more():
+            return None
+
+        result_dict = cursor.next()
+        result_dict['key'] = result_dict['_key']
+
+        return Image.model_validate(result_dict)
 
 
 if __name__ == "__main__":
