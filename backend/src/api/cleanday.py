@@ -81,16 +81,6 @@ async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersPara
     return UserListResponse(users=[])
 
 
-@router.get("/{cleanday_id}/members/status/{status}")
-async def get_cleanday_members_by_status(cleanday_id: str, status: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
-    return UserListResponse(users=[])
-
-
-@router.get("/{cleanday_id}/members/condition/{condition}")
-async def get_cleanday_members_by_condition(cleanday_id: str, condition: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
-    return UserListResponse(users=[])
-
-
 @router.get("/{cleanday_id}/logs")
 async def get_cleanday_logs(cleanday_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayLogListResponse:
     return CleandayLogListResponse(logs=[])
@@ -123,16 +113,6 @@ async def cancel_cleanday(cleanday_id: str):
 
 @router.post("/{cleanday_id}/end")
 async def end_cleanday(cleanday_id: str):
-    return
-
-
-@router.post("/{cleanday_id}/complete")
-async def complete_cleanday(cleanday_id: str):
-    return
-
-
-@router.get("/{cleanday_id}/activity")
-async def get_cleanday_activity(cleanday_id: str):
     return
 
 
