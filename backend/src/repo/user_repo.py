@@ -1,3 +1,6 @@
+from typing import Optional
+
+from arango.cursor import Cursor
 from arango.database import StandardDatabase
 
 from auth.model import RegisterUser
@@ -205,7 +208,15 @@ class UserRepo:
         page_dict = cursor.next()
         return page_dict["count"], list(map(lambda u: GetUser.model_validate(u), page_dict["page"]))
 
-    def get_raw_by_id(self, user_key: str) -> User:
+    def _return_single(self, cursor: Cursor) -> Optional[User]:
+        if not cursor.has_more():
+            return None
+        user_dict = cursor.next()
+        user_dict['key'] = user_dict['_key']
+
+        return User.model_validate(user_dict)
+
+    def get_raw_by_key(self, user_key: str) -> Optional[User]:
 
         cursor = self.db.aql.execute(
             """
@@ -214,13 +225,20 @@ class UserRepo:
               RETURN u
             """, bind_vars={"id": user_key}
         )
-        user_dict = cursor.next()
-        user_dict['key'] = user_dict['_key']
 
-        return User.model_validate(user_dict)
+        return self._return_single(cursor)
 
-    def get_raw_by_login(self, login: str) -> User:
-        pass
+    def get_raw_by_login(self, login: str) -> Optional[User]:
+
+        cursor = self.db.aql.execute(
+            """
+            FOR u in User
+              FILTER u.login == @login
+              RETURN u
+            """, bind_vars={"login": login}
+        )
+
+        return self._return_single(cursor)
 
     def create(self, user: CreateUser) -> User:
         cursor = self.db.aql.execute(
