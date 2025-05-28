@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment
+from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment, ParticipationType
 
 
 class SortOrder(StrEnum):
@@ -96,31 +96,34 @@ class CleandaySortField(StrEnum):
     AREA = auto()
     STATUS = auto()
     RECOMMENDED_COUNT = auto()
+    PARTICIPANT_COUNT = auto()
 
 
 class GetCleandaysParams(BaseModel):
     offset: int = Field(0, ge=0)
     limit: int = Field(20, ge=1, le=50)
-    sort_by: Optional[UserSortField] = None
-    sort_order: Optional[SortOrder] = None
+    sort_by: UserSortField = CleandaySortField.BEGIN_DATE
+    sort_order: SortOrder = SortOrder.ASC
     search_query: Optional[str] = None
     name: Optional[str] = None
     organization: Optional[str] = None
-    statuses: Optional[list[str]] = None
+    status: Optional[list[str]] = None
     begin_date_from: Optional[datetime] = None
     begin_date_to: Optional[datetime] = None
     end_date_from: Optional[int] = None
     end_date_to: Optional[int] = None
     area_from: Optional[int] = Field(None, ge=0)
     area_to: Optional[int] = None
-    count_from: Optional[int] = Field(None, ge=0)
-    count_to: Optional[int] = None
+    recommended_count_from: Optional[int] = Field(None, ge=0)
+    recommended_count_to: Optional[int] = None
+    participant_count_from: Optional[int] = Field(None, ge=0)
+    participant_count_to: Optional[int] = None
     tags: Optional[list[str]] = None
 
 
 class GetMembersParams(GetUsersParams):
     requirements: Optional[list[str]] = None
-    participation_type: Optional[list[str]] = None
+    participation_type: Optional[list[ParticipationType]] = None
 
 
 class PaginationParams(BaseModel):
@@ -180,3 +183,8 @@ class UpdateCleanday(BaseModel):
     description: Optional[str] = None
     recommended_count: Optional[int] = None
     tags: Optional[list[CleanDayTag]] = None
+
+
+class GetMember(GetUser):
+    requirements: list[Requirement]
+    participation_type: ParticipationType

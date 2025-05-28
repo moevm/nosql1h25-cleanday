@@ -78,6 +78,7 @@ class Participation(BaseModel):
     key: str
     type: ParticipationType
     stat: int
+    real_presence: bool
 
 
 class City(BaseModel):
