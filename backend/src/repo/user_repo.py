@@ -277,7 +277,7 @@ class UserRepo:
 
     def set_city(self, user_key: str, city_key: str):
         if not self.get_raw_by_key(user_key):
-            return None
+            return
 
         self.db.aql.execute(
             """
