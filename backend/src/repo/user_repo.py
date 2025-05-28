@@ -25,6 +25,42 @@ filter_fields = {
 }
 
 
+def setup_get_users_params(params: GetUsersParams) -> (dict, list[str]):
+    params_dict = params.model_dump(exclude_none=True)
+    filters = []
+    bind_vars = {
+        "offset": params.offset,
+        "limit": params.limit
+    }
+
+    for contains_filter in contains_filters:
+        if contains_filter in params_dict:
+            filters.append(
+                f"    FILTER CONTAINS(LOWER(usr.{contains_filter}), LOWER(@{contains_filter}))"
+            )
+            bind_vars[contains_filter] = params_dict[contains_filter]
+
+    if "sex" in params_dict:
+        filters.append("    FILTER usr.sex IN @sex")
+        bind_vars["sex"] = params_dict["sex"]
+
+    for from_filter in from_filters:
+        if from_filter in params_dict:
+            filters.append(
+                f"    FILTER usr.{filter_fields[from_filter]} >= @{from_filter}"
+            )
+            bind_vars[from_filter] = params_dict[from_filter]
+
+    for to_filter in to_filters:
+        if to_filter in params_dict:
+            filters.append(
+                f"    FILTER usr.{filter_fields[to_filter]} <= @{to_filter}"
+            )
+            bind_vars[to_filter] = params_dict[to_filter]
+
+    return bind_vars, filters
+
+
 class UserRepo:
 
     def __init__(self, database: StandardDatabase):
@@ -82,37 +118,7 @@ class UserRepo:
 
     def get_page(self, params: GetUsersParams) -> (int, list[GetUser]):
 
-        params_dict = params.model_dump(exclude_none=True)
-        filters = []
-        bind_vars = {
-            "offset": params.offset,
-            "limit": params.limit
-        }
-
-        for contains_filter in contains_filters:
-            if contains_filter in params_dict:
-                filters.append(
-                    f"    FILTER CONTAINS(LOWER(usr.{contains_filter}), LOWER(@{contains_filter}))"
-                )
-                bind_vars[contains_filter] = params_dict[contains_filter]
-
-        if "sex" in params_dict:
-            filters.append("    FILTER usr.sex IN @sex")
-            bind_vars["sex"] = params_dict["sex"]
-
-        for from_filter in from_filters:
-            if from_filter in params_dict:
-                filters.append(
-                    f"    FILTER usr.{filter_fields[from_filter]} >= @{from_filter}"
-                )
-                bind_vars[from_filter] = params_dict[from_filter]
-
-        for to_filter in to_filters:
-            if to_filter in params_dict:
-                filters.append(
-                    f"    FILTER u.{filter_fields[to_filter]} >= @{to_filter}"
-                )
-                bind_vars[to_filter] = params_dict[to_filter]
+        bind_vars, filters = setup_get_users_params(params)
 
         query = f"""
                 LET count = COUNT(
@@ -342,7 +348,7 @@ class UserRepo:
                                         RETURN 1
                                 )
                                 
-                                RETURN MERGE(req, {"users_amount": fulfills})    
+                                RETURN MERGE(req, {"users_amount": fulfills, "key": req._key})    
                         )
                         
                         RETURN MERGE(cl_day,
@@ -409,7 +415,7 @@ class UserRepo:
                                         RETURN 1
                                 )
 
-                                RETURN MERGE(req, {"users_amount": fulfills})    
+                                RETURN MERGE(req, {"users_amount": fulfills, "key": req._key})    
                         )
 
                         RETURN MERGE(cl_day,
