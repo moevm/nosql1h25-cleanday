@@ -71,6 +71,10 @@ class GetCleandayRequirement(Requirement):
 class GetCleanday(BaseModel):
     key: str
     name: str
+    description: str
+    participant_count: int
+    recommended_count: int
+    city: str
     begin_date: datetime
     end_date: datetime
     organization: str

@@ -22,6 +22,7 @@ class UpdateUser(BaseModel):
     sex: Optional[Sex] = None
     about_me: Optional[str] = None
     password: Optional[str] = None
+    score: Optional[int] = None
 
 
 class CreateCleanday(BaseModel):
