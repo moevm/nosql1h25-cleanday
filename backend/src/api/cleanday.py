@@ -51,6 +51,21 @@ async def delete_cleanday(cleanday_id: str):
     return
 
 
+@router.patch("/{cleanday_id}")
+async def update_cleanday(cleanday_id: str, cleanday: UpdateCleanday) -> GetCleanday:
+    return GetCleanday(
+        key=cleanday_id,
+        name=cleanday.name,
+        begin_date=cleanday.begin_date,
+        end_date=cleanday.end_date,
+        organization=cleanday.organization,
+        area=cleanday.area,
+        status=CleanDayStatus.PLANNED,
+        tags=cleanday.tags,
+        requirements=cleanday.requirements
+    )
+
+
 @router.get("/{cleanday_id}/members")
 async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
     return UserListResponse(users=[])
