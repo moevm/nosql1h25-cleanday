@@ -30,7 +30,10 @@ class UserRepo:
     def __init__(self, database: StandardDatabase):
         self.db = database
 
-    def get_by_id(self, user_key: str) -> GetUser:
+    def get_by_key(self, user_key: str) -> Optional[GetUser]:
+        if not self.get_raw_by_key(user_key):
+            return None
+
         cursor = self.db.aql.execute(
             """
             LET user = FIRST(
@@ -272,7 +275,10 @@ class UserRepo:
 
         return self._return_single(cursor)
 
-    def set_city(self, user_key: str, city_key: str) -> bool:
+    def set_city(self, user_key: str, city_key: str):
+        if not self.get_raw_by_key(user_key):
+            return None
+
         self.db.aql.execute(
             """
             LET userId = CONCAT("User/", @user_id)
@@ -490,27 +496,3 @@ class UserRepo:
         result_dict['key'] = result_dict['_key']
 
         return Image.model_validate(result_dict)
-
-
-if __name__ == "__main__":
-    repo = UserRepo(database)
-
-    print(repo.get_page(
-        GetUsersParams(
-            sort_by=UserSortField.CLEANDAY_COUNT,
-            sort_order="asc",
-            limit=1
-        )
-    ))
-    # print(repo.create(
-    #     CreateUser(
-    #         first_name="Маргарита",
-    #         last_name="Иванова",
-    #         login="pitatir",
-    #         sex=Sex.FEMALE,
-    #         password="12345678",
-    #         about_me="с каждым днем я становлюсь чуточку смешнее и нестабильнее",
-    #         score=0
-    #     )
-    # ))
-    # repo.set_city("51554", "1355")
