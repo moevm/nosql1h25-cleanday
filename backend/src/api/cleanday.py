@@ -86,6 +86,31 @@ async def create_cleanday_comment(cleanday_id: str, comment: str):
     return
 
 
+@router.post("/{cleanday_id}/join")
+async def join_cleanday(cleanday_id: str):
+    return
+
+
+@router.patch("/{cleanday_id}/participation")
+async def update_participation(cleanday_id: str, participation: str):
+    return
+
+
+@router.post("/{cleanday_id}/cancel")
+async def cancel_cleanday(cleanday_id: str):
+    return
+
+
+@router.post("/{cleanday_id}/complete")
+async def complete_cleanday(cleanday_id: str):
+    return
+
+
+@router.get("/{cleanday_id}/activity")
+async def get_cleanday_activity(cleanday_id: str):
+    return
+
+
 @router.patch("/{cleanday_id}")
 async def create_new_cleanday(cleanday_id: str, cleanday: UpdateCleanday):
     return
