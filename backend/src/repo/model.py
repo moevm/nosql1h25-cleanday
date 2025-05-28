@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from data.entity import Sex, CleanDayTag, ParticipationType
+from data.entity import Sex, CleanDayTag, ParticipationType, CleanDayStatus
 
 
 class CreateUser(BaseModel):
@@ -32,6 +32,7 @@ class CreateCleanday(BaseModel):
     organization: str
     area: int
     description: str
+    status: CleanDayStatus
     recommended_count: int
     tags: list[CleanDayTag]
     requirements: list[str]
