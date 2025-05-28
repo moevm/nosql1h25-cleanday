@@ -89,3 +89,8 @@ async def create_cleanday_comment(cleanday_id: str, comment: str):
 @router.patch("/{cleanday_id}")
 async def create_new_cleanday(cleanday_id: str, cleanday: UpdateCleanday):
     return
+
+
+@router.get("/graph")
+async def get_cleanday_graph(attribute_1: str, attribute_2: str) -> dict:
+    return 
