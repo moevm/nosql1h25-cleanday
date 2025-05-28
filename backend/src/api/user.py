@@ -57,8 +57,3 @@ async def get_user_cleandays(user_id: str, query: Annotated[PaginationParams, Qu
 @router.get("/{user_id}/organized")
 async def get_user_organized_cleandays(user_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayListResponse:
     return CleandayListResponse(cleandays=[])
-
-
-@router.post("/{user_id}/organized")
-async def create_new_cleanday(user_id: str, cleanday: CreateCleanday):
-    return

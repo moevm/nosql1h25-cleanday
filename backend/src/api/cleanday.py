@@ -16,6 +16,21 @@ async def get_cleandays(query: Annotated[GetCleandaysParams, Query()]) -> Cleand
     return CleandayListResponse(cleandays=[])
 
 
+@router.post("/")
+async def create_cleanday(cleanday: UpdateCleanday) -> GetCleanday:
+    return GetCleanday(
+        key="1",
+        name=cleanday.name,
+        begin_date=cleanday.begin_date,
+        end_date=cleanday.end_date,
+        organization=cleanday.organization,
+        area=cleanday.area,
+        status=CleanDayStatus.PLANNED,
+        tags=cleanday.tags,
+        requirements=cleanday.requirements
+    )
+
+
 @router.get("/{cleanday_id}")
 async def get_cleanday(cleanday_id: str) -> GetCleanday:
     return GetCleanday(
