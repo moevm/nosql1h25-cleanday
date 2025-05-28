@@ -31,6 +31,11 @@ async def get_cleanday(cleanday_id: str) -> GetCleanday:
     )
 
 
+@router.delete("/{cleanday_id}")
+async def delete_cleanday(cleanday_id: str):
+    return
+
+
 @router.get("/{cleanday_id}/members")
 async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
     return UserListResponse(users=[])
