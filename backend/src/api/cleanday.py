@@ -46,6 +46,11 @@ async def get_cleanday_comments(cleanday_id: str, query: Annotated[PaginationPar
     return CommentListResponse(comments=[])
 
 
+@router.post("/{cleanday_id}/comments")
+async def create_cleanday_comment(cleanday_id: str, comment: str):
+    return
+
+
 @router.patch("/{cleanday_id}")
 async def create_new_cleanday(cleanday_id: str, cleanday: UpdateCleanday):
     return
