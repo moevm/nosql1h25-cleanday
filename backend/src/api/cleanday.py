@@ -66,8 +66,18 @@ async def update_cleanday(cleanday_id: str, cleanday: UpdateCleanday) -> GetClea
     )
 
 
-@router.get("/{cleanday_id}/members")
+@router.get("/{cleanday_id}/members/total")
 async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
+    return UserListResponse(users=[])
+
+
+@router.get("/{cleanday_id}/members/status/{status}")
+async def get_cleanday_members_by_status(cleanday_id: str, status: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
+    return UserListResponse(users=[])
+
+
+@router.get("/{cleanday_id}/members/condition/{condition}")
+async def get_cleanday_members_by_condition(cleanday_id: str, condition: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
     return UserListResponse(users=[])
 
 
