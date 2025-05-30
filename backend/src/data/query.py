@@ -132,9 +132,8 @@ class PaginationParams(BaseModel):
 
 
 class CleandayLog(Log):
-    user: Optional[GetUser] = None
+    user: Optional[User] = None
     comment: Optional[Comment] = None
-    requirements: Optional[list[Requirement]] = None
 
 
 class CleandayLogListResponse(BaseModel):

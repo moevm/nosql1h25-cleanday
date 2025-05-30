@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from arango import cursor
 from arango.database import StandardDatabase
 
 from data.entity import CleanDay, CleanDayTag, CleanDayStatus, ParticipationType
@@ -451,27 +452,116 @@ class CleandayRepo:
         pass
 
     def get_logs(self, cleanday_key: str, params: PaginationParams) -> (int, list[CleandayLog]):
-        pass
+        bind_vars = params.model_dump()
+        bind_vars["cleanday_key"] = cleanday_key
+
+        cursor = self.db.aql.execute(
+            """
+            LET cdId = CONCAT("CleanDay/", @cleanday_key)
+            
+            LET count = COUNT(
+                FOR log IN INBOUND cdId relates_to_cleanday
+                    RETURN 1
+            )
+            
+            LET page = (
+                FOR log IN INBOUND cdId relates_to_cleanday
+                    SORT log.date
+                    
+                    LET user = FIRST(
+                        FOR usr IN OUTBOUND log relates_to_user
+                            LIMIT 1
+                            RETURN usr
+                    )
+                    LET comment = FIRST(
+                        FOR comm IN OUTBOUND log relates_to_comment
+                            LIMIT 1
+                            RETURN comm
+                    )
+                    LIMIT @offset, @limit
+                    
+                    RETURN MERGE(log, {
+                        user: MERGE(user, {key: user._key}),
+                        comment: comment,
+                        key: log._key
+                    })
+            )
+            
+            RETURN {
+                page: page,
+                count: count
+            }
+            """,
+            bind_vars=bind_vars
+        )
+
+        result_dict = cursor.next()
+        print(result_dict["page"])
+        page = list(map(lambda c: CleandayLog.model_validate(c), result_dict["page"]))
+        return result_dict["count"], page
 
     def get_comments(self, cleanday_key: str, params: PaginationParams) -> (int, list[GetComment]):
-        pass
+        bind_vars = params.model_dump()
+        bind_vars["cleanday_key"] = cleanday_key
 
+        cursor = self.db.aql.execute(
+            """
+            LET cdId = CONCAT("CleanDay/", @cleanday_key)
+            LET count = COUNT(
+                FOR comment IN OUTBOUND cdId has_comment
+                    RETURN 1
+            )
+            LET page = (
+                FOR comment IN OUTBOUND cdId has_comment
+                    SORT comment.time DESC
+                    LIMIT @offset, @limit
+                    LET user = FIRST(
+                        FOR par IN INBOUND comment._id authored
+                            FOR u IN INBOUND par has_participation
+                              LIMIT 1
+                              LET city = FIRST(
+                                  FOR city IN OUTBOUND u._id lives_in
+                                    LIMIT 1
+                                    RETURN city
+                              )
+                              
+                              LET parCount = COUNT(
+                                  FOR p IN OUTBOUND u._id has_participation
+                                    FOR cl_day IN OUTBOUND p participation_in
+                                      RETURN cl_day
+                              )
+                              
+                              LET orgCount = COUNT(
+                                  FOR p IN OUTBOUND u._id has_participation
+                                    FILTER p.type == "organiser"
+                                    FOR cl_day IN OUTBOUND p participation_in
+                                      RETURN cl_day
+                              )
+                              
+                              LET stat = SUM(
+                                  FOR p IN OUTBOUND u._id has_participation
+                                        RETURN p.stat
+                              )
+                              RETURN MERGE(u, {
+                                "key": u._key,
+                                "city": city.name,
+                                "cleanday_count": parCount,
+                                "organized_count": orgCount,
+                                "stat": stat
+                              })
+                    )
+                    RETURN MERGE(comment, {"author": user, key: comment._key})
+            )
+            
+            RETURN {
+                page: page,
+                count: count
+            }
+            """,
+            bind_vars=bind_vars
+        )
 
-if __name__ == "__main__":
-    repo = CleandayRepo(database)
-    # repo.set_city('84421', '1355')
-    # repo.set_city('85868', '1355')
-    print(repo.get_members('84421', GetMembersParams()))
-    # print(repo.get_members('1778', GetMembersParams(participation_type=[ParticipationType.ORGANIZER, ParticipationType.WILL_GO])))
-    # print(repo.create('84421', CreateCleanday(
-    #     name='Субботник 2025 2',
-    #     begin_date=datetime(2025, 7, 10, 13),
-    #     end_date=datetime(2025, 7, 10, 16),
-    #     organization='ЛЭТИ',
-    #     area=25,
-    #     description='субботник 2.',
-    #     status=CleanDayStatus.PLANNED,
-    #     recommended_count=30,
-    #     tags=[CleanDayTag.WATERBODY_CLEANING, CleanDayTag.LEAF_CLEANING],
-    #     requirements=['Наличие сапог', 'Наличие еды']
-    # )))
+        result_dict = cursor.next()
+        print(result_dict["page"])
+        page = list(map(lambda c: GetComment.model_validate(c), result_dict["page"]))
+        return result_dict["count"], page
