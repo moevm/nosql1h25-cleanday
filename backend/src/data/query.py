@@ -184,3 +184,4 @@ class UpdateCleanday(BaseModel):
 
 class GetCityParams(PaginationParams):
     search_query: str = ""
+    sort_order: SortOrder = SortOrder.ASC

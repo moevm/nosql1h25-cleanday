@@ -1,7 +1,7 @@
 from arango.database import StandardDatabase
 
 from data.entity import City
-from data.query import GetCityParams
+from data.query import GetCityParams, SortOrder
 from repo.client import database
 
 
@@ -26,12 +26,13 @@ class CityRepo:
 
     def get_page(self, params: GetCityParams) -> (int, list[City]):
         cursor = self.db.aql.execute(
-            """
+            f"""
             LET cities = (
                 FOR c IN City
                     FILTER (CONTAINS(LOWER(c.name), LOWER(@search_query)) OR @search_query == "")
                     LIMIT @offset, @limit
-                    RETURN MERGE(c, {key: c._key})
+                    SORT c.name @sort_order
+                    RETURN MERGE(c, {{key: c._key}})
             )
             LET city_count = COUNT(
                 FOR c IN City
@@ -39,10 +40,10 @@ class CityRepo:
                     RETURN c
             )
             
-            RETURN {
+            RETURN {{
                 "cities": cities,
                 "city_count": city_count
-            }
+            }}
             """,
             bind_vars=params.model_dump()
         )
@@ -60,4 +61,4 @@ class CityRepo:
 
 if __name__ == '__main__':
     repo = CityRepo(database)
-    print(repo.get_page(GetCityParams(search_query="санкт")))
+    print(repo.get_page(GetCityParams(search_query="", sort_order=SortOrder.DESC)))
