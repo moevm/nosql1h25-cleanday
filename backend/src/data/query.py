@@ -180,3 +180,8 @@ class UpdateCleanday(BaseModel):
     description: Optional[str] = None
     recommended_count: Optional[int] = None
     tags: Optional[list[CleanDayTag]] = None
+
+
+class GetCityParams(PaginationParams):
+    search_query: str = ""
+    sort_order: SortOrder = SortOrder.ASC
