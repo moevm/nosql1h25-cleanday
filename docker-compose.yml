@@ -15,7 +15,7 @@ services:
       dockerfile: Dockerfile
     container_name: cleanday_backend
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./backend:/app
     environment:
@@ -30,7 +30,7 @@ services:
       dockerfile: Dockerfile
     container_name: cleanday_frontend
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./frontend:/app
       - /app/node_modules
