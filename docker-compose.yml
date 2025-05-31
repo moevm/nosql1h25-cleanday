@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   arangodb:
-    image: arangodb:latest
+    image: arangodb:3.12
     environment:
       - ARANGO_ROOT_PASSWORD=${ARANGO_PASS}
     ports:
