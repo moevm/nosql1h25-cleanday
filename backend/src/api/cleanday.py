@@ -4,9 +4,9 @@ from typing import Annotated
 from pydantic import BaseModel
 from fastapi import APIRouter, Query
 
-from data.entity import CleanDayStatus
+from data.entity import CleanDayStatus, CleanDay
 from data.query import GetCleandaysParams, CleandayListResponse, GetCleanday, UserListResponse, GetMembersParams, \
-    PaginationParams, CleandayLogListResponse, CommentListResponse, UpdateCleanday
+    PaginationParams, CleandayLogListResponse, CommentListResponse, UpdateCleanday, CreateCleanday
 
 router = APIRouter(prefix="/cleandays", tags=["cleanday"])
 
@@ -17,17 +17,9 @@ async def get_cleandays(query: Annotated[GetCleandaysParams, Query()]) -> Cleand
 
 
 @router.post("/")
-async def create_cleanday(cleanday: UpdateCleanday) -> GetCleanday:
-    return GetCleanday(
-        key="1",
-        name=cleanday.name,
-        begin_date=cleanday.begin_date,
-        end_date=cleanday.end_date,
-        organization=cleanday.organization,
-        area=cleanday.area,
-        status=CleanDayStatus.PLANNED,
-        tags=cleanday.tags,
-        requirements=cleanday.requirements
+async def create_cleanday(cleanday: CreateCleanday) -> CleanDay:
+    return CleanDay(
+        **cleanday.model_dump()
     )
 
 
@@ -76,7 +68,7 @@ async def get_cleanday_picture(cleanday_id: str, number: int):
     return {"message": "Picture retrieved successfully", "cleanday_id": cleanday_id, "picture_number": number}
 
 
-@router.get("/{cleanday_id}/members/total")
+@router.get("/{cleanday_id}/members")
 async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
     return UserListResponse(users=[])
 
@@ -96,18 +88,13 @@ async def create_cleanday_comment(cleanday_id: str, comment: str):
     return
 
 
-@router.post("/{cleanday_id}/join")
+@router.post("/{cleanday_id}/members")
 async def join_cleanday(cleanday_id: str):
     return
 
 
-@router.patch("/{cleanday_id}/participation")
+@router.patch("/{cleanday_id}/members/me")
 async def update_participation(cleanday_id: str, participation: str):
-    return
-
-
-@router.post("/{cleanday_id}/cancel")
-async def cancel_cleanday(cleanday_id: str):
     return
 
 
@@ -116,11 +103,6 @@ async def end_cleanday(cleanday_id: str):
     return
 
 
-@router.patch("/{cleanday_id}")
-async def create_new_cleanday(cleanday_id: str, cleanday: UpdateCleanday):
-    return
-
-
 @router.get("/graph")
-async def get_cleanday_graph(attribute_1: str, attribute_2: str) -> dict:
-    return 
+async def get_cleanday_graph(attribute_1: str, attribute_2: str):
+    return

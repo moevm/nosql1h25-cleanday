@@ -70,5 +70,5 @@ async def get_user_organized_cleandays(user_id: str, query: Annotated[Pagination
 
 
 @router.get("/graph")
-async def get_users_graph(attribute_1: str, attribute_2: str) -> None:
-    return 
+async def get_users_graph(attribute_1: str, attribute_2: str):
+    return
