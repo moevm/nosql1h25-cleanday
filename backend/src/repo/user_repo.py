@@ -380,13 +380,30 @@ class UserRepo:
                                 RETURN MERGE(req, {"users_amount": fulfills, "key": req._key})    
                         )
                         
+                        LET created_at = FIRST(
+                            FOR log IN INBOUND cdId relates_to_cleanday
+                                FILTER log.type == "CreateCleanday"
+                                LIMIT 1
+                                RETURN log.date
+                        )
+                        
+                        LET updated_at = NOT_NULL(FIRST(
+                            FOR log IN INBOUND cdId relates_to_cleanday
+                                FILTER log.type == "UpdateCleanday"
+                                SORT log.date DESC
+                                LIMIT 1
+                                RETURN log.date
+                        ), created_at)
+                        
                         RETURN MERGE(cl_day,
                         {
                             "key": cl_day._key,
                             "city": city.name,
                             "participant_count": participant_count,
                             "requirements": requirements,
-                            "location": loc
+                            "location": loc,
+                            "created_at": created_at,
+                            "updated_at": updated_at
                         }
                         )
             )
@@ -453,6 +470,20 @@ class UserRepo:
 
                                 RETURN MERGE(req, {"users_amount": fulfills, "key": req._key})    
                         )
+                        LET created_at = FIRST(
+                            FOR log IN INBOUND cdId relates_to_cleanday
+                                FILTER log.type == "CreateCleanday"
+                                LIMIT 1
+                                RETURN log.date
+                        )
+                        
+                        LET updated_at = NOT_NULL(FIRST(
+                            FOR log IN INBOUND cdId relates_to_cleanday
+                                FILTER log.type == "UpdateCleanday"
+                                SORT log.date DESC
+                                LIMIT 1
+                                RETURN log.date
+                        ), created_at)
 
                         RETURN MERGE(cl_day,
                         {
@@ -460,7 +491,9 @@ class UserRepo:
                             "city": city.name,
                             "participant_count": participant_count,
                             "requirements": requirements,
-                            "location": loc
+                            "location": loc,
+                            "created_at": created_at,
+                            "updated_at": updated_at
                         }
                         )
             )

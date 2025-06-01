@@ -84,6 +84,8 @@ class GetCleanday(BaseModel):
     location: Location
     begin_date: datetime
     end_date: datetime
+    created_at: datetime
+    updated_at: datetime
     organization: str
     area: int
     status: CleanDayStatus
