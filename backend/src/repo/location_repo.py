@@ -1,3 +1,5 @@
+from typing import Optional
+
 from arango.database import StandardDatabase
 
 from data.entity import Location
@@ -85,8 +87,24 @@ class LocationRepo:
 
         return Location.model_validate(cursor.next())
 
+    def get_raw_by_key(self, loc_key: str) -> Optional[Location]:
+        cursor = self.db.aql.execute(
+            """
+            RETURN DOCUMENT(CONCAT("Location/", @loc_key))
+            """, bind_vars={"loc_key": loc_key}
+        )
+
+        loc_dict = cursor.next()
+        if loc_dict is None:
+            return None
+
+        loc_dict['key'] = loc_dict['_key']
+
+        return Location.model_validate(loc_dict)
+
 
 if __name__ == '__main__':
     repo = LocationRepo(database)
 
     print(repo.get_page(GetLocationsParams(sort_order='asc')))
+    print(repo.get_raw_by_key('121319'))
