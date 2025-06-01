@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 from arango.cursor import Cursor
 from arango.database import StandardDatabase
@@ -330,7 +330,7 @@ class UserRepo:
         )
         return True
 
-    def get_cleandays(self, user_key: str, params: PaginationParams) -> Optional[(int, list[GetCleanday])]:
+    def get_cleandays(self, user_key: str, params: PaginationParams) -> Optional[Tuple[int, list[GetCleanday]]]:
         if not self.get_raw_by_key(user_key):
             return None
 
@@ -402,7 +402,7 @@ class UserRepo:
 
         return result_dict["count"], cleandays
 
-    def get_organized(self, user_key: str, params: PaginationParams) -> Optional[(int, list[GetCleanday])]:
+    def get_organized(self, user_key: str, params: PaginationParams) -> Optional[Tuple[int, list[GetCleanday]]]:
         if not self.get_raw_by_key(user_key):
             return None
 
@@ -532,7 +532,7 @@ class UserRepo:
             bind_vars={"user_key": user_key},
         )
 
-        if not cursor.has_more():
+        if cursor.empty():
             return None
 
         result_dict = cursor.next()

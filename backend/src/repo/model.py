@@ -52,6 +52,7 @@ class UpdateCleanday(BaseModel):
 class UpdateParticipation(BaseModel):
     type: Optional[ParticipationType] = None
     stat: Optional[int] = None
+    real_presence: Optional[bool] = None
 
 
 class LogRelations(BaseModel):
