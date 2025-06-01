@@ -41,7 +41,7 @@ class LocationRepo:
                     FILTER CONTAINS(LOWER(city.name), LOWER(@city_name)) OR @city_name == ""
                     
                     LIMIT @offset, @limit
-                    SORT loc.name @sort_order
+                    SORT loc.address @sort_order
                     
                     RETURN MERGE(loc, {key: loc._key, city: city})
             )
@@ -89,9 +89,4 @@ class LocationRepo:
 if __name__ == '__main__':
     repo = LocationRepo(database)
 
-    print(repo.get_page(GetLocationsParams(search_query="д. к")))
-    print(repo.create(CreateLocation(address="ул. Торжковская, д. 15",
-                                     instructions="1. От станции метро Чёрная речка пройти подземный"
-                                     " пешеходный переход, дальше перейти Чернореченский мост\n"
-                                     "2. Идти вдоль Торжковской улицы по правой стороне 1,5 км.",
-                                     city_key='1355')))
+    print(repo.get_page(GetLocationsParams(sort_order='asc')))
