@@ -667,6 +667,11 @@ class CleandayRepo:
             bind_vars={'cleanday_key': cleanday_key, 'name': name}
         )
 
+        req_dict = cursor.next()
+        req_dict['key'] = req_dict['_key']
+
+        return Requirement.model_validate(req_dict)
+
     def delete_requirement(self, cleanday_key: str, req_key: str) -> DeleteReqResult:
         if self.get_raw_by_key(cleanday_key) is None:
             return DeleteReqResult.CLEANDAY_DOES_NOT_EXIST
@@ -730,4 +735,5 @@ class CleandayRepo:
 if __name__ == "__main__":
     repo = CleandayRepo(database)
     print(repo.get_by_key('131375'))
+    # print(repo.create_requirement('131375', 'Принести еду'))
     # print(repo.delete_requirement('131375', '131379'))
