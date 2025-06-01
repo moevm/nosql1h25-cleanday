@@ -5,7 +5,7 @@ from arango.database import StandardDatabase
 
 from auth.model import RegisterUser
 from data.entity import User, Image, Sex
-from data.query import GetUser, GetUsersParams, GetCleanday, PaginationParams, UserSortField
+from data.query import GetUser, GetUsersParams, GetCleanday, PaginationParams, UserSortField, GetExtendedUser
 from repo.client import database
 from repo.model import CreateUser, UpdateUser
 
@@ -66,7 +66,7 @@ class UserRepo:
     def __init__(self, database: StandardDatabase):
         self.db = database
 
-    def get_by_key(self, user_key: str) -> Optional[GetUser]:
+    def get_by_key(self, user_key: str) -> Optional[GetExtendedUser]:
         if not self.get_raw_by_key(user_key):
             return None
 
@@ -93,7 +93,7 @@ class UserRepo:
             
             LET orgCount = COUNT(
                 FOR p IN OUTBOUND userId has_participation
-                  FILTER p.type == "organiser"
+                  FILTER p.type == "Организатор"
                   FOR cl_day IN OUTBOUND p participation_in
                     RETURN cl_day
             )
@@ -102,19 +102,38 @@ class UserRepo:
                 FOR p IN OUTBOUND userId has_participation
                       RETURN p.stat
             )
+            
+            LET created_at = FIRST(
+                FOR log IN INBOUND userId relates_to_user
+                    FILTER log.type == "CreateUser"
+                    LIMIT 1
+                    RETURN log.date
+            )
+            
+            LET updated_at = NOT_NULL(FIRST(
+                FOR log IN INBOUND userId relates_to_user
+                    FILTER log.type == "UpdateUser"
+                    SORT log.date DESC
+                    LIMIT 1
+                    RETURN log.date
+            ), created_at)
+            
+            
             RETURN MERGE(user, {
               "key": @id,
               "city": city.name,
               "cleanday_count": parCount,
               "organized_count": orgCount,
-              "stat": stat
+              "stat": stat,
+              "created_at": created_at,
+              "updated_at": updated_at
             })
             """, bind_vars={"id": user_key}
         )
 
         data_dict = cursor.next()
 
-        return GetUser.model_validate(data_dict)
+        return GetExtendedUser.model_validate(data_dict)
 
     def get_page(self, params: GetUsersParams) -> (int, list[GetUser]):
 
@@ -139,7 +158,7 @@ class UserRepo:
                     
                         LET orgCount = COUNT(
                             FOR p IN OUTBOUND userId has_participation
-                              FILTER p.type == "organiser"
+                              FILTER p.type == "Организатор"
                               FOR cl_day IN OUTBOUND p participation_in
                                 RETURN cl_day
                         )
@@ -179,7 +198,7 @@ class UserRepo:
                 
                     LET orgCount = COUNT(
                         FOR p IN OUTBOUND userId has_participation
-                          FILTER p.type == "organiser"
+                          FILTER p.type == "Организатор"
                           FOR cl_day IN OUTBOUND p participation_in
                             RETURN cl_day
                     )
@@ -524,5 +543,5 @@ class UserRepo:
 if __name__ == "__main__":
     repo = UserRepo(database)
     print(repo.get_organized('1088', PaginationParams()))
-    print(repo.get_raw_by_key('51554'))
+    print(repo.get_raw_by_key('1088'))
     print(repo.get_by_key('1088'))
