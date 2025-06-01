@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import StrEnum, auto
 from typing import Optional, Tuple
 
 from arango import cursor
@@ -16,6 +17,13 @@ contains_filters = ['name', 'organization']
 
 from_filters = ['begin_date_from', 'end_date_from', 'area_from', 'recommended_count_from', 'participant_count_from']
 to_filters = ['begin_date_to', 'end_date_to', 'area_to', 'recommended_count_to', 'participant_count_to']
+
+
+class DeleteReqResult(StrEnum):
+    CLEANDAY_DOES_NOT_EXIST = auto()
+    REQUIREMENT_DOES_NOT_EXIST = auto()
+    CLEANDAY_DOES_NOT_MATCH = auto()
+    SUCCESS = auto()
 
 
 class CleandayRepo:
@@ -634,8 +642,92 @@ class CleandayRepo:
 
         return result_list
 
+    def create_requirement(self, cleanday_key: str, name: str) -> Optional[Requirement]:
+        if self.get_raw_by_key(cleanday_key) is None:
+            return None
+
+        cursor = self.db.aql.execute(
+            """
+            LET cdId = CONCAT("CleanDay/", @cleanday_key)
+            
+            LET req = FIRST(
+                INSERT {
+                    name: @name
+                } INTO Requirement
+                RETURN NEW
+            )
+            
+            INSERT {
+                _from: cdId,
+                _to: req._id
+            } INTO has_requirement
+            
+            RETURN req
+            """,
+            bind_vars={'cleanday_key': cleanday_key, 'name': name}
+        )
+
+    def delete_requirement(self, cleanday_key: str, req_key: str) -> DeleteReqResult:
+        if self.get_raw_by_key(cleanday_key) is None:
+            return DeleteReqResult.CLEANDAY_DOES_NOT_EXIST
+
+        cursor = self.db.aql.execute(
+            """
+            LET req = FIRST(RETURN DOCUMENT(CONCAT("Requirement/", @req_key)))
+            LET cleanday = FIRST(
+                FOR cd IN INBOUND req has_requirement
+                    LIMIT 1
+                    RETURN cd
+            )
+            RETURN {
+                req: req,
+                cleanday: cleanday
+            }
+            """,
+            bind_vars={'req_key': req_key}
+        )
+
+        if cursor.empty():
+            return DeleteReqResult.REQUIREMENT_DOES_NOT_EXIST
+
+        req_dict = cursor.next()
+        if req_dict['req'] is None:
+            return DeleteReqResult.REQUIREMENT_DOES_NOT_EXIST
+        if req_dict['cleanday']['_key'] != cleanday_key:
+            return DeleteReqResult.CLEANDAY_DOES_NOT_MATCH
+
+        cursor = self.db.aql.execute(
+            """
+            LET reqId = CONCAT("Requirement/", @req_key)
+            
+            FOR edge IN has_requirement
+                FILTER edge._to == reqId
+                REMOVE edge IN has_requirement
+            """,
+            bind_vars={'req_key': req_key}
+        )
+        self.db.aql.execute(
+            """
+            LET reqId = CONCAT("Requirement/", @req_key)
+            
+            FOR edge2 IN fullfills
+                FILTER edge2._to == reqId
+                REMOVE edge2 IN fullfills
+            """,
+            bind_vars={'req_key': req_key}
+        )
+        self.db.aql.execute(
+            """
+            LET reqId = CONCAT("Requirement/", @req_key)
+            REMOVE @req_key IN Requirement
+            """,
+            bind_vars={'req_key': req_key}
+        )
+
+        return DeleteReqResult.SUCCESS
+
 
 if __name__ == "__main__":
     repo = CleandayRepo(database)
-    repo.set_location('131375', '124651')
     print(repo.get_by_key('131375'))
+    # print(repo.delete_requirement('131375', '131379'))
