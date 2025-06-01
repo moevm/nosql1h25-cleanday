@@ -25,6 +25,42 @@ filter_fields = {
 }
 
 
+def setup_get_users_params(params: GetUsersParams) -> (dict, list[str]):
+    params_dict = params.model_dump(exclude_none=True)
+    filters = []
+    bind_vars = {
+        "offset": params.offset,
+        "limit": params.limit
+    }
+
+    for contains_filter in contains_filters:
+        if contains_filter in params_dict:
+            filters.append(
+                f"    FILTER CONTAINS(LOWER(usr.{contains_filter}), LOWER(@{contains_filter}))"
+            )
+            bind_vars[contains_filter] = params_dict[contains_filter]
+
+    if "sex" in params_dict:
+        filters.append("    FILTER usr.sex IN @sex")
+        bind_vars["sex"] = params_dict["sex"]
+
+    for from_filter in from_filters:
+        if from_filter in params_dict:
+            filters.append(
+                f"    FILTER usr.{filter_fields[from_filter]} >= @{from_filter}"
+            )
+            bind_vars[from_filter] = params_dict[from_filter]
+
+    for to_filter in to_filters:
+        if to_filter in params_dict:
+            filters.append(
+                f"    FILTER usr.{filter_fields[to_filter]} <= @{to_filter}"
+            )
+            bind_vars[to_filter] = params_dict[to_filter]
+
+    return bind_vars, filters
+
+
 class UserRepo:
 
     def __init__(self, database: StandardDatabase):
@@ -82,37 +118,7 @@ class UserRepo:
 
     def get_page(self, params: GetUsersParams) -> (int, list[GetUser]):
 
-        params_dict = params.model_dump(exclude_none=True)
-        filters = []
-        bind_vars = {
-            "offset": params.offset,
-            "limit": params.limit
-        }
-
-        for contains_filter in contains_filters:
-            if contains_filter in params_dict:
-                filters.append(
-                    f"    FILTER CONTAINS(LOWER(usr.{contains_filter}), LOWER(@{contains_filter}))"
-                )
-                bind_vars[contains_filter] = params_dict[contains_filter]
-
-        if "sex" in params_dict:
-            filters.append("    FILTER usr.sex IN @sex")
-            bind_vars["sex"] = params_dict["sex"]
-
-        for from_filter in from_filters:
-            if from_filter in params_dict:
-                filters.append(
-                    f"    FILTER usr.{filter_fields[from_filter]} >= @{from_filter}"
-                )
-                bind_vars[from_filter] = params_dict[from_filter]
-
-        for to_filter in to_filters:
-            if to_filter in params_dict:
-                filters.append(
-                    f"    FILTER u.{filter_fields[to_filter]} >= @{to_filter}"
-                )
-                bind_vars[to_filter] = params_dict[to_filter]
+        bind_vars, filters = setup_get_users_params(params)
 
         query = f"""
                 LET count = COUNT(
@@ -223,13 +229,16 @@ class UserRepo:
 
         cursor = self.db.aql.execute(
             """
-            FOR u in User
-              FILTER u._key == @id
-              RETURN u
+            RETURN DOCUMENT(CONCAT("User/", @id))
             """, bind_vars={"id": user_key}
         )
 
-        return self._return_single(cursor)
+        try:
+            user_dict = cursor.next()
+            user_dict['key'] = user_dict['_key']
+            return User.model_validate(user_dict)
+        except StopIteration:
+            return None
 
     def get_raw_by_login(self, login: str) -> Optional[User]:
 
@@ -322,8 +331,14 @@ class UserRepo:
                         
                         LIMIT @offset, @limit
                         
+                        LET loc = FIRST(
+                            FOR loc IN OUTBOUND cdId in_location
+                                LIMIT 1
+                                RETURN MERGE(loc, {key: loc._key})
+                        )
+                        
                         LET city = FIRST(
-                            FOR city IN OUTBOUND cdId takes_place_in
+                            FOR city IN OUTBOUND loc in_city
                               LIMIT 1
                               RETURN city
                         )
@@ -342,7 +357,7 @@ class UserRepo:
                                         RETURN 1
                                 )
                                 
-                                RETURN MERGE(req, {"users_amount": fulfills})    
+                                RETURN MERGE(req, {"users_amount": fulfills, "key": req._key})    
                         )
                         
                         RETURN MERGE(cl_day,
@@ -350,7 +365,8 @@ class UserRepo:
                             "key": cl_day._key,
                             "city": city.name,
                             "participant_count": participant_count,
-                            "requirements": requirements
+                            "requirements": requirements,
+                            "location": loc
                         }
                         )
             )
@@ -377,20 +393,26 @@ class UserRepo:
             LET cd_count = COUNT(
                 FOR p IN OUTBOUND userId has_participation
                     FOR cl_day IN OUTBOUND p participation_in
-                        FILTER p.type == "organiser"
+                        FILTER p.type == "Организатор"
                         RETURN 1
             )
 
             LET cleandays = (
                 FOR p IN OUTBOUND userId has_participation
                     FOR cl_day IN OUTBOUND p participation_in
-                        FILTER p.type == "organiser"
+                        FILTER p.type == "Организатор"
                         LET cdId = cl_day._id
 
                         LIMIT @offset, @limit
 
+                        LET loc = FIRST(
+                            FOR loc IN OUTBOUND cdId in_location
+                                LIMIT 1
+                                RETURN MERGE(loc, {key: loc._key})
+                        )
+                        
                         LET city = FIRST(
-                            FOR city IN OUTBOUND cdId takes_place_in
+                            FOR city IN OUTBOUND loc in_city
                               LIMIT 1
                               RETURN city
                         )
@@ -409,7 +431,7 @@ class UserRepo:
                                         RETURN 1
                                 )
 
-                                RETURN MERGE(req, {"users_amount": fulfills})    
+                                RETURN MERGE(req, {"users_amount": fulfills, "key": req._key})    
                         )
 
                         RETURN MERGE(cl_day,
@@ -417,7 +439,8 @@ class UserRepo:
                             "key": cl_day._key,
                             "city": city.name,
                             "participant_count": participant_count,
-                            "requirements": requirements
+                            "requirements": requirements,
+                            "location": loc
                         }
                         )
             )
@@ -496,3 +519,10 @@ class UserRepo:
         result_dict['key'] = result_dict['_key']
 
         return Image.model_validate(result_dict)
+
+
+if __name__ == "__main__":
+    repo = UserRepo(database)
+    print(repo.get_organized('1088', PaginationParams()))
+    print(repo.get_raw_by_key('51554'))
+    print(repo.get_by_key('1088'))

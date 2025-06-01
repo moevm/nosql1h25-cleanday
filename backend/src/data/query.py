@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment
+from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment, ParticipationType, Location
 
 
 class SortOrder(StrEnum):
@@ -75,6 +75,7 @@ class GetCleanday(BaseModel):
     participant_count: int
     recommended_count: int
     city: str
+    location: Location
     begin_date: datetime
     end_date: datetime
     organization: str
@@ -96,31 +97,34 @@ class CleandaySortField(StrEnum):
     AREA = auto()
     STATUS = auto()
     RECOMMENDED_COUNT = auto()
+    PARTICIPANT_COUNT = auto()
 
 
 class GetCleandaysParams(BaseModel):
     offset: int = Field(0, ge=0)
     limit: int = Field(20, ge=1, le=50)
-    sort_by: Optional[UserSortField] = None
-    sort_order: Optional[SortOrder] = None
+    sort_by: UserSortField = CleandaySortField.BEGIN_DATE
+    sort_order: SortOrder = SortOrder.ASC
     search_query: Optional[str] = None
     name: Optional[str] = None
     organization: Optional[str] = None
-    statuses: Optional[list[str]] = None
+    status: Optional[list[str]] = None
     begin_date_from: Optional[datetime] = None
     begin_date_to: Optional[datetime] = None
     end_date_from: Optional[int] = None
     end_date_to: Optional[int] = None
     area_from: Optional[int] = Field(None, ge=0)
     area_to: Optional[int] = None
-    count_from: Optional[int] = Field(None, ge=0)
-    count_to: Optional[int] = None
+    recommended_count_from: Optional[int] = Field(None, ge=0)
+    recommended_count_to: Optional[int] = None
+    participant_count_from: Optional[int] = Field(None, ge=0)
+    participant_count_to: Optional[int] = None
     tags: Optional[list[str]] = None
 
 
 class GetMembersParams(GetUsersParams):
     requirements: Optional[list[str]] = None
-    participation_type: Optional[list[str]] = None
+    participation_type: Optional[list[ParticipationType]] = None
 
 
 class PaginationParams(BaseModel):
@@ -129,9 +133,8 @@ class PaginationParams(BaseModel):
 
 
 class CleandayLog(Log):
-    user: Optional[GetUser] = None
+    user: Optional[User] = None
     comment: Optional[Comment] = None
-    requirements: Optional[list[Requirement]] = None
 
 
 class CleandayLogListResponse(BaseModel):
@@ -157,7 +160,6 @@ class UpdateUser(BaseModel):
 
 class CreateCleanday(BaseModel):
     name: str
-    city_id: str
     location_id: str
     begin_date: datetime
     end_date: datetime
@@ -171,7 +173,6 @@ class CreateCleanday(BaseModel):
 
 class UpdateCleanday(BaseModel):
     name: Optional[str] = None
-    city_id: Optional[str] = None
     location_id: Optional[str] = None
     begin_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
@@ -182,6 +183,11 @@ class UpdateCleanday(BaseModel):
     tags: Optional[list[CleanDayTag]] = None
 
 
+class GetMember(GetUser):
+    requirements: list[Requirement]
+    participation_type: ParticipationType
+
+      
 class GetCityParams(PaginationParams):
     search_query: str = ""
     sort_order: SortOrder = SortOrder.ASC
