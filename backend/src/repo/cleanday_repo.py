@@ -83,6 +83,14 @@ class CleandayRepo:
                     RETURN log.date
             ), created_at)
             
+            LET organizer = FIRST(
+                FOR par IN INBOUND cdId participation_in
+                    FILTER par.type == "Организатор"
+                    LIMIT 1
+                    FOR user IN INBOUND par has_participation
+                        RETURN user.login
+            )
+            
             RETURN MERGE(cl_day,
             {
                 "key": cl_day._key,
@@ -91,7 +99,8 @@ class CleandayRepo:
                 "requirements": requirements,
                 "location": loc,
                 "created_at": created_at,
-                "updated_at": updated_at
+                "updated_at": updated_at,
+                "organizer": organizer
             }
             )
             """,
@@ -185,6 +194,14 @@ class CleandayRepo:
                             RETURN log.date
                     ), created_at)
                     
+                    LET organizer = FIRST(
+                        FOR par IN INBOUND cdId participation_in
+                            FILTER par.type == "Организатор"
+                            LIMIT 1
+                            FOR user IN INBOUND par has_participation
+                                RETURN user.login
+                    )
+                    
                     LET cleanday = MERGE(cl_day,
                     {{
                         "key": cl_day._key,
@@ -193,7 +210,8 @@ class CleandayRepo:
                         "requirements": requirements,
                         "location": loc,
                         "created_at": created_at,
-                        "updated_at": updated_at
+                        "updated_at": updated_at,
+                        "organizer": organizer
                     }})
                     
                 {'\n'.join(filters)}
@@ -248,6 +266,14 @@ class CleandayRepo:
                             RETURN log.date
                     ), created_at)
                     
+                    LET organizer = FIRST(
+                        FOR par IN INBOUND cdId participation_in
+                            FILTER par.type == "Организатор"
+                            LIMIT 1
+                            FOR user IN INBOUND par has_participation
+                                RETURN user.login
+                    )
+                    
                     LET cleanday = MERGE(cl_day,
                     {{
                         "key": cl_day._key,
@@ -256,7 +282,8 @@ class CleandayRepo:
                         "requirements": requirements,
                         "location": loc,
                         "created_at": created_at,
-                        "updated_at": updated_at
+                        "updated_at": updated_at,
+                        "organizer": organizer
                     }})
                     
                 {'\n'.join(filters)}
@@ -831,8 +858,8 @@ class CleandayRepo:
 
 if __name__ == "__main__":
     repo = CleandayRepo(database)
-    # print(repo.get_page(GetCleandaysParams()))
-    # print(repo.get_by_key('131375'))
+    print(repo.get_page(GetCleandaysParams()))
+    print(repo.get_by_key('131375'))
     # print(repo.create_images('131375', [CreateImage(photo="data", description="Территория до")]))
     # print(repo.get_images('131375'))
     # print(repo.create_requirement('131375', 'Принести еду'))

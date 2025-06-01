@@ -395,6 +395,14 @@ class UserRepo:
                                 RETURN log.date
                         ), created_at)
                         
+                        LET organizer = FIRST(
+                            FOR par IN INBOUND cdId participation_in
+                                FILTER par.type == "Организатор"
+                                LIMIT 1
+                                FOR user IN INBOUND par has_participation
+                                    RETURN user.login
+                        )
+                        
                         RETURN MERGE(cl_day,
                         {
                             "key": cl_day._key,
@@ -403,7 +411,8 @@ class UserRepo:
                             "requirements": requirements,
                             "location": loc,
                             "created_at": created_at,
-                            "updated_at": updated_at
+                            "updated_at": updated_at,
+                            "organizer": organizer,
                         }
                         )
             )
@@ -484,7 +493,15 @@ class UserRepo:
                                 LIMIT 1
                                 RETURN log.date
                         ), created_at)
-
+                        
+                        LET organizer = FIRST(
+                            FOR par IN INBOUND cdId participation_in
+                                FILTER par.type == "Организатор"
+                                LIMIT 1
+                                FOR user IN INBOUND par has_participation
+                                    RETURN user.login
+                        )
+                        
                         RETURN MERGE(cl_day,
                         {
                             "key": cl_day._key,
@@ -493,7 +510,8 @@ class UserRepo:
                             "requirements": requirements,
                             "location": loc,
                             "created_at": created_at,
-                            "updated_at": updated_at
+                            "updated_at": updated_at,
+                            "organizer": organizer
                         }
                         )
             )

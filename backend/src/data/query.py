@@ -87,6 +87,7 @@ class GetCleanday(BaseModel):
     created_at: datetime
     updated_at: datetime
     organization: str
+    organizer: str
     area: int
     status: CleanDayStatus
     tags: list[CleanDayTag]
