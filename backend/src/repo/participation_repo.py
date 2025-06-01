@@ -28,7 +28,6 @@ class ParticipationRepo:
         self.db = database
         self.user_repo = UserRepo(database)
         self.cleanday_repo = CleandayRepo(database)
-        pass
 
     def get(self, user_key: str, cleanday_key: str) -> Optional[Participation]:
         if self.user_repo.get_raw_by_key(user_key) is None:
