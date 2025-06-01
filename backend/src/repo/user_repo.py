@@ -6,6 +6,7 @@ from arango.database import StandardDatabase
 from auth.model import RegisterUser
 from data.entity import User, Image, Sex
 from data.query import GetUser, GetUsersParams, GetCleanday, PaginationParams, UserSortField, GetExtendedUser
+from repo.city_repo import CityRepo
 from repo.client import database
 from repo.model import CreateUser, UpdateUser
 
@@ -65,6 +66,7 @@ class UserRepo:
 
     def __init__(self, database: StandardDatabase):
         self.db = database
+        self.city_repo = CityRepo(database)
 
     def get_by_key(self, user_key: str) -> Optional[GetExtendedUser]:
         if not self.get_raw_by_key(user_key):
@@ -237,9 +239,9 @@ class UserRepo:
         return page_dict["count"], list(map(lambda u: GetUser.model_validate(u), page_dict["page"]))
 
     def _return_single(self, cursor: Cursor) -> Optional[User]:
-        if not cursor.has_more():
-            return None
         user_dict = cursor.next()
+        if user_dict is None:
+            return None
         user_dict['key'] = user_dict['_key']
 
         return User.model_validate(user_dict)
@@ -252,12 +254,7 @@ class UserRepo:
             """, bind_vars={"id": user_key}
         )
 
-        try:
-            user_dict = cursor.next()
-            user_dict['key'] = user_dict['_key']
-            return User.model_validate(user_dict)
-        except StopIteration:
-            return None
+        return self._return_single(cursor)
 
     def get_raw_by_login(self, login: str) -> Optional[User]:
 
@@ -303,9 +300,12 @@ class UserRepo:
 
         return self._return_single(cursor)
 
-    def set_city(self, user_key: str, city_key: str):
+    def set_city(self, user_key: str, city_key: str) -> bool:
         if not self.get_raw_by_key(user_key):
-            return
+            return False
+
+        if not self.city_repo.get_by_key(city_key):
+            return False
 
         self.db.aql.execute(
             """
@@ -328,8 +328,9 @@ class UserRepo:
             } INTO lives_in
             """, bind_vars={"user_id": user_key, "city_id": city_key}
         )
+        return True
 
-    def get_cleandays(self, user_key: str, params: PaginationParams) -> (int, list[GetCleanday]):
+    def get_cleandays(self, user_key: str, params: PaginationParams) -> Optional[(int, list[GetCleanday])]:
         if not self.get_raw_by_key(user_key):
             return None
 
@@ -401,7 +402,7 @@ class UserRepo:
 
         return result_dict["count"], cleandays
 
-    def get_organized(self, user_key: str, params: PaginationParams) -> (int, list[GetCleanday]):
+    def get_organized(self, user_key: str, params: PaginationParams) -> Optional[(int, list[GetCleanday])]:
         if not self.get_raw_by_key(user_key):
             return None
 
@@ -543,5 +544,5 @@ class UserRepo:
 if __name__ == "__main__":
     repo = UserRepo(database)
     print(repo.get_organized('1088', PaginationParams()))
-    print(repo.get_raw_by_key('1088'))
+    print(repo.get_raw_by_key('04'))
     print(repo.get_by_key('1088'))

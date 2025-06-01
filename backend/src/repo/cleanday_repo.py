@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from arango import cursor
 from arango.database import StandardDatabase
@@ -7,6 +8,7 @@ from data.entity import CleanDay, CleanDayTag, CleanDayStatus, ParticipationType
 from data.query import GetCleanday, GetCleandaysParams, GetUser, GetMembersParams, PaginationParams, CleandayLog, \
     GetComment, GetMember
 from repo.client import database
+from repo.location_repo import LocationRepo
 from repo.model import CreateCleanday, UpdateCleanday
 from repo.user_repo import setup_get_users_params
 
@@ -19,8 +21,12 @@ to_filters = ['begin_date_to', 'end_date_to', 'area_to', 'recommended_count_to',
 class CleandayRepo:
     def __init__(self, database: StandardDatabase):
         self.db = database
+        self.loc_repo = LocationRepo(database)
 
-    def get_by_id(self, cleanday_key: str) -> GetCleanday:
+    def get_by_key(self, cleanday_key: str) -> Optional[GetCleanday]:
+        if self.get_raw_by_key(cleanday_key) is None:
+            return None
+
         cursor = self.db.aql.execute(
             """
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
@@ -220,7 +226,7 @@ class CleandayRepo:
 
         return result_dict["count"], cleanday_page
 
-    def get_raw_by_id(self, cleanday_key: str) -> CleanDay:
+    def get_raw_by_key(self, cleanday_key: str) -> Optional[CleanDay]:
         cursor = self.db.aql.execute(
             """
             RETURN DOCUMENT(CONCAT("CleanDay/", @cleanday_key))
@@ -229,6 +235,10 @@ class CleandayRepo:
         )
 
         result_dict = cursor.next()
+
+        if result_dict is None:
+            return None
+
         result_dict['key'] = result_dict["_key"]
         return CleanDay.model_validate(result_dict)
 
@@ -291,7 +301,10 @@ class CleandayRepo:
 
         return CleanDay.model_validate(result_dict)
 
-    def update(self, cleanday_key: str, cleanday: UpdateCleanday) -> CleanDay:
+    def update(self, cleanday_key: str, cleanday: UpdateCleanday) -> Optional[CleanDay]:
+        if self.get_raw_by_key(cleanday_key) is None:
+            return None
+
         cursor = self.db.aql.execute(
             """
             UPDATE @cleanday_key WITH @changes IN CleanDay
@@ -306,6 +319,12 @@ class CleandayRepo:
         return CleanDay.model_validate(result_dict)
 
     def set_location(self, cleanday_key: str, location_key: str) -> bool:
+        if self.get_raw_by_key(cleanday_key) is None:
+            return False
+
+        if self.loc_repo.get_raw_by_key(location_key) is None:
+            return False
+
         self.db.aql.execute(
             """
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
@@ -319,7 +338,7 @@ class CleandayRepo:
         self.db.aql.execute(
             """
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
-            LET locId = CONCAT("City/", @loc_id)
+            LET locId = CONCAT("Location/", @loc_id)
 
             INSERT {
               _from: cdId,
@@ -330,7 +349,10 @@ class CleandayRepo:
 
         return True
 
-    def get_members(self, cleanday_key: str, params: GetMembersParams) -> (int, list[GetMember]):
+    def get_members(self, cleanday_key: str, params: GetMembersParams) -> Optional[(int, list[GetMember])]:
+        if self.get_raw_by_key(cleanday_key) is None:
+            return None
+
         bind_vars, filters = setup_get_users_params(params)
         bind_vars["cleanday_key"] = cleanday_key
 
@@ -470,7 +492,10 @@ class CleandayRepo:
         return page_dict["count"], list(map(lambda u: GetMember.model_validate(u), page_dict["page"]))
         pass
 
-    def get_logs(self, cleanday_key: str, params: PaginationParams) -> (int, list[CleandayLog]):
+    def get_logs(self, cleanday_key: str, params: PaginationParams) -> Optional[(int, list[CleandayLog])]:
+        if self.get_raw_by_key(cleanday_key) is None:
+            return None
+
         bind_vars = params.model_dump()
         bind_vars["cleanday_key"] = cleanday_key
 
@@ -519,7 +544,10 @@ class CleandayRepo:
         page = list(map(lambda c: CleandayLog.model_validate(c), result_dict["page"]))
         return result_dict["count"], page
 
-    def get_comments(self, cleanday_key: str, params: PaginationParams) -> (int, list[GetComment]):
+    def get_comments(self, cleanday_key: str, params: PaginationParams) -> Optional[(int, list[GetComment])]:
+        if self.get_raw_by_key(cleanday_key) is None:
+            return None
+
         bind_vars = params.model_dump()
         bind_vars["cleanday_key"] = cleanday_key
 
@@ -589,4 +617,4 @@ class CleandayRepo:
 if __name__ == "__main__":
     repo = CleandayRepo(database)
 
-    print(repo.get_by_id('1778'))
+    print(repo.get_by_key('1778'))

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from arango.database import StandardDatabase
 
 from data.entity import City
@@ -58,7 +60,24 @@ class CityRepo:
 
         return result_dict['city_count'], city_list
 
+    def get_by_key(self, city_key: str) -> Optional[City]:
+        cursor = self.db.aql.execute(
+            """
+            RETURN DOCUMENT(CONCAT("City/", @city_key))
+            """,
+            bind_vars={"city_key": city_key}
+        )
+        city_dict = cursor.next()
+
+        if city_dict is None:
+            return None
+
+        city_dict['key'] = city_dict['_key']
+
+        return City.model_validate(city_dict)
+
 
 if __name__ == '__main__':
     repo = CityRepo(database)
     print(repo.get_page(GetCitiesParams(search_query="", sort_order=SortOrder.DESC)))
+    print(repo.get_by_key('7576'))
