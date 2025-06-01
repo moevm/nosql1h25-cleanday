@@ -338,7 +338,7 @@ class CleandayRepo:
         self.db.aql.execute(
             """
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
-            LET locId = CONCAT("City/", @loc_id)
+            LET locId = CONCAT("Location/", @loc_id)
 
             INSERT {
               _from: cdId,
