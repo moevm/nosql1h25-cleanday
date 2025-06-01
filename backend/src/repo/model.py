@@ -52,3 +52,17 @@ class UpdateCleanday(BaseModel):
 class UpdateParticipation(BaseModel):
     type: Optional[ParticipationType] = None
     stat: Optional[int] = None
+
+
+class LogRelations(BaseModel):
+    cleanday_key: Optional[str] = None
+    user_key: Optional[str] = None
+    comment_key: Optional[str] = None
+    location_key: Optional[str] = None
+
+
+class CreateLog(BaseModel):
+    date: datetime
+    type: str
+    description: str
+    keys: LogRelations
