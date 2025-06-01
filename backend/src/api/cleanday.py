@@ -14,7 +14,7 @@ router = APIRouter(prefix="/cleandays", tags=["cleanday"])
 
 @router.get("/")
 async def get_cleandays(query: Annotated[GetCleandaysParams, Query()]) -> CleandayListResponse:
-    return CleandayListResponse(cleandays=[])
+    return CleandayListResponse(cleandays=[], total_count=0)
 
 
 @router.post("/")
@@ -71,17 +71,17 @@ async def get_cleanday_images(cleanday_id: str) -> ImageListResponse:
 
 @router.get("/{cleanday_id}/members")
 async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
-    return UserListResponse(users=[])
+    return UserListResponse(users=[], total_count=0)
 
 
 @router.get("/{cleanday_id}/logs")
 async def get_cleanday_logs(cleanday_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayLogListResponse:
-    return CleandayLogListResponse(logs=[])
+    return CleandayLogListResponse(logs=[], total_count=0)
 
 
 @router.get("/{cleanday_id}/comments")
 async def get_cleanday_comments(cleanday_id: str, query: Annotated[PaginationParams, Query()]) -> CommentListResponse:
-    return CommentListResponse(comments=[])
+    return CommentListResponse(comments=[], total_count=0)
 
 
 @router.post("/{cleanday_id}/comments")

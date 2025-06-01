@@ -69,6 +69,7 @@ class GetExtendedUser(GetUser):
 
 class UserListResponse(BaseModel):
     users: list[GetUser]
+    total_count: int
 
 
 class GetCleandayRequirement(Requirement):
@@ -97,6 +98,7 @@ class GetCleanday(BaseModel):
 
 class CleandayListResponse(BaseModel):
     cleandays: list[GetCleanday]
+    total_count: int
 
 
 class CleandaySortField(StrEnum):
@@ -154,6 +156,7 @@ class CleandayLog(Log):
 
 class CleandayLogListResponse(BaseModel):
     logs: list[CleandayLog]
+    total_count: int
 
 
 class GetComment(Comment):
@@ -162,7 +165,7 @@ class GetComment(Comment):
 
 class CommentListResponse(BaseModel):
     comments: list[GetComment]
-
+    total_count: int
 
 class UpdateUser(BaseModel):
     first_name: Optional[str] = None
