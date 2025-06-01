@@ -66,7 +66,7 @@ async def create_cleanday_images(cleanday_id: str, images: CreateImages):
 
 @router.get("/{cleanday_id}/images")
 async def get_cleanday_images(cleanday_id: str) -> ImageListResponse:
-    return ImageListResponse(images=[])
+    return ImageListResponse(contents=[])
 
 
 @router.get("/{cleanday_id}/members")
