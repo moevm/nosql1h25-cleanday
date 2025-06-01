@@ -212,7 +212,7 @@ class CreateLocation(BaseModel):
 
 class GetLocationsParams(PaginationParams):
     search_query: str = ""
-    city_name: Optional[str] = None
+    city_name: str = ""
     sort_order: SortOrder = SortOrder.ASC
 
 
