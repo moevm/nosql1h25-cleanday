@@ -14,3 +14,7 @@ async def register(register_user: RegisterUser) -> AuthToken:
 async def login(login_user: LoginUser) -> AuthToken:
     return AuthToken(access_token="")
 
+
+@router.post("/logout")
+async def logout() -> None:
+    return None

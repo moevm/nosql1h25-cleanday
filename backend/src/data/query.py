@@ -186,3 +186,8 @@ class UpdateCleanday(BaseModel):
 class GetMember(GetUser):
     requirements: list[Requirement]
     participation_type: ParticipationType
+
+      
+class GetCityParams(PaginationParams):
+    search_query: str = ""
+    sort_order: SortOrder = SortOrder.ASC
