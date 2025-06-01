@@ -30,10 +30,10 @@ async def get_location(location_id: int) -> GetLocation:
 
 
 @router.post("/{location_id}/images")
-async def create_cleanday_images(location_id: str, images: CreateImages):
+async def create_location_images(location_id: str, images: CreateImages):
     return {"message": "Picture uploaded successfully", "location_id": location_id}
 
 
 @router.get("/{location_id}/images")
-async def get_cleanday_images(location_id: str) -> ImageListResponse:
+async def get_location_images(location_id: str) -> ImageListResponse:
     return ImageListResponse(contents=[])
