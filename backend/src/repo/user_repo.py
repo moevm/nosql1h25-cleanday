@@ -330,7 +330,7 @@ class UserRepo:
         )
         return True
 
-    def get_cleandays(self, user_key: str, params: PaginationParams) -> (int, list[GetCleanday]):
+    def get_cleandays(self, user_key: str, params: PaginationParams) -> Optional[(int, list[GetCleanday])]:
         if not self.get_raw_by_key(user_key):
             return None
 
@@ -402,7 +402,7 @@ class UserRepo:
 
         return result_dict["count"], cleandays
 
-    def get_organized(self, user_key: str, params: PaginationParams) -> (int, list[GetCleanday]):
+    def get_organized(self, user_key: str, params: PaginationParams) -> Optional[(int, list[GetCleanday])]:
         if not self.get_raw_by_key(user_key):
             return None
 
