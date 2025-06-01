@@ -6,7 +6,8 @@ from fastapi import APIRouter, Query
 
 from data.entity import CleanDayStatus, CleanDay
 from data.query import GetCleandaysParams, CleandayListResponse, GetCleanday, UserListResponse, GetMembersParams, \
-    PaginationParams, CleandayLogListResponse, CommentListResponse, UpdateCleanday, CreateCleanday
+    PaginationParams, CleandayLogListResponse, CommentListResponse, UpdateCleanday, CreateCleanday, CreateImages, \
+    ImageListResponse
 
 router = APIRouter(prefix="/cleandays", tags=["cleanday"])
 
@@ -58,14 +59,14 @@ async def update_cleanday(cleanday_id: str, cleanday: UpdateCleanday) -> GetClea
     )
 
 
-@router.post("/{cleanday_id}/picture/{number}")
-async def upload_cleanday_picture(cleanday_id: str, number: int):
-    return {"message": "Picture uploaded successfully", "cleanday_id": cleanday_id, "picture_number": number}
+@router.post("/{cleanday_id}/images")
+async def create_cleanday_images(cleanday_id: str, images: CreateImages):
+    return {"message": "Picture uploaded successfully", "cleanday_id": cleanday_id}
 
 
-@router.get("/{cleanday_id}/picture/{number}")
-async def get_cleanday_picture(cleanday_id: str, number: int):
-    return {"message": "Picture retrieved successfully", "cleanday_id": cleanday_id, "picture_number": number}
+@router.get("/{cleanday_id}/images")
+async def get_cleanday_images(cleanday_id: str) -> ImageListResponse:
+    return ImageListResponse(contents=[])
 
 
 @router.get("/{cleanday_id}/members")
