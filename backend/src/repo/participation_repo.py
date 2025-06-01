@@ -1,12 +1,13 @@
+from datetime import datetime
 from enum import Enum, StrEnum, auto
 from typing import Optional, Tuple
 
 from arango.database import StandardDatabase
 
-from data.entity import Participation, ParticipationType
+from data.entity import Participation, ParticipationType, Comment
 from repo.cleanday_repo import CleandayRepo
 from repo.client import database
-from repo.model import UpdateParticipation
+from repo.model import UpdateParticipation, CreateComment
 from repo.user_repo import UserRepo
 
 
@@ -179,10 +180,56 @@ class ParticipationRepo:
 
         return SetReqResult.SUCCESS
 
+    def create_comment(self, user_key: str, cleanday_key: str, comment: CreateComment) -> Optional[Comment]:
+        if self.cleanday_repo.get_raw_by_key(cleanday_key) is None:
+            return None
+        if self.user_repo.get_raw_by_key(user_key) is None:
+            return None
+
+        participation = self.get(user_key, cleanday_key)
+
+        if participation is None:
+            return None
+
+        comm_data = comment.model_dump(exclude_none=True)
+        comm_data['date'] = str(comm_data['date'])
+
+        cursor = self.db.aql.execute(
+            """
+            LET cdId = CONCAT("CleanDay/", @cleanday_key)
+            LET parId = CONCAT("Participation/", @par_key)
+            
+            LET comm = FIRST(
+              INSERT @comm_data INTO Comment
+              RETURN NEW
+            )
+            
+            INSERT {
+              _from: parId,
+              _to: comm._id
+            } INTO authored
+            
+            INSERT {
+              _from: cdId,
+              _to: comm._id
+            } INTO has_comment
+            
+            RETURN comm
+            """,
+            bind_vars={"par_key": participation.key, "comm_data": comm_data,
+                       'cleanday_key': cleanday_key}
+        )
+
+        par_dict = cursor.next()
+        par_dict['key'] = par_dict['_key']
+
+        return Comment.model_validate(par_dict)
+
 
 if __name__ == "__main__":
     repo = ParticipationRepo(database)
-    print(repo.set_requirements('51554', '131375', ['131380', '131379']))
+    # repo.create_comment('51554', '131375', CreateComment(date=datetime.now(), text="Приглашаю всех на субботник!"))
+    # print(repo.set_requirements('51554', '131375', ['131380', '131379']))
     # print(repo.get('51554', '1778'))
     # print(repo.create('51554', '1778', ParticipationType.MAYBE_WILL_GO))
     # print(repo.update('51554', '1778', UpdateParticipation(type=ParticipationType.WILL_BE_LATE)))
