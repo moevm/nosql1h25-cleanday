@@ -380,13 +380,39 @@ class UserRepo:
                                 RETURN MERGE(req, {"users_amount": fulfills, "key": req._key})    
                         )
                         
+                        LET created_at = FIRST(
+                            FOR log IN INBOUND cdId relates_to_cleanday
+                                FILTER log.type == "CreateCleanday"
+                                LIMIT 1
+                                RETURN log.date
+                        )
+                        
+                        LET updated_at = NOT_NULL(FIRST(
+                            FOR log IN INBOUND cdId relates_to_cleanday
+                                FILTER log.type == "UpdateCleanday"
+                                SORT log.date DESC
+                                LIMIT 1
+                                RETURN log.date
+                        ), created_at)
+                        
+                        LET organizer = FIRST(
+                            FOR par IN INBOUND cdId participation_in
+                                FILTER par.type == "Организатор"
+                                LIMIT 1
+                                FOR user IN INBOUND par has_participation
+                                    RETURN user.login
+                        )
+                        
                         RETURN MERGE(cl_day,
                         {
                             "key": cl_day._key,
                             "city": city.name,
                             "participant_count": participant_count,
                             "requirements": requirements,
-                            "location": loc
+                            "location": loc,
+                            "created_at": created_at,
+                            "updated_at": updated_at,
+                            "organizer": organizer,
                         }
                         )
             )
@@ -453,14 +479,39 @@ class UserRepo:
 
                                 RETURN MERGE(req, {"users_amount": fulfills, "key": req._key})    
                         )
-
+                        LET created_at = FIRST(
+                            FOR log IN INBOUND cdId relates_to_cleanday
+                                FILTER log.type == "CreateCleanday"
+                                LIMIT 1
+                                RETURN log.date
+                        )
+                        
+                        LET updated_at = NOT_NULL(FIRST(
+                            FOR log IN INBOUND cdId relates_to_cleanday
+                                FILTER log.type == "UpdateCleanday"
+                                SORT log.date DESC
+                                LIMIT 1
+                                RETURN log.date
+                        ), created_at)
+                        
+                        LET organizer = FIRST(
+                            FOR par IN INBOUND cdId participation_in
+                                FILTER par.type == "Организатор"
+                                LIMIT 1
+                                FOR user IN INBOUND par has_participation
+                                    RETURN user.login
+                        )
+                        
                         RETURN MERGE(cl_day,
                         {
                             "key": cl_day._key,
                             "city": city.name,
                             "participant_count": participant_count,
                             "requirements": requirements,
-                            "location": loc
+                            "location": loc,
+                            "created_at": created_at,
+                            "updated_at": updated_at,
+                            "organizer": organizer
                         }
                         )
             )

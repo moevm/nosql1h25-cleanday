@@ -13,10 +13,14 @@ from repo.location_repo import LocationRepo
 from repo.model import CreateCleanday, UpdateCleanday, CreateImage
 from repo.user_repo import setup_get_users_params
 
-contains_filters = ['name', 'organization']
+contains_filters = ['name', 'organization', 'organizer']
 
-from_filters = ['begin_date_from', 'end_date_from', 'area_from', 'recommended_count_from', 'participant_count_from']
-to_filters = ['begin_date_to', 'end_date_to', 'area_to', 'recommended_count_to', 'participant_count_to']
+from_filters = ['begin_date_from', 'end_date_from', 'area_from', 'recommended_count_from', 'participant_count_from',
+                'created_at_from', 'updated_at_from']
+to_filters = ['begin_date_to', 'end_date_to', 'area_to', 'recommended_count_to', 'participant_count_to',
+              'created_at_to', 'updated_at_to']
+
+time_fields = ['begin_date', 'end_date', 'created_at', 'updated_at']
 
 
 class DeleteReqResult(StrEnum):
@@ -68,13 +72,39 @@ class CleandayRepo:
                     RETURN MERGE(req, {"users_amount": fulfills, "key": req._key})    
             )
             
+            LET created_at = FIRST(
+                FOR log IN INBOUND cdId relates_to_cleanday
+                    FILTER log.type == "CreateCleanday"
+                    LIMIT 1
+                    RETURN log.date
+            )
+            
+            LET updated_at = NOT_NULL(FIRST(
+                FOR log IN INBOUND cdId relates_to_cleanday
+                    FILTER log.type == "UpdateCleanday"
+                    SORT log.date DESC
+                    LIMIT 1
+                    RETURN log.date
+            ), created_at)
+            
+            LET organizer = FIRST(
+                FOR par IN INBOUND cdId participation_in
+                    FILTER par.type == "Организатор"
+                    LIMIT 1
+                    FOR user IN INBOUND par has_participation
+                        RETURN user.login
+            )
+            
             RETURN MERGE(cl_day,
             {
                 "key": cl_day._key,
                 "city": city.name,
                 "participant_count": participant_count,
                 "requirements": requirements,
-                "location": loc
+                "location": loc,
+                "created_at": created_at,
+                "updated_at": updated_at,
+                "organizer": organizer
             }
             )
             """,
@@ -109,17 +139,23 @@ class CleandayRepo:
 
         for from_filter in from_filters:
             if from_filter in params_dict:
+                field_name = from_filter[:-5]
                 filters.append(
-                    f"    FILTER cleanday.{from_filter[:-5]} >= @{from_filter}"
+                    f"    FILTER cleanday.{field_name} >= @{from_filter}"
                 )
                 bind_vars[from_filter] = params_dict[from_filter]
+                if field_name in time_fields:
+                    bind_vars[from_filter] = bind_vars[from_filter].isoformat()
 
         for to_filter in to_filters:
             if to_filter in params_dict:
+                field_name = to_filter[:-3]
                 filters.append(
-                    f"    FILTER cleanday.{to_filter[:-3]} <= @{to_filter}"
+                    f"    FILTER cleanday.{field_name} <= @{to_filter}"
                 )
                 bind_vars[to_filter] = params_dict[to_filter]
+                if field_name in time_fields:
+                    bind_vars[to_filter] = bind_vars[to_filter].isoformat()
 
         query = f"""
             LET count = COUNT(
@@ -153,7 +189,28 @@ class CleandayRepo:
         
                             RETURN MERGE(req, {{"users_amount": fulfills, "key": req._key}})    
                     )
-                
+                    LET created_at = FIRST(
+                        FOR log IN INBOUND cdId relates_to_cleanday
+                            FILTER log.type == "CreateCleanday"
+                            LIMIT 1
+                            RETURN log.date
+                    )
+                    
+                    LET updated_at = NOT_NULL(FIRST(
+                        FOR log IN INBOUND cdId relates_to_cleanday
+                            FILTER log.type == "UpdateCleanday"
+                            SORT log.date DESC
+                            LIMIT 1
+                            RETURN log.date
+                    ), created_at)
+                    
+                    LET organizer = FIRST(
+                        FOR par IN INBOUND cdId participation_in
+                            FILTER par.type == "Организатор"
+                            LIMIT 1
+                            FOR user IN INBOUND par has_participation
+                                RETURN user.login
+                    )
                     
                     LET cleanday = MERGE(cl_day,
                     {{
@@ -161,7 +218,10 @@ class CleandayRepo:
                         "city": city.name,
                         "participant_count": participant_count,
                         "requirements": requirements,
-                        "location": loc
+                        "location": loc,
+                        "created_at": created_at,
+                        "updated_at": updated_at,
+                        "organizer": organizer
                     }})
                     
                 {'\n'.join(filters)}
@@ -200,7 +260,29 @@ class CleandayRepo:
         
                             RETURN MERGE(req, {{"users_amount": fulfills, "key": req._key}})    
                     )
-                
+                    
+                    LET created_at = FIRST(
+                        FOR log IN INBOUND cdId relates_to_cleanday
+                            FILTER log.type == "CreateCleanday"
+                            LIMIT 1
+                            RETURN log.date
+                    )
+                    
+                    LET updated_at = NOT_NULL(FIRST(
+                        FOR log IN INBOUND cdId relates_to_cleanday
+                            FILTER log.type == "UpdateCleanday"
+                            SORT log.date DESC
+                            LIMIT 1
+                            RETURN log.date
+                    ), created_at)
+                    
+                    LET organizer = FIRST(
+                        FOR par IN INBOUND cdId participation_in
+                            FILTER par.type == "Организатор"
+                            LIMIT 1
+                            FOR user IN INBOUND par has_participation
+                                RETURN user.login
+                    )
                     
                     LET cleanday = MERGE(cl_day,
                     {{
@@ -208,7 +290,10 @@ class CleandayRepo:
                         "city": city.name,
                         "participant_count": participant_count,
                         "requirements": requirements,
-                        "location": loc
+                        "location": loc,
+                        "created_at": created_at,
+                        "updated_at": updated_at,
+                        "organizer": organizer
                     }})
                     
                 {'\n'.join(filters)}
@@ -783,8 +868,9 @@ class CleandayRepo:
 
 if __name__ == "__main__":
     repo = CleandayRepo(database)
-    # print(repo.get_by_key('131375'))
+    print(repo.get_page(GetCleandaysParams(created_at_from=datetime.now())))
+    print(repo.get_by_key('131375'))
     # print(repo.create_images('131375', [CreateImage(photo="data", description="Территория до")]))
-    print(repo.get_images('131375'))
+    # print(repo.get_images('131375'))
     # print(repo.create_requirement('131375', 'Принести еду'))
     # print(repo.delete_requirement('131375', '131379'))
