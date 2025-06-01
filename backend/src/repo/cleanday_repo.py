@@ -25,8 +25,14 @@ class CleandayRepo:
             """
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
             LET cl_day = DOCUMENT(cdId)                    
+            LET loc = FIRST(
+                FOR loc IN OUTBOUND cdId in_location
+                    LIMIT 1
+                    RETURN MERGE(loc, {key: loc._key})
+            )
+            
             LET city = FIRST(
-                FOR city IN OUTBOUND cdId takes_place_in
+                FOR city IN OUTBOUND loc in_city
                   LIMIT 1
                   RETURN city
             )
@@ -53,7 +59,8 @@ class CleandayRepo:
                 "key": cl_day._key,
                 "city": city.name,
                 "participant_count": participant_count,
-                "requirements": requirements
+                "requirements": requirements,
+                "location": loc
             }
             )
             """,
@@ -104,8 +111,14 @@ class CleandayRepo:
             LET count = COUNT(
                 FOR cl_day IN CleanDay
                     LET cdId = cl_day._id     
+                    LET loc = FIRST(
+                        FOR loc IN OUTBOUND cdId in_location
+                            LIMIT 1
+                            RETURN MERGE(loc, {{key: loc._key}})
+                    )
+                    
                     LET city = FIRST(
-                        FOR city IN OUTBOUND cdId takes_place_in
+                        FOR city IN OUTBOUND loc in_city
                           LIMIT 1
                           RETURN city
                     )
@@ -133,7 +146,8 @@ class CleandayRepo:
                         "key": cl_day._key,
                         "city": city.name,
                         "participant_count": participant_count,
-                        "requirements": requirements
+                        "requirements": requirements,
+                        "location": loc
                     }})
                     
                 {'\n'.join(filters)}
@@ -144,8 +158,14 @@ class CleandayRepo:
             LET page = (
                  FOR cl_day IN CleanDay
                     LET cdId = cl_day._id     
+                    LET loc = FIRST(
+                        FOR loc IN OUTBOUND cdId in_location
+                            LIMIT 1
+                            RETURN MERGE(loc, {{key: loc._key}})
+                    )
+                    
                     LET city = FIRST(
-                        FOR city IN OUTBOUND cdId takes_place_in
+                        FOR city IN OUTBOUND loc in_city
                           LIMIT 1
                           RETURN city
                     )
@@ -173,7 +193,8 @@ class CleandayRepo:
                         "key": cl_day._key,
                         "city": city.name,
                         "participant_count": participant_count,
-                        "requirements": requirements
+                        "requirements": requirements,
+                        "location": loc
                     }})
                     
                 {'\n'.join(filters)}
@@ -284,32 +305,30 @@ class CleandayRepo:
 
         return CleanDay.model_validate(result_dict)
 
-    def set_city(self, cleanday_key: str, city_key: str) -> bool:
+    def set_location(self, cleanday_key: str, location_key: str) -> bool:
         self.db.aql.execute(
             """
-            LET userId = CONCAT("CleanDay/", @cleanday_key)
+            LET cdId = CONCAT("CleanDay/", @cleanday_key)
 
-            FOR edge IN takes_place_in
-              FILTER edge._from == userId
-              REMOVE edge IN takes_place_in
+            FOR edge IN in_location
+              FILTER edge._from == cdId
+              REMOVE edge IN in_location
             """, bind_vars={"cleanday_key": cleanday_key}
         )
 
         self.db.aql.execute(
             """
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
-            LET cityId = CONCAT("City/", @city_id)
+            LET locId = CONCAT("City/", @loc_id)
 
             INSERT {
               _from: cdId,
-              _to: cityId
-            } INTO takes_place_in
-            """, bind_vars={"cleanday_key": cleanday_key, "city_id": city_key}
+              _to: locId
+            } INTO in_location
+            """, bind_vars={"cleanday_key": cleanday_key, "loc_id": location_key}
         )
-        pass
 
-    def set_location(self, cleanday_key: str, location_key: str) -> bool:
-        pass
+        return True
 
     def get_members(self, cleanday_key: str, params: GetMembersParams) -> (int, list[GetMember]):
         bind_vars, filters = setup_get_users_params(params)
@@ -565,3 +584,9 @@ class CleandayRepo:
         print(result_dict["page"])
         page = list(map(lambda c: GetComment.model_validate(c), result_dict["page"]))
         return result_dict["count"], page
+
+
+if __name__ == "__main__":
+    repo = CleandayRepo(database)
+
+    print(repo.get_by_id('1778'))

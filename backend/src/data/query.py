@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment, ParticipationType
+from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment, ParticipationType, Location
 
 
 class SortOrder(StrEnum):
@@ -75,6 +75,7 @@ class GetCleanday(BaseModel):
     participant_count: int
     recommended_count: int
     city: str
+    location: Location
     begin_date: datetime
     end_date: datetime
     organization: str
@@ -159,7 +160,6 @@ class UpdateUser(BaseModel):
 
 class CreateCleanday(BaseModel):
     name: str
-    city_id: str
     location_id: str
     begin_date: datetime
     end_date: datetime
@@ -173,7 +173,6 @@ class CreateCleanday(BaseModel):
 
 class UpdateCleanday(BaseModel):
     name: Optional[str] = None
-    city_id: Optional[str] = None
     location_id: Optional[str] = None
     begin_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
