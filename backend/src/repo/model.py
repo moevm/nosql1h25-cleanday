@@ -67,3 +67,8 @@ class CreateLog(BaseModel):
     type: str
     description: str
     keys: LogRelations
+
+
+class CreateComment(BaseModel):
+    text: str
+    date: datetime
