@@ -192,3 +192,8 @@ class GetMember(GetUser):
 class GetCitiesParams(PaginationParams):
     search_query: str = ""
     sort_order: SortOrder = SortOrder.ASC
+
+
+class CityListResponse(BaseModel):
+    contents: list[City]
+    total_count: int
