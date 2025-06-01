@@ -197,3 +197,24 @@ class GetCitiesParams(PaginationParams):
 class CityListResponse(BaseModel):
     contents: list[City]
     total_count: int
+
+
+class CreateLocation(BaseModel):
+    address: str
+    instructions: str
+    city_key: str
+
+
+class GetLocationsParams(PaginationParams):
+    search_query: str = ""
+    city_name: Optional[str] = None
+    sort_order: SortOrder = SortOrder.ASC
+
+
+class GetLocation(Location):
+    city: City
+
+
+class LocationListResponse(BaseModel):
+    contents: list[GetLocation]
+    total_count: int
