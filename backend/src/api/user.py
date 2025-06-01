@@ -11,7 +11,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/")
 async def get_users(query: Annotated[GetUsersParams, Query()]) -> UserListResponse:
-    return UserListResponse(users=[])
+    return UserListResponse(users=[], total_count=0)
 
 
 @router.get("/{user_id}")
@@ -64,12 +64,12 @@ async def upload_user_picture(user_id: str) -> None:
 
 @router.get("/{user_id}/cleandays")
 async def get_user_cleandays(user_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayListResponse:
-    return CleandayListResponse(cleandays=[])
+    return CleandayListResponse(cleandays=[], total_count=0)
 
 
 @router.get("/{user_id}/organized")
 async def get_user_organized_cleandays(user_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayListResponse:
-    return CleandayListResponse(cleandays=[])
+    return CleandayListResponse(cleandays=[], total_count=0)
 
 
 @router.get("/graph")
