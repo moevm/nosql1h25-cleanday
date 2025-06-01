@@ -180,6 +180,29 @@ class ParticipationRepo:
 
         return SetReqResult.SUCCESS
 
+    def get_requirements(self, user_key: str, cleanday_key: str) -> Optional[list[str]]:
+        participation = self.get(user_key, cleanday_key)
+
+        if participation is None:
+            return None
+
+        cursor = self.db.aql.execute(
+            """
+            LET parId = CONCAT("Participation/", @par_key)
+            
+            FOR req IN OUTBOUND parId fullfills
+                RETURN req._key
+            """,
+            bind_vars={"par_key": participation.key}
+        )
+
+        req_list = []
+
+        for req in cursor:
+            req_list.append(req)
+
+        return req_list
+
     def create_comment(self, user_key: str, cleanday_key: str, comment: CreateComment) -> Optional[Comment]:
         if self.cleanday_repo.get_raw_by_key(cleanday_key) is None:
             return None
