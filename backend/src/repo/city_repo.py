@@ -1,7 +1,7 @@
 from arango.database import StandardDatabase
 
 from data.entity import City
-from data.query import GetCityParams, SortOrder
+from data.query import GetCitiesParams, SortOrder
 from repo.client import database
 
 
@@ -24,7 +24,7 @@ class CityRepo:
 
         return City.model_validate(city_dict)
 
-    def get_page(self, params: GetCityParams) -> (int, list[City]):
+    def get_page(self, params: GetCitiesParams) -> (int, list[City]):
         cursor = self.db.aql.execute(
             f"""
             LET cities = (
@@ -61,4 +61,4 @@ class CityRepo:
 
 if __name__ == '__main__':
     repo = CityRepo(database)
-    print(repo.get_page(GetCityParams(search_query="", sort_order=SortOrder.DESC)))
+    print(repo.get_page(GetCitiesParams(search_query="", sort_order=SortOrder.DESC)))
