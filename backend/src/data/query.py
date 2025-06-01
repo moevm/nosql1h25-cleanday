@@ -61,6 +61,11 @@ class GetUser(BaseModel):
     stat: int
 
 
+class GetExtendedUser(GetUser):
+    created_at: datetime
+    updated_at: datetime
+
+
 class UserListResponse(BaseModel):
     users: list[GetUser]
 

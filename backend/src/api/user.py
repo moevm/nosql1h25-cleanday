@@ -1,9 +1,10 @@
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Query
 
 from data.query import GetUsersParams, UserListResponse, GetUser, CleandayListResponse, PaginationParams, UpdateUser, \
-    CreateCleanday
+    CreateCleanday, GetExtendedUser
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -14,8 +15,8 @@ async def get_users(query: Annotated[GetUsersParams, Query()]) -> UserListRespon
 
 
 @router.get("/{user_id}")
-async def get_user(user_id: str) -> GetUser:
-    return GetUser(
+async def get_user(user_id: str) -> GetExtendedUser:
+    return GetExtendedUser(
         key="1",
         first_name="Иван",
         last_name="Иванов",
@@ -27,7 +28,9 @@ async def get_user(user_id: str) -> GetUser:
         cleanday_count=0,
         organized_count=0,
         stat=0,
-        city="Санкт-Петербург"
+        city="Санкт-Петербург",
+        created_at=datetime(2025, 2, 1),
+        updated_at=datetime(2025, 2, 1),
     )
 
 
@@ -72,3 +75,8 @@ async def get_user_organized_cleandays(user_id: str, query: Annotated[Pagination
 @router.get("/graph")
 async def get_users_graph(attribute_1: str, attribute_2: str):
     return
+
+
+@router.put("/{user_id}/password")
+async def check_user_password(user_id: str, password: str) -> bool:
+    return True
