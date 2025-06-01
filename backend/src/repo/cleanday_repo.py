@@ -76,7 +76,7 @@ class CleandayRepo:
         cleanday_dict = cursor.next()
         return GetCleanday.model_validate(cleanday_dict)
 
-    def get_page(self, params: GetCleandaysParams) -> Optional[(int, list[GetCleanday])]:
+    def get_page(self, params: GetCleandaysParams) -> (int, list[GetCleanday]):
         params_dict = params.model_dump(exclude_none=True)
         filters = []
         bind_vars = {
