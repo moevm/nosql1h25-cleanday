@@ -192,7 +192,7 @@ class ParticipationRepo:
             return None
 
         comm_data = comment.model_dump(exclude_none=True)
-        comm_data['date'] = str(comm_data['date'])
+        comm_data['date'] = comm_data['date'].isoformat()
 
         cursor = self.db.aql.execute(
             """
