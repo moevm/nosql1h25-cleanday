@@ -72,3 +72,8 @@ class CreateLog(BaseModel):
 class CreateComment(BaseModel):
     text: str
     date: datetime
+
+
+class CreateImage(BaseModel):
+    photo: str
+    description: str

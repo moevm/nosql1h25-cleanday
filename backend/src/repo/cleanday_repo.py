@@ -5,12 +5,12 @@ from typing import Optional, Tuple
 from arango import cursor
 from arango.database import StandardDatabase
 
-from data.entity import CleanDay, CleanDayTag, CleanDayStatus, ParticipationType, Requirement
+from data.entity import CleanDay, CleanDayTag, CleanDayStatus, ParticipationType, Requirement, Image
 from data.query import GetCleanday, GetCleandaysParams, GetUser, GetMembersParams, PaginationParams, CleandayLog, \
     GetComment, GetMember
 from repo.client import database
 from repo.location_repo import LocationRepo
-from repo.model import CreateCleanday, UpdateCleanday
+from repo.model import CreateCleanday, UpdateCleanday, CreateImage
 from repo.user_repo import setup_get_users_params
 
 contains_filters = ['name', 'organization']
@@ -731,9 +731,60 @@ class CleandayRepo:
 
         return DeleteReqResult.SUCCESS
 
+    def create_images(self, cleanday_key: str, image_data: list[CreateImage]) -> Optional[int]:
+
+        if not self.get_raw_by_key(cleanday_key):
+            return None
+
+        image_data = list(map(lambda img: img.model_dump(), image_data))
+
+        cursor = self.db.aql.execute(
+            """
+            RETURN COUNT(FOR image_entry IN @image_data
+                LET cdId = CONCAT("CleanDay/", @cleanday_key)
+                LET img = FIRST(
+                  INSERT image_entry INTO Image
+                  RETURN NEW
+                )
+    
+                INSERT {
+                  _from: cdId,
+                  _to: img._id
+                } INTO cleanday_image
+                
+                RETURN 1)
+            """,
+            bind_vars={"cleanday_key": cleanday_key, "image_data": image_data},
+        )
+
+        return cursor.next()
+
+    def get_images(self, cleanday_key: str) -> Optional[list[Image]]:
+        if not self.get_raw_by_key(cleanday_key):
+            return None
+
+        cursor = self.db.aql.execute(
+            """
+            LET cdId = CONCAT("CleanDay/", @cleanday_key)
+            
+            FOR img IN OUTBOUND cdId cleanday_image
+                RETURN MERGE(img, {key: img._key})
+            """,
+            bind_vars={"cleanday_key": cleanday_key}
+        )
+
+        img_list = []
+
+        for row in cursor:
+            img_list.append(Image.model_validate(row))
+
+        return img_list
+
 
 if __name__ == "__main__":
     repo = CleandayRepo(database)
-    print(repo.get_by_key('131375'))
+    # print(repo.get_by_key('131375'))
+    # print(repo.create_images('131375', [CreateImage(photo="data", description="Территория до")]))
+    print(repo.get_images('131375'))
     # print(repo.create_requirement('131375', 'Принести еду'))
     # print(repo.delete_requirement('131375', '131379'))

@@ -2,9 +2,10 @@ from typing import Optional
 
 from arango.database import StandardDatabase
 
-from data.entity import Location
+from data.entity import Location, Image
 from data.query import GetLocationsParams, GetLocation, CreateLocation
 from repo.client import database
+from repo.model import CreateImage
 
 
 class LocationRepo:
@@ -102,9 +103,60 @@ class LocationRepo:
 
         return Location.model_validate(loc_dict)
 
+    def create_images(self, loc_key: str, image_data: list[CreateImage]) -> Optional[int]:
+
+        if not self.get_raw_by_key(loc_key):
+            return None
+
+        image_data = list(map(lambda img: img.model_dump(), image_data))
+
+        cursor = self.db.aql.execute(
+            """
+            RETURN COUNT(FOR image_entry IN @image_data
+                LET locId = CONCAT("Location/", @loc_key)
+                LET img = FIRST(
+                  INSERT image_entry INTO Image
+                  RETURN NEW
+                )
+
+                INSERT {
+                  _from: locId,
+                  _to: img._id
+                } INTO location_image
+
+                RETURN 1)
+            """,
+            bind_vars={"loc_key": loc_key, "image_data": image_data},
+        )
+
+        return cursor.next()
+
+    def get_images(self, loc_key: str) -> Optional[list[Image]]:
+        if not self.get_raw_by_key(loc_key):
+            return None
+
+        cursor = self.db.aql.execute(
+            """
+            LET locId = CONCAT("Location/", @loc_key)
+
+            FOR img IN OUTBOUND locId location_image
+                RETURN MERGE(img, {key: img._key})
+            """,
+            bind_vars={"loc_key": loc_key}
+        )
+
+        img_list = []
+
+        for row in cursor:
+            img_list.append(Image.model_validate(row))
+
+        return img_list
+
 
 if __name__ == '__main__':
     repo = LocationRepo(database)
 
     print(repo.get_page(GetLocationsParams(sort_order='asc')))
     print(repo.get_raw_by_key('121319'))
+    print(repo.get_images('121319'))
+    # print(repo.create_images('121319', [CreateImage(photo="data", description="5 корпус")]))
