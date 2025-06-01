@@ -13,10 +13,14 @@ from repo.location_repo import LocationRepo
 from repo.model import CreateCleanday, UpdateCleanday, CreateImage
 from repo.user_repo import setup_get_users_params
 
-contains_filters = ['name', 'organization']
+contains_filters = ['name', 'organization', 'organizer']
 
-from_filters = ['begin_date_from', 'end_date_from', 'area_from', 'recommended_count_from', 'participant_count_from']
-to_filters = ['begin_date_to', 'end_date_to', 'area_to', 'recommended_count_to', 'participant_count_to']
+from_filters = ['begin_date_from', 'end_date_from', 'area_from', 'recommended_count_from', 'participant_count_from',
+                'created_at_from', 'updated_at_from']
+to_filters = ['begin_date_to', 'end_date_to', 'area_to', 'recommended_count_to', 'participant_count_to',
+              'created_at_to', 'updated_at_to']
+
+time_fields = ['begin_date', 'end_date', 'created_at', 'updated_at']
 
 
 class DeleteReqResult(StrEnum):
@@ -135,17 +139,23 @@ class CleandayRepo:
 
         for from_filter in from_filters:
             if from_filter in params_dict:
+                field_name = from_filter[:-5]
                 filters.append(
-                    f"    FILTER cleanday.{from_filter[:-5]} >= @{from_filter}"
+                    f"    FILTER cleanday.{field_name} >= @{from_filter}"
                 )
                 bind_vars[from_filter] = params_dict[from_filter]
+                if field_name in time_fields:
+                    bind_vars[from_filter] = bind_vars[from_filter].isoformat()
 
         for to_filter in to_filters:
             if to_filter in params_dict:
+                field_name = to_filter[:-3]
                 filters.append(
-                    f"    FILTER cleanday.{to_filter[:-3]} <= @{to_filter}"
+                    f"    FILTER cleanday.{field_name} <= @{to_filter}"
                 )
                 bind_vars[to_filter] = params_dict[to_filter]
+                if field_name in time_fields:
+                    bind_vars[to_filter] = bind_vars[to_filter].isoformat()
 
         query = f"""
             LET count = COUNT(
@@ -858,7 +868,7 @@ class CleandayRepo:
 
 if __name__ == "__main__":
     repo = CleandayRepo(database)
-    print(repo.get_page(GetCleandaysParams()))
+    print(repo.get_page(GetCleandaysParams(created_at_from=datetime.now())))
     print(repo.get_by_key('131375'))
     # print(repo.create_images('131375', [CreateImage(photo="data", description="Территория до")]))
     # print(repo.get_images('131375'))

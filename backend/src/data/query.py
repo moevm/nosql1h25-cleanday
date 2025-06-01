@@ -117,11 +117,16 @@ class GetCleandaysParams(BaseModel):
     search_query: Optional[str] = None
     name: Optional[str] = None
     organization: Optional[str] = None
+    organizer: Optional[str] = None
     status: Optional[list[str]] = None
     begin_date_from: Optional[datetime] = None
     begin_date_to: Optional[datetime] = None
     end_date_from: Optional[int] = None
     end_date_to: Optional[int] = None
+    created_at_from: Optional[datetime] = None
+    created_at_to: Optional[datetime] = None
+    updated_at_from: Optional[datetime] = None
+    updated_at_to: Optional[datetime] = None
     area_from: Optional[int] = Field(None, ge=0)
     area_to: Optional[int] = None
     recommended_count_from: Optional[int] = Field(None, ge=0)
