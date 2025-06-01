@@ -5,7 +5,8 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment, ParticipationType, Location, \
-    City
+    City, Image
+from repo.model import CreateImage
 
 
 class SortOrder(StrEnum):
@@ -231,3 +232,11 @@ class GetLocation(Location):
 class LocationListResponse(BaseModel):
     contents: list[GetLocation]
     total_count: int
+
+
+class CreateImages(BaseModel):
+    images: list[CreateImage]
+
+
+class ImageListResponse(BaseModel):
+    contents: list[Image]
