@@ -17,6 +17,12 @@ class CreateResult(StrEnum):
     PARTICIPATION_ALREADY_EXISTS = auto()
 
 
+class SetReqResult(StrEnum):
+    SUCCESS = auto()
+    PARTICIPATION_DOES_NOT_EXIST = auto()
+    REQUIREMENT_DOES_NOT_EXIST = auto()
+
+
 class ParticipationRepo:
     def __init__(self, database: StandardDatabase):
         self.db = database
@@ -100,21 +106,21 @@ class ParticipationRepo:
         return CreateResult.CREATED, Participation.model_validate(par_dict)
 
     def update(self, user_key: str, cleanday_key: str, par: UpdateParticipation) -> Optional[Participation]:
-        par = self.get(user_key, cleanday_key)
+        participation = self.get(user_key, cleanday_key)
 
-        if par is None:
+        if participation is None:
             return None
 
         cursor = self.db.aql.execute(
             """
             LET parId = CONCAT("Participation/", @par_key)
             
-            FOR par Participation
+            FOR par IN Participation
                 FILTER par._id == parId
                 UPDATE par WITH @data IN Participation
                 RETURN NEW
             """,
-            bind_vars={"par_key": par.key, "data": par.model_dump(exclude_none=True)}
+            bind_vars={"par_key": participation.key, "data": par.model_dump(exclude_none=True)}
         )
 
         if cursor.empty():
@@ -125,8 +131,59 @@ class ParticipationRepo:
 
         return Participation.model_validate(par_dict)
 
+    def set_requirements(self, user_key: str, cleanday_key: str, requirement_keys: list[str]) -> SetReqResult:
+        participation = self.get(user_key, cleanday_key)
+
+        if participation is None:
+            return SetReqResult.PARTICIPATION_DOES_NOT_EXIST
+
+        requirements = self.cleanday_repo.get_raw_requirements(cleanday_key)
+        existing_req_keys = set(map(lambda req: req.key, requirements))
+
+        print(existing_req_keys)
+
+        for key in requirement_keys:
+            if key not in existing_req_keys:
+                return SetReqResult.REQUIREMENT_DOES_NOT_EXIST
+
+        trans = self.db.begin_transaction(read=['Participation', 'fullfills', 'Requirement'],
+                                          write=['Participation', 'fullfills', 'Requirement'])
+        cursor = trans.aql.execute(
+            """
+            LET parId = CONCAT("Participation/", @par_key)
+            
+            FOR edge IN fullfills
+                FILTER edge._from == parId
+                REMOVE edge IN fullfills
+            
+            
+            """,
+            bind_vars={"par_key": participation.key}
+        )
+
+        trans.aql.execute(
+            """
+            LET parId = CONCAT("Participation/", @par_key)
+            
+            FOR key IN @req_keys
+                LET reqId = CONCAT("Requirement/", key)
+                INSERT {
+                    _from: parId,
+                    _to: reqId
+                } INTO fullfills
+                RETURN NEW
+            """,
+            bind_vars={"par_key": participation.key, "req_keys": requirement_keys}
+        )
+
+        trans.commit_transaction()
+
+        return SetReqResult.SUCCESS
+
 
 if __name__ == "__main__":
     repo = ParticipationRepo(database)
-    print(repo.get('51554', '1778'))
-    print(repo.create('51554', '1778', ParticipationType.MAYBE_WILL_GO))
+    print(repo.set_requirements('51554', '131375', ['131380', '131379']))
+    # print(repo.get('51554', '1778'))
+    # print(repo.create('51554', '1778', ParticipationType.MAYBE_WILL_GO))
+    # print(repo.update('51554', '1778', UpdateParticipation(type=ParticipationType.WILL_BE_LATE)))

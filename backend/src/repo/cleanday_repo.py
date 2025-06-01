@@ -634,7 +634,8 @@ class CleandayRepo:
 
         return result_list
 
+
 if __name__ == "__main__":
     repo = CleandayRepo(database)
-
-    print(repo.get_by_key('1778'))
+    repo.set_location('131375', '124651')
+    print(repo.get_by_key('131375'))
