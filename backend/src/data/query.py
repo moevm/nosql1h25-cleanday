@@ -4,7 +4,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment, ParticipationType, Location
+from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment, ParticipationType, Location, \
+    City
 
 
 class SortOrder(StrEnum):
@@ -188,6 +189,32 @@ class GetMember(GetUser):
     participation_type: ParticipationType
 
       
-class GetCityParams(PaginationParams):
+class GetCitiesParams(PaginationParams):
     search_query: str = ""
     sort_order: SortOrder = SortOrder.ASC
+
+
+class CityListResponse(BaseModel):
+    contents: list[City]
+    total_count: int
+
+
+class CreateLocation(BaseModel):
+    address: str
+    instructions: str
+    city_key: str
+
+
+class GetLocationsParams(PaginationParams):
+    search_query: str = ""
+    city_name: Optional[str] = None
+    sort_order: SortOrder = SortOrder.ASC
+
+
+class GetLocation(Location):
+    city: City
+
+
+class LocationListResponse(BaseModel):
+    contents: list[GetLocation]
+    total_count: int
