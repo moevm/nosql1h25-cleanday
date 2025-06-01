@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 
 from arango import cursor
 from arango.database import StandardDatabase
@@ -349,7 +349,7 @@ class CleandayRepo:
 
         return True
 
-    def get_members(self, cleanday_key: str, params: GetMembersParams) -> Optional[(int, list[GetMember])]:
+    def get_members(self, cleanday_key: str, params: GetMembersParams) -> Optional[Tuple[int, list[GetMember]]]:
         if self.get_raw_by_key(cleanday_key) is None:
             return None
 
@@ -492,7 +492,7 @@ class CleandayRepo:
         return page_dict["count"], list(map(lambda u: GetMember.model_validate(u), page_dict["page"]))
         pass
 
-    def get_logs(self, cleanday_key: str, params: PaginationParams) -> Optional[(int, list[CleandayLog])]:
+    def get_logs(self, cleanday_key: str, params: PaginationParams) -> Optional[Tuple[int, list[CleandayLog]]]:
         if self.get_raw_by_key(cleanday_key) is None:
             return None
 
@@ -544,7 +544,7 @@ class CleandayRepo:
         page = list(map(lambda c: CleandayLog.model_validate(c), result_dict["page"]))
         return result_dict["count"], page
 
-    def get_comments(self, cleanday_key: str, params: PaginationParams) -> Optional[(int, list[GetComment])]:
+    def get_comments(self, cleanday_key: str, params: PaginationParams) -> Optional[Tuple[int, list[GetComment]]]:
         if self.get_raw_by_key(cleanday_key) is None:
             return None
 
