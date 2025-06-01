@@ -6,8 +6,6 @@ import {
     Container,
     Typography,
     TextField,
-    Checkbox,
-    FormControlLabel,
     Button,
     Box,
     Toolbar,
@@ -26,7 +24,6 @@ import {LogIn} from '../../models/User.ts';
 export const Authorization = (): React.JSX.Element=> {
     const [username, setUsername] = React.useState('');
     const [password, setPassword] = React.useState('');
-    const [rememberMe, setRememberMe] = React.useState(false); // Я пока не понимаю, как с этим работать. Но вот кнопочка
     // Хук для навигации по страницам
     const navigate = useNavigate();
     const {UserLoginToken} = useAuth();
@@ -72,9 +69,6 @@ export const Authorization = (): React.JSX.Element=> {
         }
     };
 
-    const handleRememberMeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setRememberMe(event.target.checked);
-    };
 
     const textFieldStyle = {
         '& .MuiOutlinedInput-root': {
@@ -127,16 +121,6 @@ export const Authorization = (): React.JSX.Element=> {
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                value="remember"
-                                color="primary"
-                                onChange={handleRememberMeChange}
-                            />
-                        }
-                        label="Запомнить меня"
                     />
                     <Button
                         sx={{
