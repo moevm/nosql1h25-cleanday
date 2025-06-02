@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from jwt import ExpiredSignatureError
+from jose.exceptions import ExpiredSignatureError
 from passlib.context import CryptContext
 
 from data.entity import User
