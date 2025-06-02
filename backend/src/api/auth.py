@@ -64,10 +64,10 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> AuthToken:
     user = user_repo.get_raw_by_login(login_user.login)
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
 
     if not auth_service.verify_password(login_user.password, user.password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect password')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
 
     access_token = auth_service.create_access_token(data={"sub": user.login})
     return AuthToken(access_token=access_token, token_type="bearer")
