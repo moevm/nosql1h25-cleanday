@@ -11,6 +11,10 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+     <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <QueryClientProvider client={queryClient}>
+          <App/>
+        </QueryClientProvider>
+      </LocalizationProvider>
   </StrictMode>,
 )
