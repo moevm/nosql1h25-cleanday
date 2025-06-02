@@ -60,6 +60,7 @@ class LogRelations(BaseModel):
     user_key: Optional[str] = None
     comment_key: Optional[str] = None
     location_key: Optional[str] = None
+    city_key: Optional[str] = None
 
 
 class CreateLog(BaseModel):

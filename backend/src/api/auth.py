@@ -15,8 +15,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register")
 async def register(register_user: RegisterUser) -> AuthToken:
-    trans = database.begin_transaction(read=['City', 'User', 'lives_in', 'Log'],
-                                       write=['User', 'lives_in', 'relates_to_user', 'Log'])
+    trans = database.begin_transaction(read=['City', 'User', 'lives_in', 'Log', 'Image'],
+                                       write=['User', 'lives_in', 'relates_to_user',
+                                              'Log', 'Image', 'user_avatar'])
     try:
         user_repo = UserRepo(trans)
         log_repo = LogRepo(trans)
@@ -38,6 +39,8 @@ async def register(register_user: RegisterUser) -> AuthToken:
 
         if not user_repo.set_city(user.key, register_user.city_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='City not found')
+
+        user_repo.create_image(user.key, "default_image")
 
         log_repo.create(
             CreateLog(

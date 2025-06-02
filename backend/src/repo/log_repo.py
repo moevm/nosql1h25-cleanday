@@ -10,14 +10,16 @@ edge_collections = {
     'cleanday_key': 'relates_to_cleanday',
     'user_key': 'relates_to_user',
     'comment_key': 'relates_to_comment',
-    'location_key': 'relates_to_location'
+    'location_key': 'relates_to_location',
+    'city_key': 'relates_to_city'
 }
 
 collection_names = {
     'cleanday_key': 'CleanDay',
     'user_key': 'User',
     'comment_key': 'Comment',
-    'location_key': 'Location'
+    'location_key': 'Location',
+    'city_key': 'City'
 }
 
 
