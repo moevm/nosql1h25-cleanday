@@ -90,6 +90,7 @@ class GetCleanday(BaseModel):
     updated_at: datetime
     organization: str
     organizer: str
+    organizer_key: str
     area: int
     status: CleanDayStatus
     tags: list[CleanDayTag]
@@ -115,7 +116,7 @@ class CleandaySortField(StrEnum):
 class GetCleandaysParams(BaseModel):
     offset: int = Field(0, ge=0)
     limit: int = Field(20, ge=1, le=50)
-    sort_by: UserSortField = CleandaySortField.BEGIN_DATE
+    sort_by: CleandaySortField = CleandaySortField.BEGIN_DATE
     sort_order: SortOrder = SortOrder.ASC
     search_query: Optional[str] = None
     name: Optional[str] = None
@@ -152,6 +153,7 @@ class PaginationParams(BaseModel):
 class CleandayLog(Log):
     user: Optional[User] = None
     comment: Optional[Comment] = None
+    location: Optional[Location] = None
 
 
 class CleandayLogListResponse(BaseModel):
@@ -247,3 +249,12 @@ class ImageListResponse(BaseModel):
 
 class SetAvatar(BaseModel):
     photo: str
+
+
+class UpdateParticipation(BaseModel):
+    type: Optional[ParticipationType] = None
+    requirement_keys: Optional[list[str]] = None
+
+
+class CreateParticipation(BaseModel):
+    type: ParticipationType
