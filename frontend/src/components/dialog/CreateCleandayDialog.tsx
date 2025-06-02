@@ -17,8 +17,8 @@ import {
 } from '@mui/material';
 import {DatePicker} from '@mui/x-date-pickers/DatePicker';
 import {TimePicker} from '@mui/x-date-pickers/TimePicker';
-import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
-import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
+// import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
+// import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
 import {Dayjs} from 'dayjs';
 import {Location, CreateCleanday} from "../../models/User.ts";
 import CleanDayTag from "../../models/User.ts"
@@ -366,81 +366,74 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
 
                     {/* Поля "Дата начала" и "Время начала" */}
                     <Grid item xs={12} sm={6}>
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <DatePicker
-                                label="Дата начала"
-                                value={beginDateDay}
-                                onChange={(newValue) => setFormState(prevState => ({
-                                    ...prevState,
-                                    beginDateDay: newValue
-                                }))}
-                                slotProps={{
-                                    textField: {
-                                        fullWidth: true,
-                                        error: !!errors.beginDateDay,
-                                        helperText: errors.beginDateDay,
-                                    },
-                                }}
-                            />
-                        </LocalizationProvider>
+                        <DatePicker
+                            label="Дата начала"
+                            value={beginDateDay}
+                            onChange={(newValue) => setFormState(prevState => ({
+                                ...prevState,
+                                beginDateDay: newValue
+                            }))}
+                            slotProps={{
+                                textField: {
+                                    fullWidth: true,
+                                    error: !!errors.beginDateDay,
+                                    helperText: errors.beginDateDay,
+                                },
+                            }}
+                        />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <TimePicker
-                                label="Время начала"
-                                value={beginDateTime}
-                                onChange={(newValue) => setFormState(prevState => ({
-                                    ...prevState,
-                                    beginDateTime: newValue
-                                }))}
-                                slotProps={{
-                                    textField: {
-                                        fullWidth: true,
-                                        error: !!errors.beginDateTime,
-                                        helperText: errors.beginDateTime,
-                                    },
-                                }}
-                            />
-                        </LocalizationProvider>
+                        <TimePicker
+                            label="Время начала"
+                            value={beginDateTime}
+                            onChange={(newValue) => setFormState(prevState => ({
+                                ...prevState,
+                                beginDateTime: newValue
+                            }))}
+                            slotProps={{
+                                textField: {
+                                    fullWidth: true,
+                                    error: !!errors.beginDateTime,
+                                    helperText: errors.beginDateTime,
+                                },
+                            }}
+                        />
                     </Grid>
 
                     {/* Поля "Дата конца" и "Время конца" */}
                     <Grid item xs={12} sm={6}>
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <DatePicker
-                                label="Дата конца"
-                                value={endDateDay}
-                                onChange={(newValue) => setFormState(prevState => ({
-                                    ...prevState,
-                                    endDateDay: newValue
-                                }))}
-                                slotProps={{
-                                    textField: {
-                                        fullWidth: true,
-                                        error: !!errors.endDateDay,
-                                        helperText: errors.endDateDay,
-                                    },
-                                }}
-                            />
-                        </LocalizationProvider>
+                        <DatePicker
+                            label="Дата конца"
+                            value={endDateDay}
+                            onChange={(newValue) => setFormState(prevState => ({
+                                ...prevState,
+                                endDateDay: newValue
+                            }))}
+                            slotProps={{
+                                textField: {
+                                    fullWidth: true,
+                                    error: !!errors.endDateDay,
+                                    helperText: errors.endDateDay,
+                                },
+                            }}
+                        />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <TimePicker
-                                label="Время конца"
-                                value={endDateTime}
-                                onChange={(newValue) => setFormState(prevState => ({
-                                    ...prevState,
-                                    endDateTime: newValue
-                                }))}
-                                slotProps={{
-                                    textField: {
-                                        fullWidth: true,
-                                        error: !!errors.endDateTime,
-                                        helperText: errors.endDateTime,
-                                    },
-                                }}/>
-                        </LocalizationProvider>
+                        <TimePicker
+                            label="Время конца"
+                            value={endDateTime}
+                            onChange={(newValue) => setFormState(prevState => ({
+                                ...prevState,
+                                endDateTime: newValue
+                            }))}
+                            slotProps={{
+                                textField: {
+                                    fullWidth: true,
+                                    error: !!errors.endDateTime,
+                                    helperText: errors.endDateTime,
+                                },
+                            }}
+                        />`
                     </Grid>
 
                     {/* Поле "Организация" */}
