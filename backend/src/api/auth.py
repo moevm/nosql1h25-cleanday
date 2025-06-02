@@ -37,6 +37,7 @@ async def register(register_user: RegisterUser) -> AuthToken:
     user = user_repo.create(create_user)
 
     if not user_repo.set_city(user.key, register_user.city_id):
+        trans.abort_transaction()
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='City not found')
 
     log_repo.create(
