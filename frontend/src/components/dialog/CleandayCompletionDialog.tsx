@@ -29,34 +29,7 @@ import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-
-/**
- * Интерфейс для участника субботника
- */
-interface Participant {
-    id: number;
-    name: string;
-    status: ParticipantStatus;
-}
-
-/**
- * Перечисление для статуса участника
- */
-enum ParticipantStatus {
-    CONFIRMED = 'Подтвержден',
-    PARTICIPATED = 'Участвовал',
-    NOT_PARTICIPATED = 'Не участвовал',
-    UNKNOWN = 'Неизвестно'
-}
-
-/**
- * Интерфейс для данных завершения субботника
- */
-interface CompletionData {
-    results: string[];
-    images: File[];
-    participantStatuses: { [userId: number]: ParticipantStatus };
-}
+import {CompletionData, Participant, ParticipantStatus} from '../../models/User';
 
 /**
  * Интерфейс для пропсов компонента CleandayCompletionDialog
@@ -69,8 +42,8 @@ interface CleandayCompletionDialogProps {
     participants: Participant[];
 }
 
-// Максимальный размер файла (3 МБ)
-const MAX_FILE_SIZE = 3 * 1024 * 1024;
+// Максимальный размер файла (1 МБ)
+const MAX_FILE_SIZE = 1 * 1024 * 1024;
 
 // Допустимые типы файлов
 const ACCEPTED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
@@ -154,7 +127,7 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
 
         // Проверка размера файла
         if (file.size > MAX_FILE_SIZE) {
-            setFileError(`Размер файла не должен превышать 3 МБ`);
+            setFileError(`Размер файла не должен превышать 1 МБ`);
             return false;
         }
 
@@ -286,7 +259,7 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle>
                 Завершение субботника
-                <Typography variant="subtitle1" color="text.secondary">
+                <Typography component="div" variant="subtitle1" color="text.secondary">
                     {cleandayName}
                 </Typography>
             </DialogTitle>
