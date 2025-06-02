@@ -266,7 +266,13 @@ class UserRepo:
             """, bind_vars={"login": login}
         )
 
-        return self._return_single(cursor)
+        if cursor.empty():
+            return None
+
+        user_dict = cursor.next()
+        user_dict['key'] = user_dict['_key']
+
+        return User.model_validate(user_dict)
 
     def create(self, user: CreateUser) -> User:
         cursor = self.db.aql.execute(
