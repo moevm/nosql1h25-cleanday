@@ -103,6 +103,29 @@ class LocationRepo:
 
         return Location.model_validate(loc_dict)
 
+    def get_by_key(self, loc_key: str) -> Optional[GetLocation]:
+        if not self.get_raw_by_key(loc_key):
+            return None
+
+        cursor = self.db.aql.execute(
+            """
+            LET loc = FIRST(RETURN DOCUMENT(CONCAT("Location/", @loc_key)))
+            LET city = FIRST(
+                FOR city IN OUTBOUND loc in_city
+                    LIMIT 1
+                    RETURN MERGE(city, {key: city._key})
+            )      
+            RETURN MERGE(loc, {key: loc._key, city: city})
+            """,
+            bind_vars={"loc_key": loc_key}
+        )
+
+        loc_dict = cursor.next()
+        if loc_dict is None:
+            return None
+
+        return GetLocation.model_validate(loc_dict)
+
     def create_images(self, loc_key: str, image_data: list[CreateImage]) -> Optional[int]:
 
         if not self.get_raw_by_key(loc_key):
