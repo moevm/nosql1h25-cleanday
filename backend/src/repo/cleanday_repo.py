@@ -508,7 +508,7 @@ class CleandayRepo:
     
                                 LET orgCount = COUNT(
                                     FOR p IN OUTBOUND userId has_participation
-                                      FILTER p.type == "organiser"
+                                      FILTER p.type == "Организатор"
                                       FOR cl_day IN OUTBOUND p participation_in
                                         RETURN cl_day
                                 )
@@ -559,7 +559,7 @@ class CleandayRepo:
         
                                 LET orgCount = COUNT(
                                     FOR p IN OUTBOUND userId has_participation
-                                      FILTER p.type == "organiser"
+                                      FILTER p.type == "Организатор"
                                       FOR cl_day IN OUTBOUND p participation_in
                                         RETURN cl_day
                                 )
@@ -706,7 +706,7 @@ class CleandayRepo:
                               
                               LET orgCount = COUNT(
                                   FOR p IN OUTBOUND u._id has_participation
-                                    FILTER p.type == "organiser"
+                                    FILTER p.type == "Организатор"
                                     FOR cl_day IN OUTBOUND p participation_in
                                       RETURN cl_day
                               )
