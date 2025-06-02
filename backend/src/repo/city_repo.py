@@ -23,6 +23,7 @@ class CityRepo:
         )
 
         city_dict = cursor.next()
+        city_dict['key'] = city_dict['_key']
 
         return City.model_validate(city_dict)
 
