@@ -146,9 +146,7 @@ class ParticipationRepo:
             if key not in existing_req_keys:
                 return SetReqResult.REQUIREMENT_DOES_NOT_EXIST
 
-        trans = self.db.begin_transaction(read=['Participation', 'fullfills', 'Requirement'],
-                                          write=['Participation', 'fullfills', 'Requirement'])
-        cursor = trans.aql.execute(
+        cursor = self.db.aql.execute(
             """
             LET parId = CONCAT("Participation/", @par_key)
             
@@ -161,7 +159,7 @@ class ParticipationRepo:
             bind_vars={"par_key": participation.key}
         )
 
-        trans.aql.execute(
+        self.db.aql.execute(
             """
             LET parId = CONCAT("Participation/", @par_key)
             
@@ -175,8 +173,6 @@ class ParticipationRepo:
             """,
             bind_vars={"par_key": participation.key, "req_keys": requirement_keys}
         )
-
-        trans.commit_transaction()
 
         return SetReqResult.SUCCESS
 
