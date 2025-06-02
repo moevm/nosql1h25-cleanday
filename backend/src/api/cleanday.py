@@ -8,7 +8,7 @@ from auth.service import get_current_user
 from data.entity import CleanDayStatus, CleanDay, User, CleanDayTag, Comment
 from data.query import GetCleandaysParams, CleandayListResponse, GetCleanday, UserListResponse, GetMembersParams, \
     PaginationParams, CleandayLogListResponse, CommentListResponse, UpdateCleanday, CreateCleanday, CreateImages, \
-    ImageListResponse, UpdateParticipation, CreateParticipation
+    ImageListResponse, UpdateParticipation, CreateParticipation, CleandayResults
 from repo.cleanday_repo import CleandayRepo
 from repo.client import database
 import repo.model as repo_model
@@ -141,15 +141,13 @@ async def update_cleanday(cleanday_id: str, cleanday: UpdateCleanday,
     return static_cleanday_repo.get_by_key(cleanday_id)
 
 
-@router.post("/{cleanday_id}/images")
-async def create_cleanday_images(cleanday_id: str, images: CreateImages,
-                                 current_user: User = Depends(get_current_user)):
-    return {"message": "Picture uploaded successfully", "cleanday_id": cleanday_id}
-
-
 @router.get("/{cleanday_id}/images")
 async def get_cleanday_images(cleanday_id: str) -> ImageListResponse:
-    return ImageListResponse(contents=[])
+    images = static_cleanday_repo.get_images(cleanday_id)
+    if images is None:
+        raise HTTPException(status_code=404, detail="Cleanday not found")
+
+    return ImageListResponse(contents=images)
 
 
 @router.get("/{cleanday_id}/members")
@@ -335,7 +333,56 @@ async def update_participation(cleanday_id: str, participation: UpdateParticipat
 
 
 @router.post("/{cleanday_id}/end")
-async def end_cleanday(cleanday_id: str):
+async def end_cleanday(cleanday_id: str, results: CleandayResults,
+                       current_user: User = Depends(get_current_user)):
+    cleanday = static_cleanday_repo.get_by_key(cleanday_id)
+    if cleanday is None:
+        raise HTTPException(status_code=404, detail="Cleanday not found")
+
+    if cleanday.organizer_key != current_user.key:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Insufficient permissions")
+
+    if cleanday.status == CleanDayStatus.ENDED:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cleanday already ended")
+
+    trans = database.begin_transaction(
+        read=['Participation', 'participation_in', 'has_participation', 'CleanDay'],
+        write=['Participation', 'Log', 'CleanDay', 'relates_to_cleanday', 'Image', 'cleanday_image']
+    )
+    try:
+        cleanday_repo = CleandayRepo(trans)
+        log_repo = LogRepo(trans)
+
+        participation_repo = ParticipationRepo(trans)
+
+        cleanday_repo.update(cleanday_id,
+                             repo_model.UpdateCleanday(results=results.results,
+                                                       status=CleanDayStatus.ENDED))
+
+        for user_key in results.participated_user_keys:
+            participation_repo.update(
+                user_key, cleanday_id,
+                repo_model.UpdateParticipation(real_presence=True, stat=cleanday.area)
+            )
+
+        cleanday_repo.create_images(cleanday_id, results.images)
+
+        log_repo.create(
+            repo_model.CreateLog(
+                date=datetime.now(UTC),
+                type='EndCleanday',
+                description=f'Субботник завершён',
+                keys=repo_model.LogRelations(
+                    cleanday_key=cleanday_id
+                )
+            )
+        )
+
+    except Exception as e:
+        trans.abort_transaction()
+        raise e
+    else:
+        trans.commit_transaction()
     return
 
 

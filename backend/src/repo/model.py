@@ -47,6 +47,8 @@ class UpdateCleanday(BaseModel):
     description: Optional[str] = None
     recommended_count: Optional[int] = None
     tags: Optional[list[CleanDayTag]] = None
+    results: Optional[list[str]] = None
+    status: Optional[CleanDayStatus] = None
 
 
 class UpdateParticipation(BaseModel):
