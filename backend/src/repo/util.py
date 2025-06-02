@@ -56,6 +56,15 @@ def get_cleanday_page(db: StandardDatabase, header_query: str, params: GetCleand
             if field_name in time_fields:
                 bind_vars[to_filter] = bind_vars[to_filter].isoformat()
 
+    if 'search_query' in params_dict and 'search_query' != "":
+        all_contains = [
+            f'CONTAINS(LOWER(cleanday.{contains_filter}), LOWER(@search_query))' for contains_filter in contains_filters
+        ]
+        filters.append(
+            f"    FILTER({' OR '.join(all_contains)})"
+        )
+        bind_vars['search_query'] = params_dict['search_query']
+
     query = f"""
         LET count = COUNT(
             {header_query}
