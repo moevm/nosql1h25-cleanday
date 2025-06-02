@@ -573,7 +573,7 @@ class UserRepo:
             bind_vars={"user_key": user_key, "file": image_data},
         )
 
-    def get_image(self, user_key: str) -> Optional:
+    def get_image(self, user_key: str) -> Optional[Image]:
 
         if not self.get_raw_by_key(user_key):
             return None
