@@ -6,57 +6,24 @@ import {
     DialogActions,
     Button,
     TextField,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
     Grid,
     Box,
     Typography,
     IconButton,
     Paper,
-    Alert,
+    Alert, Autocomplete,
 } from '@mui/material';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
-
-// Список городов для выпадающего списка
-const CITIES = [
-    'Москва',
-    'Санкт-Петербург',
-    'Новосибирск',
-    'Екатеринбург',
-    'Казань',
-    'Нижний Новгород',
-    'Челябинск',
-    'Самара',
-    'Омск',
-    'Ростов-на-Дону',
-    'Уфа',
-    'Красноярск',
-    'Воронеж',
-    'Пермь',
-    'Волгоград'
-];
+import {City, CreateLocationData} from "../../models/User.ts";
 
 // Максимальный размер файла (3 МБ)
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
 
 // Допустимые типы файлов
 const ACCEPTED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
-
-/**
- * Интерфейс для создаваемой локации
- */
-interface CreateLocationData {
-    name: string;
-    city: string;
-    address: string;
-    images: File[];
-    additionalInfo: string;
-}
 
 /**
  * Интерфейс для пропсов компонента CreateLocationDialog
@@ -81,13 +48,21 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
 }: CreateLocationDialogProps): React.JSX.Element => {
     // Состояния формы
     const [name, setName] = useState<string>('');
-    const [city, setCity] = useState<string>('');
+    const [city, setCity] = useState<City | null>(null);
     const [address, setAddress] = useState<string>('');
     const [additionalInfo, setAdditionalInfo] = useState<string>('');
     const [images, setImages] = useState<File[]>([]);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
     const [fileError, setFileError] = useState<string | null>(null);
+
+    const cities: City[] = [
+        { key: '1', name: 'Москва' },
+        { key: '2', name: 'Санкт-Петербург' },
+        { key: '3', name: 'Новосибирск' },
+        { key: '4', name: 'Екатеринбург' },
+        { key: '5', name: 'Казань' },
+    ];
 
     // Ref для скрытого input загрузки файлов
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,7 +119,7 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
         if (validateForm()) {
             const locationData: CreateLocationData = {
                 name: name.trim(),
-                city,
+                city: city?.name || '',
                 address: address.trim(),
                 images,
                 additionalInfo: additionalInfo.trim(),
@@ -160,7 +135,7 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
     const handleClose = () => {
         // Сброс формы
         setName('');
-        setCity('');
+        setCity(null);
         setAddress('');
         setAdditionalInfo('');
         setImages([]);
@@ -182,10 +157,10 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const fileList = event.target.files;
         setFileError(null);
-        
+
         if (fileList && fileList.length > 0) {
             const validFiles: File[] = [];
-            
+
             // Проверяем каждый файл
             for (let i = 0; i < fileList.length; i++) {
                 const file = fileList[i];
@@ -196,7 +171,7 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                     break;
                 }
             }
-            
+
             // Добавляем только валидные файлы
             if (validFiles.length > 0) {
                 setImages(prevImages => [...prevImages, ...validFiles]);
@@ -243,6 +218,10 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
         }
     };
 
+    const handleCityChange = (_event: any, value: City | null) => {
+        setCity(value);
+    };
+
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle>Создание новой локации</DialogTitle>
@@ -262,27 +241,22 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
 
                     {/* Выбор города */}
                     <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth error={!!errors.city}>
-                            <InputLabel id="city-label">Город</InputLabel>
-                            <Select
-                                labelId="city-label"
-                                id="city"
-                                value={city}
-                                label="Город"
-                                onChange={(e) => setCity(e.target.value)}
-                            >
-                                {CITIES.map((cityName) => (
-                                    <MenuItem key={cityName} value={cityName}>
-                                        {cityName}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                            {errors.city && (
-                                <Typography color="error" variant="caption">
-                                    {errors.city}
-                                </Typography>
+                        <Autocomplete
+                            options={cities}
+                            getOptionLabel={(option) => option.name}
+                            value={city}
+                            onChange={handleCityChange}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Город"
+                                    variant="outlined"
+                                    required
+                                    error={!!errors.city}
+                                    helperText={errors.city}
+                                />
                             )}
-                        </FormControl>
+                        />
                     </Grid>
 
                     {/* Адрес локации */}
@@ -299,13 +273,13 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
 
                     {/* Карусель изображений */}
                     <Grid item xs={12}>
-                        <Paper 
-                            variant="outlined" 
-                            sx={{ 
-                                p: 2, 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                alignItems: 'center' 
+                        <Paper
+                            variant="outlined"
+                            sx={{
+                                p: 2,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center'
                             }}
                         >
                             <Typography variant="subtitle1" gutterBottom>
@@ -315,11 +289,11 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                             {images.length > 0 ? (
                                 <Box sx={{ width: '100%', position: 'relative' }}>
                                     {/* Текущее изображение */}
-                                    <Box 
-                                        sx={{ 
-                                            height: 300, 
-                                            display: 'flex', 
-                                            justifyContent: 'center', 
+                                    <Box
+                                        sx={{
+                                            height: 300,
+                                            display: 'flex',
+                                            justifyContent: 'center',
                                             alignItems: 'center',
                                             mb: 2
                                         }}
@@ -327,10 +301,10 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                                         <img
                                             src={URL.createObjectURL(images[currentImageIndex])}
                                             alt={`Изображение ${currentImageIndex + 1}`}
-                                            style={{ 
-                                                maxHeight: '100%', 
-                                                maxWidth: '100%', 
-                                                objectFit: 'contain' 
+                                            style={{
+                                                maxHeight: '100%',
+                                                maxWidth: '100%',
+                                                objectFit: 'contain'
                                             }}
                                         />
                                     </Box>
@@ -346,8 +320,8 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                                         <IconButton onClick={handleNextImage} disabled={images.length <= 1}>
                                             <NavigateNextIcon />
                                         </IconButton>
-                                        <IconButton 
-                                            color="error" 
+                                        <IconButton
+                                            color="error"
                                             onClick={() => handleDeleteImage(currentImageIndex)}
                                         >
                                             <DeleteIcon />
@@ -355,12 +329,12 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                                     </Box>
                                 </Box>
                             ) : (
-                                <Box 
-                                    sx={{ 
-                                        height: 150, 
-                                        width: '100%', 
-                                        display: 'flex', 
-                                        justifyContent: 'center', 
+                                <Box
+                                    sx={{
+                                        height: 150,
+                                        width: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'center',
                                         alignItems: 'center',
                                         border: '2px dashed grey.300',
                                         borderRadius: 1,
@@ -389,7 +363,7 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                                 onChange={handleFileChange}
                                 style={{ display: 'none' }}
                             />
-                            
+
                             {/* Отображение ошибки файла */}
                             {fileError && (
                                 <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
@@ -413,16 +387,16 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                 </Grid>
             </DialogContent>
             <DialogActions>
-                <Button 
-                    onClick={handleSubmit} 
-                    color="success" 
+                <Button
+                    onClick={handleSubmit}
+                    color="success"
                     variant="contained"
                 >
                     Создать
                 </Button>
-                <Button 
-                    onClick={handleClose} 
-                    color="primary" 
+                <Button
+                    onClick={handleClose}
+                    color="primary"
                     variant="text"
                 >
                     Отмена
