@@ -1,11 +1,14 @@
-import './StatisticsPage.css'
+import './StatisticsPage.css';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import Notification from '../../components/Notification';
 
+
 import './StatisticsPage.css'; // You can create this file for custom styling
-import {StatisticData} from '../../models/User';
+import { StatisticData } from '../../models/User';
+import ExportConfirmationDialog from "../../components/dialog/ExportConfirmationDialog.tsx";
+import ImportDialog from "../../components/dialog/ImportDialog.tsx";
 
 /**
  * StatisticsPage: Компонент страницы для отображения статистики приложения.
@@ -36,14 +39,28 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
     const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
     const [notificationSeverity, setNotificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
 
+    // Состояние для управления диалогом подтверждения экспорта
+    const [isExportDialogOpen, setExportDialogOpen] = React.useState<boolean>(false);
+
+    // Состояние для управления диалогом импорта
+    const [isImportDialogOpen, setImportDialogOpen] = React.useState<boolean>(false);
+
     // TODO: Реализуйте обработку
     /**
      * Обработчик нажатия кнопки импорта.
-     * В данной реализации выводит сообщение в консоль и отображает уведомление об успехе.
-     * В реальном приложении запускал бы процесс импорта данных из внешнего источника.
+     * Показывает диалог импорта.
      */
     const handleImportButtonClick = () => {
-        console.log('Import button clicked');
+        setImportDialogOpen(true);
+    };
+
+    /**
+     * Обработчик подтверждения импорта.
+     * В данной реализации выводит сообщение в консоль и отображает уведомление об успехе.
+     * @param {File} file - Импортируемый файл.
+     */
+    const handleImportConfirm = (file: File) => {
+        console.log('Import confirmed with file:', file);
         setNotificationMessage('Успешный импорт');
         setNotificationSeverity('success');
     };
@@ -51,11 +68,18 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
     // TODO: Реализуйте обработку
     /**
      * Обработчик нажатия кнопки экспорта.
-     * В данной реализации выводит сообщение в консоль и отображает уведомление об успехе.
-     * В реальном приложении запускал бы процесс экспорта данных во внешний файл.
+     * Показывает диалог подтверждения экспорта.
      */
     const handleExportButtonClick = () => {
-        console.log('Export button clicked');
+        setExportDialogOpen(true);
+    };
+
+    /**
+     * Обработчик подтверждения экспорта.
+     * В данной реализации выводит сообщение в консоль и отображает уведомление об успехе.
+     */
+    const handleExportConfirm = () => {
+        console.log('Export confirmed');
         setNotificationMessage('Успешный экспорт');
         setNotificationSeverity('success');
     };
@@ -66,6 +90,20 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
      */
     const handleNotificationClose = () => {
         setNotificationMessage(null);
+    };
+
+    /**
+     * Обработчик закрытия диалога подтверждения экспорта.
+     */
+    const handleExportDialogClose = () => {
+        setExportDialogOpen(false);
+    };
+
+    /**
+     * Обработчик закрытия диалога импорта.
+     */
+    const handleImportDialogClose = () => {
+        setImportDialogOpen(false);
     };
 
     return (
@@ -112,6 +150,26 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
                     onClose={handleNotificationClose}
                 />
             )}
+
+            {/* Диалог подтверждения экспорта */}
+            <ExportConfirmationDialog
+                open={isExportDialogOpen}
+                onClose={handleExportDialogClose}
+                onConfirm={() => {
+                    handleExportConfirm();
+                    handleExportDialogClose();
+                }}
+            />
+
+            {/* Диалог импорта */}
+            <ImportDialog
+                open={isImportDialogOpen}
+                onClose={handleImportDialogClose}
+                onImport={(file) => {
+                    handleImportConfirm(file);
+                    handleImportDialogClose();
+                }}
+            />
         </Box>
     );
 };
