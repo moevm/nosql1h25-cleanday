@@ -12,6 +12,7 @@ import { useAuth } from "../../pages/Menu/Menu.tsx";
 import { ExitToApp } from "@mui/icons-material";
 import CreateCleandayDialog from "../dialog/CreateCleandayDialog.tsx";
 import { Location, CreateCleanday } from "../../models/User.ts";
+import LogoutConfirmationDialog from "../dialog/LogoutConfirmationDialog";
 
 const locationsMock: Location[] = [
     {
@@ -34,13 +35,22 @@ const Appbar = ({}) => {
     const location = useLocation();
     const showAppbar = location.pathname !== "/" && location.pathname !== "/register" && location.pathname !== "/authorization";
 
-    // Состояние открытия диалога
+    // Состояние открытия диалога для создания субботника
     const [openDialog, setOpenDialog] = React.useState(false);
+
+    // Состояние для диалога подтверждения выхода
+    const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
 
     // TODO: Реализуйте обработку создания субботника
     const handleCleandaySubmit = (data: CreateCleanday) => {
         // Например, сделать POST-запрос, добавить в список, обновить состояние и т.д.
         console.log('Создан субботник:', data);
+    };
+
+    // Обработчик подтверждения выхода
+    const handleLogout = () => {
+        UserLogoutToken();
+        navigate('/'); // Перенаправляем на главную после логаута
     };
 
     return (
@@ -121,10 +131,7 @@ const Appbar = ({}) => {
                     size="large"
                     color="inherit"
                     sx={{ '&:focus': { outline: 'none' }, }}
-                    onClick={() => {
-                        UserLogoutToken();
-                        navigate('/');  // Перенаправляем на главную после логаута
-                    }}
+                    onClick={() => setLogoutDialogOpen(true)} // Открытие диалога подтверждения
                 >
                     <ExitToApp />
                 </IconButton>
@@ -135,6 +142,12 @@ const Appbar = ({}) => {
                 onClose={() => setOpenDialog(false)}
                 onSubmit={handleCleandaySubmit}
                 locations={locationsMock}
+            />
+            {/* Диалог подтверждения выхода */}
+            <LogoutConfirmationDialog
+                open={logoutDialogOpen}
+                onClose={() => setLogoutDialogOpen(false)}
+                onConfirm={handleLogout}
             />
         </AppBar>
     );
