@@ -126,8 +126,14 @@ export const Menu = (): React.JSX.Element => {
                     <Toolbar>
                         <Box sx={{flexGrow: 1}}/>
                         <Avatar style={{marginRight: '10px'}}
-                        // Аватар крепить сюда !!!
-                        >{username.charAt(0).toUpperCase()}</Avatar>
+                            // Аватар крепить сюда !!!
+                                onClick={() => {
+                                    {
+                                        navigate('/profile');
+                                    }
+                                }}
+                        >{username.charAt(0).toUpperCase()}
+                        </Avatar>
                         <IconButton
                             size="large"
                             color="inherit"
@@ -142,8 +148,8 @@ export const Menu = (): React.JSX.Element => {
                     </Toolbar>
                 )}
             </AppBar>
-            <Toolbar className="menuToolbar">
-                <Box className="toolbarContent">
+            <Toolbar sx = {{ borderRadius: '8%'}}  className="menuToolbar">
+                <Box   className="toolbarContent">
                     <Typography variant="h2" component="div">
                         Сервис организации субботников
                     </Typography>
@@ -215,6 +221,10 @@ export const Menu = (): React.JSX.Element => {
                             </Button>
                         </Box>
                     )}
+                </Box>
+
+                <Box mt={4} display="flex" justifyContent="center">
+                    <img src="/img.png" alt="Statistics Page" style={{ maxWidth: '100%', height: 'auto' }} />
                 </Box>
             </Container>
         </div>
