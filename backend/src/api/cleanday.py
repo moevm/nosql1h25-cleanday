@@ -35,7 +35,8 @@ async def create_cleanday(cleanday: CreateCleanday,
                                              'has_participation', 'participation_in'],
                                        write=['Location', 'CleanDay', 'in_location', 'Participation',
                                               'has_participation', 'participation_in', 'Requirement',
-                                              'has_requirement', 'Log', 'relates_to_user', 'relates_to_cleanday'])
+                                              'has_requirement', 'Log', 'relates_to_user', 'relates_to_cleanday',
+                                              'relates_to_location'])
     try:
         cleanday_repo = CleandayRepo(trans)
         log_repo = LogRepo(trans)
