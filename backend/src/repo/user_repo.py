@@ -5,7 +5,9 @@ from arango.database import StandardDatabase
 
 from auth.model import RegisterUser
 from data.entity import User, Image, Sex
-from data.query import GetUser, GetUsersParams, GetCleanday, PaginationParams, UserSortField, GetExtendedUser
+from data.query import GetUser, GetUsersParams, GetCleanday, PaginationParams, UserSortField, GetExtendedUser, \
+    GetCleandaysParams
+from repo import util
 from repo.city_repo import CityRepo
 from repo.client import database
 from repo.model import CreateUser, UpdateUser
@@ -336,220 +338,29 @@ class UserRepo:
         )
         return True
 
-    def get_cleandays(self, user_key: str, params: PaginationParams) -> Optional[Tuple[int, list[GetCleanday]]]:
+    def get_cleandays(self, user_key: str, params: GetCleandaysParams) -> Optional[Tuple[int, list[GetCleanday]]]:
         if not self.get_raw_by_key(user_key):
             return None
 
-        cursor = self.db.aql.execute(
-            """
-            LET userId = CONCAT("User/", @user_key)
-            
-            LET cd_count = COUNT(
-                FOR p IN OUTBOUND userId has_participation
-                    FOR cl_day IN OUTBOUND p participation_in
-                        RETURN 1
-            )
-            
-            LET cleandays = (
-                FOR p IN OUTBOUND userId has_participation
-                    FOR cl_day IN OUTBOUND p participation_in
-                        LET cdId = cl_day._id
-                        
-                        LIMIT @offset, @limit
-                        
-                        LET loc = FIRST(
-                            FOR loc IN OUTBOUND cdId in_location
-                                LIMIT 1
-                                RETURN MERGE(loc, {key: loc._key})
-                        )
-                        
-                        LET city = FIRST(
-                            FOR city IN OUTBOUND loc in_city
-                              LIMIT 1
-                              RETURN city
-                        )
-                        
-                        LET participant_count = COUNT(
-                            FOR par IN INBOUND cdId participation_in
-                              FOR user IN INBOUND par has_participation
-                                LIMIT 1
-                                RETURN user
-                        )
-                        
-                        LET requirements = (
-                            FOR req IN OUTBOUND cdId has_requirement 
-                                LET fulfills = COUNT(
-                                    FOR par IN INBOUND req fullfills
-                                        RETURN 1
-                                )
-                                
-                                RETURN MERGE(req, {"users_amount": fulfills, "key": req._key})    
-                        )
-                        
-                        LET created_at = FIRST(
-                            FOR log IN INBOUND cdId relates_to_cleanday
-                                FILTER log.type == "CreateCleanday"
-                                LIMIT 1
-                                RETURN log.date
-                        )
-                        
-                        LET updated_at = NOT_NULL(FIRST(
-                            FOR log IN INBOUND cdId relates_to_cleanday
-                                FILTER log.type == "UpdateCleanday"
-                                SORT log.date DESC
-                                LIMIT 1
-                                RETURN log.date
-                        ), created_at)
-                        
-                        LET organizer = FIRST(
-                            FOR par IN INBOUND cdId participation_in
-                                FILTER par.type == "Организатор"
-                                LIMIT 1
-                                FOR user IN INBOUND par has_participation
-                                    RETURN user.login
-                        )
-                        
-                        LET organizer_key = FIRST(
-                            FOR par IN INBOUND cdId participation_in
-                                FILTER par.type == "Организатор"
-                                LIMIT 1
-                                FOR user IN INBOUND par has_participation
-                                    RETURN user._key
-                        )
-                        
-                        RETURN MERGE(cl_day,
-                        {
-                            "key": cl_day._key,
-                            "city": city.name,
-                            "participant_count": participant_count,
-                            "requirements": requirements,
-                            "location": loc,
-                            "created_at": created_at,
-                            "updated_at": updated_at,
-                            "organizer": organizer,
-                            "organizer_key": organizer_key
-                        }
-                        )
-            )
-            RETURN {
-                "cleandays": cleandays,
-                "count": cd_count
-            }
-            """,
-            bind_vars={"user_key": user_key, "offset": params.offset, "limit": params.limit},
+        return util.get_cleanday_page(
+            self.db,
+            "FOR p IN OUTBOUND @userId has_participation\n\tFOR cl_day IN OUTBOUND p participation_in",
+            params,
+            userId=f"User/{user_key}"
         )
-        result_dict = cursor.next()
-        cleandays = list(map(lambda cd: GetCleanday.model_validate(cd), result_dict["cleandays"]))
 
-        return result_dict["count"], cleandays
-
-    def get_organized(self, user_key: str, params: PaginationParams) -> Optional[Tuple[int, list[GetCleanday]]]:
+    def get_organized(self, user_key: str, params: GetCleandaysParams) -> Optional[Tuple[int, list[GetCleanday]]]:
         if not self.get_raw_by_key(user_key):
             return None
 
-        cursor = self.db.aql.execute(
-            """
-            LET userId = CONCAT("User/", @user_key)
-
-            LET cd_count = COUNT(
-                FOR p IN OUTBOUND userId has_participation
-                    FOR cl_day IN OUTBOUND p participation_in
-                        FILTER p.type == "Организатор"
-                        RETURN 1
-            )
-
-            LET cleandays = (
-                FOR p IN OUTBOUND userId has_participation
-                    FOR cl_day IN OUTBOUND p participation_in
-                        FILTER p.type == "Организатор"
-                        LET cdId = cl_day._id
-
-                        LIMIT @offset, @limit
-
-                        LET loc = FIRST(
-                            FOR loc IN OUTBOUND cdId in_location
-                                LIMIT 1
-                                RETURN MERGE(loc, {key: loc._key})
-                        )
-                        
-                        LET city = FIRST(
-                            FOR city IN OUTBOUND loc in_city
-                              LIMIT 1
-                              RETURN city
-                        )
-
-                        LET participant_count = COUNT(
-                            FOR par IN INBOUND cdId participation_in
-                              FOR user IN INBOUND par has_participation
-                                LIMIT 1
-                                RETURN user
-                        )
-
-                        LET requirements = (
-                            FOR req IN OUTBOUND cdId has_requirement 
-                                LET fulfills = COUNT(
-                                    FOR par IN INBOUND req fullfills
-                                        RETURN 1
-                                )
-
-                                RETURN MERGE(req, {"users_amount": fulfills, "key": req._key})    
-                        )
-                        LET created_at = FIRST(
-                            FOR log IN INBOUND cdId relates_to_cleanday
-                                FILTER log.type == "CreateCleanday"
-                                LIMIT 1
-                                RETURN log.date
-                        )
-                        
-                        LET updated_at = NOT_NULL(FIRST(
-                            FOR log IN INBOUND cdId relates_to_cleanday
-                                FILTER log.type == "UpdateCleanday"
-                                SORT log.date DESC
-                                LIMIT 1
-                                RETURN log.date
-                        ), created_at)
-                        
-                        LET organizer = FIRST(
-                            FOR par IN INBOUND cdId participation_in
-                                FILTER par.type == "Организатор"
-                                LIMIT 1
-                                FOR user IN INBOUND par has_participation
-                                    RETURN user.login
-                        )
-                        LET organizer_key = FIRST(
-                            FOR par IN INBOUND cdId participation_in
-                                FILTER par.type == "Организатор"
-                                LIMIT 1
-                                FOR user IN INBOUND par has_participation
-                                    RETURN user._key
-                        )
-                        
-                        RETURN MERGE(cl_day,
-                        {
-                            "key": cl_day._key,
-                            "city": city.name,
-                            "participant_count": participant_count,
-                            "requirements": requirements,
-                            "location": loc,
-                            "created_at": created_at,
-                            "updated_at": updated_at,
-                            "organizer": organizer,
-                            "organizer_key": organizer_key
-                        }
-                        )
-            )
-            RETURN {
-                "cleandays": cleandays,
-                "count": cd_count
-            }
-            """,
-            bind_vars={"user_key": user_key, "offset": params.offset, "limit": params.limit},
+        return util.get_cleanday_page(
+            self.db,
+            "FOR p IN OUTBOUND @userId has_participation\n\tFOR cl_day IN OUTBOUND p participation_in\n"
+            "\t\tFILTER p.type == \"Организатор\"",
+            params,
+            userId=f"User/{user_key}"
         )
-        result_dict = cursor.next()
-        cleandays = list(map(lambda cd: GetCleanday.model_validate(cd), result_dict["cleandays"]))
 
-        return result_dict["count"], cleandays
-        pass
 
     def set_image(self, user_key: str, image_data: str):
         if not self.get_raw_by_key(user_key):

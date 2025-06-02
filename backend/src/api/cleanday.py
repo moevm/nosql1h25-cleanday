@@ -8,7 +8,8 @@ from auth.service import get_current_user
 from data.entity import CleanDayStatus, CleanDay, User, CleanDayTag, Comment
 from data.query import GetCleandaysParams, CleandayListResponse, GetCleanday, UserListResponse, GetMembersParams, \
     PaginationParams, CleandayLogListResponse, CommentListResponse, UpdateCleanday, CreateCleanday, CreateImages, \
-    ImageListResponse, UpdateParticipation, CreateParticipation, CleandayResults
+    ImageListResponse, UpdateParticipation, CreateParticipation, CleandayResults, GetCleandayLogsParams, \
+    GetCommentsParams
 from repo.cleanday_repo import CleandayRepo
 from repo.client import database
 import repo.model as repo_model
@@ -161,7 +162,7 @@ async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersPara
 
 
 @router.get("/{cleanday_id}/logs")
-async def get_cleanday_logs(cleanday_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayLogListResponse:
+async def get_cleanday_logs(cleanday_id: str, query: Annotated[GetCleandayLogsParams, Query()]) -> CleandayLogListResponse:
     page_res = static_cleanday_repo.get_logs(cleanday_id, query)
     if page_res is None:
         raise HTTPException(status_code=404, detail="Cleanday not found")
@@ -170,7 +171,7 @@ async def get_cleanday_logs(cleanday_id: str, query: Annotated[PaginationParams,
 
 
 @router.get("/{cleanday_id}/comments")
-async def get_cleanday_comments(cleanday_id: str, query: Annotated[PaginationParams, Query()]) -> CommentListResponse:
+async def get_cleanday_comments(cleanday_id: str, query: Annotated[GetCommentsParams, Query()]) -> CommentListResponse:
     page_res = static_cleanday_repo.get_comments(cleanday_id, query)
     if page_res is None:
         raise HTTPException(status_code=404, detail="Cleanday not found")

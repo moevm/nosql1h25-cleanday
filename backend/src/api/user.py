@@ -7,7 +7,7 @@ from auth.service import get_current_user
 import auth.service as auth_service
 from data.entity import User, Image
 from data.query import GetUsersParams, UserListResponse, GetUser, CleandayListResponse, PaginationParams, UpdateUser, \
-    CreateCleanday, GetExtendedUser, SetAvatar
+    CreateCleanday, GetExtendedUser, SetAvatar, GetCleandaysParams
 from repo.client import database
 from repo.log_repo import LogRepo
 from repo.model import CreateLog, LogRelations
@@ -144,7 +144,7 @@ async def upload_user_avatar(user_id: str, avatar: SetAvatar,
 
 
 @router.get("/{user_id}/cleandays")
-async def get_user_cleandays(user_id: str, query: Annotated[PaginationParams, Query()]) -> CleandayListResponse:
+async def get_user_cleandays(user_id: str, query: Annotated[GetCleandaysParams, Query()]) -> CleandayListResponse:
     res = static_user_repo.get_cleandays(user_id, query)
     if not res:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -154,7 +154,7 @@ async def get_user_cleandays(user_id: str, query: Annotated[PaginationParams, Qu
 
 @router.get("/{user_id}/organized")
 async def get_user_organized_cleandays(user_id: str,
-                                       query: Annotated[PaginationParams, Query()]) -> CleandayListResponse:
+                                       query: Annotated[GetCleandaysParams, Query()]) -> CleandayListResponse:
     res = static_user_repo.get_organized(user_id, query)
     if not res:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

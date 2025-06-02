@@ -273,3 +273,34 @@ class CleandayResults(BaseModel):
     participated_user_keys: list[str]
     results: list[str]
     images: list[CreateImage]
+
+
+class LogSortField(StrEnum):
+    DATE = auto()
+
+
+class GetCleandayLogsParams(PaginationParams):
+    sort_by: LogSortField = LogSortField.DATE
+    sort_order: SortOrder = SortOrder.DESC
+
+    type: Optional[str] = None
+    description: Optional[str] = None
+    search_query: Optional[str] = None
+    user_login: Optional[str] = None
+    location_address: Optional[str] = None
+    comment_text: Optional[str] = None
+
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None
+
+
+class GetCommentsParams(PaginationParams):
+    sort_by: LogSortField = LogSortField.DATE
+    sort_order: SortOrder = SortOrder.DESC
+
+    search_query: Optional[str] = None
+
+    user_login: Optional[str] = None
+    text: Optional[str] = None
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None

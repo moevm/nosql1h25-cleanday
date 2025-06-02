@@ -7,20 +7,12 @@ from arango.database import StandardDatabase
 
 from data.entity import CleanDay, CleanDayTag, CleanDayStatus, ParticipationType, Requirement, Image
 from data.query import GetCleanday, GetCleandaysParams, GetUser, GetMembersParams, PaginationParams, CleandayLog, \
-    GetComment, GetMember
+    GetComment, GetMember, GetCleandayLogsParams, GetCommentsParams
+from repo import util
 from repo.client import database
 from repo.location_repo import LocationRepo
 from repo.model import CreateCleanday, UpdateCleanday, CreateImage
 from repo.user_repo import setup_get_users_params
-
-contains_filters = ['name', 'organization', 'organizer']
-
-from_filters = ['begin_date_from', 'end_date_from', 'area_from', 'recommended_count_from', 'participant_count_from',
-                'created_at_from', 'updated_at_from']
-to_filters = ['begin_date_to', 'end_date_to', 'area_to', 'recommended_count_to', 'participant_count_to',
-              'created_at_to', 'updated_at_to']
-
-time_fields = ['begin_date', 'end_date', 'created_at', 'updated_at']
 
 
 class DeleteReqResult(StrEnum):
@@ -28,6 +20,16 @@ class DeleteReqResult(StrEnum):
     REQUIREMENT_DOES_NOT_EXIST = auto()
     CLEANDAY_DOES_NOT_MATCH = auto()
     SUCCESS = auto()
+
+
+log_contains_filters = ['type', 'description']
+log_from_filters = ['date_from']
+log_to_filters = ['date_to']
+time_fields = ['date']
+
+comment_contains_filters = ['text']
+comment_from_filters = ['date_from']
+comment_to_filters = ['date_to']
 
 
 class CleandayRepo:
@@ -123,227 +125,11 @@ class CleandayRepo:
         return GetCleanday.model_validate(cleanday_dict)
 
     def get_page(self, params: GetCleandaysParams) -> (int, list[GetCleanday]):
-        params_dict = params.model_dump(exclude_none=True)
-        filters = []
-        bind_vars = {
-            "offset": params.offset,
-            "limit": params.limit
-        }
-
-        for contains_filter in contains_filters:
-            if contains_filter in params_dict:
-                filters.append(
-                    f"    FILTER CONTAINS(LOWER(cleanday.{contains_filter}), LOWER(@{contains_filter}))"
-                )
-                bind_vars[contains_filter] = params_dict[contains_filter]
-
-        if "status" in params_dict:
-            filters.append("    FILTER cleanday.status IN @status")
-            bind_vars["status"] = params_dict["status"]
-
-        if "tags" in params_dict:
-            filters.append("    FILTER cleanday.tags ANY IN @tags")
-            bind_vars["tags"] = params_dict["tags"]
-
-        for from_filter in from_filters:
-            if from_filter in params_dict:
-                field_name = from_filter[:-5]
-                filters.append(
-                    f"    FILTER cleanday.{field_name} >= @{from_filter}"
-                )
-                bind_vars[from_filter] = params_dict[from_filter]
-                if field_name in time_fields:
-                    bind_vars[from_filter] = bind_vars[from_filter].isoformat()
-
-        for to_filter in to_filters:
-            if to_filter in params_dict:
-                field_name = to_filter[:-3]
-                filters.append(
-                    f"    FILTER cleanday.{field_name} <= @{to_filter}"
-                )
-                bind_vars[to_filter] = params_dict[to_filter]
-                if field_name in time_fields:
-                    bind_vars[to_filter] = bind_vars[to_filter].isoformat()
-
-        query = f"""
-            LET count = COUNT(
-                FOR cl_day IN CleanDay
-                    LET cdId = cl_day._id     
-                    LET loc = FIRST(
-                        FOR loc IN OUTBOUND cdId in_location
-                            LIMIT 1
-                            RETURN MERGE(loc, {{key: loc._key}})
-                    )
-                    
-                    LET city = FIRST(
-                        FOR city IN OUTBOUND loc in_city
-                          LIMIT 1
-                          RETURN city
-                    )
-        
-                    LET participant_count = COUNT(
-                        FOR par IN INBOUND cdId participation_in
-                          FOR user IN INBOUND par has_participation
-                            LIMIT 1
-                            RETURN 1
-                    )
-        
-                    LET requirements = (
-                        FOR req IN OUTBOUND cdId has_requirement 
-                            LET fulfills = COUNT(
-                                FOR par IN INBOUND req fullfills
-                                    RETURN 1
-                            )
-        
-                            RETURN MERGE(req, {{"users_amount": fulfills, "key": req._key}})    
-                    )
-                    LET created_at = FIRST(
-                        FOR log IN INBOUND cdId relates_to_cleanday
-                            FILTER log.type == "CreateCleanday"
-                            LIMIT 1
-                            RETURN log.date
-                    )
-                    
-                    LET updated_at = NOT_NULL(FIRST(
-                        FOR log IN INBOUND cdId relates_to_cleanday
-                            FILTER log.type == "UpdateCleanday"
-                            SORT log.date DESC
-                            LIMIT 1
-                            RETURN log.date
-                    ), created_at)
-                    
-                    LET organizer = FIRST(
-                        FOR par IN INBOUND cdId participation_in
-                            FILTER par.type == "Организатор"
-                            LIMIT 1
-                            FOR user IN INBOUND par has_participation
-                                RETURN user.login
-                    )
-                    
-                    LET organizer_key = FIRST(
-                        FOR par IN INBOUND cdId participation_in
-                            FILTER par.type == "Организатор"
-                            LIMIT 1
-                            FOR user IN INBOUND par has_participation
-                                RETURN user._key
-                    )
-                    
-                    LET cleanday = MERGE(cl_day,
-                    {{
-                        "key": cl_day._key,
-                        "city": city.name,
-                        "participant_count": participant_count,
-                        "requirements": requirements,
-                        "location": loc,
-                        "created_at": created_at,
-                        "updated_at": updated_at,
-                        "organizer": organizer,
-                        "organizer_key": organizer_key,
-                    }})
-                    
-                {'\n'.join(filters)}
-                    
-                    RETURN cleanday
-            )
-            
-            LET page = (
-                 FOR cl_day IN CleanDay
-                    LET cdId = cl_day._id     
-                    LET loc = FIRST(
-                        FOR loc IN OUTBOUND cdId in_location
-                            LIMIT 1
-                            RETURN MERGE(loc, {{key: loc._key}})
-                    )
-                    
-                    LET city = FIRST(
-                        FOR city IN OUTBOUND loc in_city
-                          LIMIT 1
-                          RETURN city
-                    )
-        
-                    LET participant_count = COUNT(
-                        FOR par IN INBOUND cdId participation_in
-                          FOR user IN INBOUND par has_participation
-                            LIMIT 1
-                            RETURN 1
-                    )
-        
-                    LET requirements = (
-                        FOR req IN OUTBOUND cdId has_requirement 
-                            LET fulfills = COUNT(
-                                FOR par IN INBOUND req fullfills
-                                    RETURN 1
-                            )
-        
-                            RETURN MERGE(req, {{"users_amount": fulfills, "key": req._key}})    
-                    )
-                    
-                    LET created_at = FIRST(
-                        FOR log IN INBOUND cdId relates_to_cleanday
-                            FILTER log.type == "CreateCleanday"
-                            LIMIT 1
-                            RETURN log.date
-                    )
-                    
-                    LET updated_at = NOT_NULL(FIRST(
-                        FOR log IN INBOUND cdId relates_to_cleanday
-                            FILTER log.type == "UpdateCleanday"
-                            SORT log.date DESC
-                            LIMIT 1
-                            RETURN log.date
-                    ), created_at)
-                    
-                    LET organizer = FIRST(
-                        FOR par IN INBOUND cdId participation_in
-                            FILTER par.type == "Организатор"
-                            LIMIT 1
-                            FOR user IN INBOUND par has_participation
-                                RETURN user.login
-                    )
-                    
-                    LET organizer_key = FIRST(
-                        FOR par IN INBOUND cdId participation_in
-                            FILTER par.type == "Организатор"
-                            LIMIT 1
-                            FOR user IN INBOUND par has_participation
-                                RETURN user._key
-                    )
-                    
-                    LET cleanday = MERGE(cl_day,
-                    {{
-                        "key": cl_day._key,
-                        "city": city.name,
-                        "participant_count": participant_count,
-                        "requirements": requirements,
-                        "location": loc,
-                        "created_at": created_at,
-                        "updated_at": updated_at,
-                        "organizer": organizer,
-                        "organizer_key": organizer_key
-                    }})
-                    
-                {'\n'.join(filters)}
-                
-                    SORT cleanday.{params.sort_by} {params.sort_order}
-                    LIMIT @offset, @limit
-                    
-                    RETURN cleanday           
-            )
-            
-            RETURN {{
-                    "page": page,
-                    "count": count
-                    }}
-            """
-
-        print(query)
-
-        cursor = self.db.aql.execute(query, bind_vars=bind_vars)
-        result_dict = cursor.next()
-
-        cleanday_page = list(map(lambda c: GetCleanday.model_validate(c), result_dict["page"]))
-
-        return result_dict["count"], cleanday_page
+        return util.get_cleanday_page(
+            self.db,
+            "FOR cl_day IN CleanDay",
+            params
+        )
 
     def get_raw_by_key(self, cleanday_key: str) -> Optional[CleanDay]:
         cursor = self.db.aql.execute(
@@ -612,56 +398,144 @@ class CleandayRepo:
         return page_dict["count"], list(map(lambda u: GetMember.model_validate(u), page_dict["page"]))
         pass
 
-    def get_logs(self, cleanday_key: str, params: PaginationParams) -> Optional[Tuple[int, list[CleandayLog]]]:
+    def get_logs(self, cleanday_key: str, params: GetCleandayLogsParams) -> Optional[Tuple[int, list[CleandayLog]]]:
         if self.get_raw_by_key(cleanday_key) is None:
             return None
 
-        bind_vars = params.model_dump()
+        bind_vars = params.model_dump(exclude_none=True)
         bind_vars["cleanday_key"] = cleanday_key
+        bind_vars.pop('sort_order')
+        bind_vars.pop('sort_by')
 
-        cursor = self.db.aql.execute(
-            """
+        filters = []
+
+        for contains_filter in log_contains_filters:
+            if contains_filter in bind_vars:
+                filters.append(
+                    f"    FILTER CONTAINS(LOWER(full_log.{contains_filter}), LOWER(@{contains_filter}))"
+                )
+
+        for from_filter in log_from_filters:
+            if from_filter in bind_vars:
+                field_name = from_filter[:-5]
+                filters.append(
+                    f"    FILTER full_log.{field_name} >= @{from_filter}"
+                )
+                if field_name in time_fields:
+                    bind_vars[from_filter] = bind_vars[from_filter].isoformat()
+
+        for to_filter in log_to_filters:
+            if to_filter in bind_vars:
+                field_name = to_filter[:-3]
+                filters.append(
+                    f"    FILTER full_log.{field_name} <= @{to_filter}"
+                )
+                if field_name in time_fields:
+                    bind_vars[to_filter] = bind_vars[to_filter].isoformat()
+
+        if 'user_login' in bind_vars:
+            filters.append(
+                f"    FILTER CONTAINS(LOWER(full_log.user.login), LOWER(@user_login))"
+            )
+
+        if 'location_address' in bind_vars:
+            filters.append(
+                f"    FILTER CONTAINS(LOWER(full_log.location.address), LOWER(@location_address))"
+            )
+
+        if 'comment_text' in bind_vars:
+            filters.append(
+                f"    FILTER CONTAINS(LOWER(full_log.comment.text), LOWER(@comment_text))"
+            )
+
+        if 'search_query' in bind_vars and bind_vars['search_query'] == "":
+            bind_vars.pop('search_query')
+
+        if 'search_query' in bind_vars:
+            filters.append(
+                f"    FILTER (CONTAINS(LOWER(full_log.comment.text), LOWER(@search_query)) OR "
+                f"CONTAINS(LOWER(full_log.location.address), LOWER(@search_query)) OR "
+                f"CONTAINS(LOWER(full_log.user.login), LOWER(@search_query)) OR "
+                f"CONTAINS(LOWER(full_log.type), LOWER(@search_query)) OR "
+                f"CONTAINS(LOWER(full_log.description), LOWER(@search_query)))"
+            )
+
+        query = f"""
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
             
             LET count = COUNT(
                 FOR log IN INBOUND cdId relates_to_cleanday
+                    LET user = FIRST(
+                        FOR usr IN OUTBOUND log relates_to_user
+                            LIMIT 1
+                            RETURN MERGE(usr, {{password: "", key: usr._key}})
+                    )
+                    LET comment = FIRST(
+                        FOR comm IN OUTBOUND log relates_to_comment
+                            LIMIT 1
+                            RETURN MERGE(comm, {{key: comm._key}})
+                    )
+                    LET location = FIRST(
+                        FOR loc IN OUTBOUND log relates_to_location
+                            LIMIT 1
+                            RETURN MERGE(loc, {{key: loc._key}})
+                    )
+                    
+                    LET full_log = MERGE(log, {{
+                        user: user,
+                        comment: comment,
+                        key: log._key,
+                        location: location
+                    }})
+                    
+                    {'\n'.join(filters)}
+                    
                     RETURN 1
             )
             
             LET page = (
                 FOR log IN INBOUND cdId relates_to_cleanday
-                    SORT log.date
-                    
+                             
                     LET user = FIRST(
                         FOR usr IN OUTBOUND log relates_to_user
                             LIMIT 1
-                            RETURN MERGE(usr, {password: "", key: usr._key})
+                            RETURN MERGE(usr, {{password: "", key: usr._key}})
                     )
                     LET comment = FIRST(
                         FOR comm IN OUTBOUND log relates_to_comment
                             LIMIT 1
-                            RETURN MERGE(comm, {key: comm._key})
+                            RETURN MERGE(comm, {{key: comm._key}})
                     )
                     LET location = FIRST(
                         FOR loc IN OUTBOUND log relates_to_location
                             LIMIT 1
-                            RETURN MERGE(loc, {key: loc._key})
+                            RETURN MERGE(loc, {{key: loc._key}})
                     )
-                    LIMIT @offset, @limit
                     
-                    RETURN MERGE(log, {
+                    LET full_log = MERGE(log, {{
                         user: user,
                         comment: comment,
                         key: log._key,
                         location: location
-                    })
+                    }})
+                    
+                    {'\n'.join(filters)}
+                    
+                    LIMIT @offset, @limit
+                    SORT full_log.{params.sort_by} {params.sort_order}
+                    
+                    RETURN full_log
             )
             
-            RETURN {
+            RETURN {{
                 page: page,
                 count: count
-            }
-            """,
+            }}
+            """
+        print(query)
+
+        cursor = self.db.aql.execute(
+            query,
             bind_vars=bind_vars
         )
 
@@ -670,24 +544,57 @@ class CleandayRepo:
         page = list(map(lambda c: CleandayLog.model_validate(c), result_dict["page"]))
         return result_dict["count"], page
 
-    def get_comments(self, cleanday_key: str, params: PaginationParams) -> Optional[Tuple[int, list[GetComment]]]:
+    def get_comments(self, cleanday_key: str, params: GetCommentsParams) -> Optional[Tuple[int, list[GetComment]]]:
         if self.get_raw_by_key(cleanday_key) is None:
             return None
 
-        bind_vars = params.model_dump()
+        bind_vars = params.model_dump(exclude_none=True)
         bind_vars["cleanday_key"] = cleanday_key
 
-        cursor = self.db.aql.execute(
-            """
+        bind_vars.pop('sort_order')
+        bind_vars.pop('sort_by')
+
+        filters = []
+
+        for contains_filter in comment_contains_filters:
+            if contains_filter in bind_vars:
+                filters.append(
+                    f"    FILTER CONTAINS(LOWER(full_comment.{contains_filter}), LOWER(@{contains_filter}))"
+                )
+
+        for from_filter in comment_from_filters:
+            if from_filter in bind_vars:
+                field_name = from_filter[:-5]
+                filters.append(
+                    f"    FILTER full_comment.{field_name} >= @{from_filter}"
+                )
+                if field_name in time_fields:
+                    bind_vars[from_filter] = bind_vars[from_filter].isoformat()
+
+        for to_filter in comment_to_filters:
+            if to_filter in bind_vars:
+                field_name = to_filter[:-3]
+                filters.append(
+                    f"    FILTER full_comment.{field_name} <= @{to_filter}"
+                )
+                if field_name in time_fields:
+                    bind_vars[to_filter] = bind_vars[to_filter].isoformat()
+
+        if 'user_login' in bind_vars:
+            filters.append(
+                f"    FILTER CONTAINS(LOWER(full_comment.author.login), LOWER(@user_login))"
+            )
+
+        if 'search_query' in bind_vars:
+            filters.append(
+                f"    FILTER (CONTAINS(LOWER(full_comment.text), LOWER(@search_query)) OR "
+                f"CONTAINS(LOWER(full_comment.author.login), LOWER(@search_query)))"
+            )
+
+        query = f"""
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
             LET count = COUNT(
                 FOR comment IN OUTBOUND cdId has_comment
-                    RETURN 1
-            )
-            LET page = (
-                FOR comment IN OUTBOUND cdId has_comment
-                    SORT comment.time DESC
-                    LIMIT @offset, @limit
                     LET user = FIRST(
                         FOR par IN INBOUND comment._id authored
                             FOR u IN INBOUND par has_participation
@@ -715,22 +622,78 @@ class CleandayRepo:
                                   FOR p IN OUTBOUND u._id has_participation
                                         RETURN p.stat
                               )
-                              RETURN MERGE(u, {
+                              RETURN MERGE(u, {{
                                 "key": u._key,
                                 "city": city.name,
                                 "cleanday_count": parCount,
                                 "organized_count": orgCount,
                                 "stat": stat
-                              })
+                              }})
                     )
-                    RETURN MERGE(comment, {"author": user, key: comment._key})
+                    LET full_comment = MERGE(comment, {{"author": user, key: comment._key}})
+                    
+                    {'\n'.join(filters)}
+                    
+                    RETURN 1
+            )
+            LET page = (
+                FOR comment IN OUTBOUND cdId has_comment
+                    LET user = FIRST(
+                        FOR par IN INBOUND comment._id authored
+                            FOR u IN INBOUND par has_participation
+                              LIMIT 1
+                              LET city = FIRST(
+                                  FOR city IN OUTBOUND u._id lives_in
+                                    LIMIT 1
+                                    RETURN city
+                              )
+                              
+                              LET parCount = COUNT(
+                                  FOR p IN OUTBOUND u._id has_participation
+                                    FOR cl_day IN OUTBOUND p participation_in
+                                      RETURN cl_day
+                              )
+                              
+                              LET orgCount = COUNT(
+                                  FOR p IN OUTBOUND u._id has_participation
+                                    FILTER p.type == "Организатор"
+                                    FOR cl_day IN OUTBOUND p participation_in
+                                      RETURN cl_day
+                              )
+                              
+                              LET stat = SUM(
+                                  FOR p IN OUTBOUND u._id has_participation
+                                        RETURN p.stat
+                              )
+                              RETURN MERGE(u, {{
+                                "key": u._key,
+                                "city": city.name,
+                                "cleanday_count": parCount,
+                                "organized_count": orgCount,
+                                "stat": stat
+                              }})
+                    )
+                    LET full_comment = MERGE(comment, {{"author": user, key: comment._key}})
+                    
+                    {'\n'.join(filters)}
+                    
+                    SORT comment.{params.sort_by} {params.sort_order}
+                    
+                    LIMIT @offset, @limit
+                    
+                    RETURN full_comment
             )
             
-            RETURN {
+            RETURN {{
                 page: page,
                 count: count
-            }
-            """,
+            }}
+            """
+
+        print(query)
+
+        cursor = self.db.aql.execute(
+            query,
             bind_vars=bind_vars
         )
 
