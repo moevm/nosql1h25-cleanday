@@ -2,14 +2,16 @@ from datetime import datetime
 from typing import Annotated
 
 from pydantic import BaseModel
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 
+from auth.service import get_current_user
 from data.entity import CleanDayStatus, CleanDay
 from data.query import GetCleandaysParams, CleandayListResponse, GetCleanday, UserListResponse, GetMembersParams, \
     PaginationParams, CleandayLogListResponse, CommentListResponse, UpdateCleanday, CreateCleanday, CreateImages, \
     ImageListResponse
 
-router = APIRouter(prefix="/cleandays", tags=["cleanday"])
+router = APIRouter(prefix="/cleandays", tags=["cleanday"],
+                   dependencies=[Depends(get_current_user)])
 
 
 @router.get("/")

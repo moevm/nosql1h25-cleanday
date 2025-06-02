@@ -1,12 +1,14 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 
+from auth.service import get_current_user
 from data.query import GetUsersParams, UserListResponse, GetUser, CleandayListResponse, PaginationParams, UpdateUser, \
     CreateCleanday, GetExtendedUser
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/users", tags=["users"],
+                   dependencies=[Depends(get_current_user)])
 
 
 @router.get("/")
