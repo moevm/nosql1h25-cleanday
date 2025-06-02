@@ -17,37 +17,39 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def register(register_user: RegisterUser) -> AuthToken:
     trans = database.begin_transaction(read=['City', 'User', 'lives_in', 'Log'],
                                        write=['User', 'lives_in', 'relates_to_user', 'Log'])
+    try:
+        user_repo = UserRepo(trans)
+        log_repo = LogRepo(trans)
 
-    user_repo = UserRepo(trans)
-    log_repo = LogRepo(trans)
+        if user_repo.get_raw_by_login(register_user.login):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Login already exists')
 
-    if user_repo.get_raw_by_login(register_user.login):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Login already exists')
+        register_dict = register_user.model_dump()
+        register_dict['score'] = 0
+        register_dict['about_me'] = ""
 
-    register_dict = register_user.model_dump()
-    register_dict['score'] = 0
-    register_dict['about_me'] = ""
+        register_dict['password'] = auth_service.hash_password(register_dict['password'])
 
-    register_dict['password'] = auth_service.hash_password(register_dict['password'])
-
-    create_user = CreateUser(
-        **register_dict
-    )
-
-    user = user_repo.create(create_user)
-
-    if not user_repo.set_city(user.key, register_user.city_id):
-        trans.abort_transaction()
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='City not found')
-
-    log_repo.create(
-        CreateLog(
-            date=datetime.now(),
-            type='CreateUser',
-            description=f"Создан пользователь с логином '{user.login}'",
-            keys=LogRelations(user_key=user.key)
+        create_user = CreateUser(
+            **register_dict
         )
-    )
+
+        user = user_repo.create(create_user)
+
+        if not user_repo.set_city(user.key, register_user.city_id):
+            trans.abort_transaction()
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='City not found')
+
+        log_repo.create(
+            CreateLog(
+                date=datetime.now(),
+                type='CreateUser',
+                description=f"Создан пользователь с логином '{user.login}'",
+                keys=LogRelations(user_key=user.key)
+            )
+        )
+    finally:
+        trans.abort_transaction()
 
     trans.commit_transaction()
 
