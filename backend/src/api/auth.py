@@ -47,11 +47,11 @@ async def register(register_user: RegisterUser) -> AuthToken:
                 keys=LogRelations(user_key=user.key)
             )
         )
-    finally:
+    except Exception as e:
         trans.abort_transaction()
-
-    trans.commit_transaction()
-
+        raise e
+    else:
+        trans.commit_transaction()
     access_token = auth_service.create_access_token(data={"sub": user.login})
     return AuthToken(access_token=access_token, token_type="bearer")
 
