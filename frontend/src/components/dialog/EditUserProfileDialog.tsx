@@ -7,9 +7,6 @@ import {
     Button,
     TextField,
     FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
     RadioGroup,
     FormControlLabel,
     Radio,
@@ -17,7 +14,7 @@ import {
     Box,
     FormHelperText,
     Grid,
-    SelectChangeEvent,
+    Autocomplete,
 } from '@mui/material';
 
 import { UserProfile, UserProfileEdit, UserPic } from '../../models/User.ts';
@@ -151,17 +148,6 @@ const EditUserProfileDialog: React.FC<UserProfileEditDialogProps> = ({
     };
 
     /**
-     * Обработчик изменения значения в выпадающем списке.
-     * Обновляет соответствующее поле в состоянии формы.
-     *
-     * @param {SelectChangeEvent<string>} event - Событие изменения значения выпадающего списка.
-     */
-    const handleSelectChange = (event: SelectChangeEvent<string>) => {
-        const { name, value } = event.target;
-        setFormState(prev => ({ ...prev, [name as string]: value }));
-    };
-
-    /**
      * Обработчик изменения значения радиогруппы (выбор пола).
      * Обновляет поле sex в состоянии формы.
      *
@@ -279,6 +265,10 @@ const EditUserProfileDialog: React.FC<UserProfileEditDialogProps> = ({
             onSubmit(data);
             onClose();
         }
+    };
+
+    const handleCityChange = (_event: React.ChangeEvent<{}>, value: string | null) => {
+        setFormState(prev => ({ ...prev, city: value || '' }));
     };
 
     return (
@@ -414,23 +404,21 @@ const EditUserProfileDialog: React.FC<UserProfileEditDialogProps> = ({
 
                     {/* Выбор города */}
                     <Grid item xs={12}>
-                        <FormControl fullWidth error={!!errors.city}>
-                            <InputLabel id="city-label">Город</InputLabel>
-                            <Select
-                                labelId="city-label"
-                                name="city"
-                                value={city}
-                                label="Город"
-                                onChange={handleSelectChange}
-                            >
-                                {/* Отображение списка доступных городов */}
-                                {cities.map(cityName => (
-                                    <MenuItem key={cityName} value={cityName}>{cityName}</MenuItem>
-                                ))}
-                            </Select>
-                            {/* Отображение ошибки, если город не выбран */}
-                            {errors.city && <FormHelperText>{errors.city}</FormHelperText>}
-                        </FormControl>
+                        <Autocomplete
+                            options={cities}
+                            getOptionLabel={(option) => option}
+                            value={city}
+                            onChange={handleCityChange}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Город"
+                                    fullWidth
+                                    error={!!errors.city}
+                                    helperText={errors.city}
+                                />
+                            )}
+                        />
                     </Grid>
 
                     {/* Поле "О себе" */}
