@@ -536,7 +536,7 @@ class UserRepo:
 
     def set_image(self, user_key: str, image_data: str):
         if not self.get_raw_by_key(user_key):
-            return None
+            return False
 
         self.db.aql.execute(
             """
@@ -545,10 +545,11 @@ class UserRepo:
             FOR file IN 1..1 OUTBOUND userId user_avatar
               UPDATE file WITH {
                 photo: @file
-              } IN File
+              } IN Image
               RETURN NEW
             """, bind_vars={"user_id": user_key, "file": image_data}
         )
+        return True
 
     def create_image(self, user_key: str, image_data: str):
 
