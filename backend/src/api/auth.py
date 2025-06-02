@@ -5,6 +5,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from auth import service as auth_service
 from auth.model import RegisterUser, LoginUser, AuthToken
+from auth.service import get_current_user
+from data.entity import User
+from data.query import GetExtendedUser
 from repo.client import database
 from repo.log_repo import LogRepo
 from repo.model import CreateUser, CreateLog, LogRelations
@@ -74,3 +77,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> AuthToken:
 
     access_token = auth_service.create_access_token(data={"sub": user.login})
     return AuthToken(access_token=access_token, token_type="bearer")
+
+
+static_user_repo = UserRepo(database)
+
+
+@router.get("/me")
+async def get_me(current_user: User = Depends(get_current_user)) -> GetExtendedUser:
+    user = static_user_repo.get_by_key(current_user.key)
+    return user
