@@ -94,6 +94,13 @@ class CleandayRepo:
                     FOR user IN INBOUND par has_participation
                         RETURN user.login
             )
+            LET organizer_key = FIRST(
+                FOR par IN INBOUND cdId participation_in
+                    FILTER par.type == "Организатор"
+                    LIMIT 1
+                    FOR user IN INBOUND par has_participation
+                        RETURN user._key
+            )
             
             RETURN MERGE(cl_day,
             {
@@ -104,7 +111,8 @@ class CleandayRepo:
                 "location": loc,
                 "created_at": created_at,
                 "updated_at": updated_at,
-                "organizer": organizer
+                "organizer": organizer,
+                "organizer_key": organizer_key
             }
             )
             """,
@@ -212,6 +220,14 @@ class CleandayRepo:
                                 RETURN user.login
                     )
                     
+                    LET organizer_key = FIRST(
+                        FOR par IN INBOUND cdId participation_in
+                            FILTER par.type == "Организатор"
+                            LIMIT 1
+                            FOR user IN INBOUND par has_participation
+                                RETURN user._key
+                    )
+                    
                     LET cleanday = MERGE(cl_day,
                     {{
                         "key": cl_day._key,
@@ -221,7 +237,8 @@ class CleandayRepo:
                         "location": loc,
                         "created_at": created_at,
                         "updated_at": updated_at,
-                        "organizer": organizer
+                        "organizer": organizer,
+                        "organizer_key": organizer_key,
                     }})
                     
                 {'\n'.join(filters)}
@@ -284,6 +301,14 @@ class CleandayRepo:
                                 RETURN user.login
                     )
                     
+                    LET organizer_key = FIRST(
+                        FOR par IN INBOUND cdId participation_in
+                            FILTER par.type == "Организатор"
+                            LIMIT 1
+                            FOR user IN INBOUND par has_participation
+                                RETURN user._key
+                    )
+                    
                     LET cleanday = MERGE(cl_day,
                     {{
                         "key": cl_day._key,
@@ -293,7 +318,8 @@ class CleandayRepo:
                         "location": loc,
                         "created_at": created_at,
                         "updated_at": updated_at,
-                        "organizer": organizer
+                        "organizer": organizer,
+                        "organizer_key": organizer_key
                     }})
                     
                 {'\n'.join(filters)}
@@ -455,7 +481,7 @@ class CleandayRepo:
 
         if params.requirements:
             bind_vars["requirements"] = params.requirements
-            filters.append("    FILTER LENGTH(INTERSECTION(usr.requirements, @requirements)) == LENGTH(@requirements)")
+            filters.append("    FILTER LENGTH(INTERSECTION(usr.requirement_keys, @requirements)) >= LENGTH(@requirements)")
 
         query = f"""
                     LET cdId = CONCAT("CleanDay/", @cleanday_key)
@@ -482,7 +508,7 @@ class CleandayRepo:
     
                                 LET orgCount = COUNT(
                                     FOR p IN OUTBOUND userId has_participation
-                                      FILTER p.type == "organiser"
+                                      FILTER p.type == "Организатор"
                                       FOR cl_day IN OUTBOUND p participation_in
                                         RETURN cl_day
                                 )
@@ -533,7 +559,7 @@ class CleandayRepo:
         
                                 LET orgCount = COUNT(
                                     FOR p IN OUTBOUND userId has_participation
-                                      FILTER p.type == "organiser"
+                                      FILTER p.type == "Организатор"
                                       FOR cl_day IN OUTBOUND p participation_in
                                         RETURN cl_day
                                 )
@@ -562,7 +588,8 @@ class CleandayRepo:
                                   "organized_count": orgCount,
                                   "stat": stat,
                                   "participation_type": par.type,
-                                  "requirements": requirements
+                                  "requirements": requirements,
+                                  "requirement_keys": requirement_keys
                                 }})
         
                             {'\n'.join(filters)}
@@ -608,19 +635,25 @@ class CleandayRepo:
                     LET user = FIRST(
                         FOR usr IN OUTBOUND log relates_to_user
                             LIMIT 1
-                            RETURN usr
+                            RETURN MERGE(usr, {password: "", key: usr._key})
                     )
                     LET comment = FIRST(
                         FOR comm IN OUTBOUND log relates_to_comment
                             LIMIT 1
-                            RETURN comm
+                            RETURN MERGE(comm, {key: comm._key})
+                    )
+                    LET location = FIRST(
+                        FOR loc IN OUTBOUND log relates_to_location
+                            LIMIT 1
+                            RETURN MERGE(loc, {key: loc._key})
                     )
                     LIMIT @offset, @limit
                     
                     RETURN MERGE(log, {
-                        user: MERGE(user, {key: user._key}),
+                        user: user,
                         comment: comment,
-                        key: log._key
+                        key: log._key,
+                        location: location
                     })
             )
             
@@ -673,7 +706,7 @@ class CleandayRepo:
                               
                               LET orgCount = COUNT(
                                   FOR p IN OUTBOUND u._id has_participation
-                                    FILTER p.type == "organiser"
+                                    FILTER p.type == "Организатор"
                                     FOR cl_day IN OUTBOUND p participation_in
                                       RETURN cl_day
                               )

@@ -26,6 +26,13 @@ class UserSortField(StrEnum):
     STAT = auto()
 
 
+class UpdateCleanDayStatus(StrEnum):
+    PLANNED = "Запланирован"
+    ONGOING = "Проходит"
+    CANCELLED = "Отменен"
+    RESCHEDULED = "Перенесен"
+
+
 class GetUsersParams(BaseModel):
     offset: int = Field(0, ge=0)
     limit: int = Field(20, ge=1, le=50)
@@ -90,10 +97,12 @@ class GetCleanday(BaseModel):
     updated_at: datetime
     organization: str
     organizer: str
+    organizer_key: str
     area: int
     status: CleanDayStatus
     tags: list[CleanDayTag]
     requirements: list[GetCleandayRequirement]
+    results: Optional[list[str]] = None
 
 
 class CleandayListResponse(BaseModel):
@@ -115,7 +124,7 @@ class CleandaySortField(StrEnum):
 class GetCleandaysParams(BaseModel):
     offset: int = Field(0, ge=0)
     limit: int = Field(20, ge=1, le=50)
-    sort_by: UserSortField = CleandaySortField.BEGIN_DATE
+    sort_by: CleandaySortField = CleandaySortField.BEGIN_DATE
     sort_order: SortOrder = SortOrder.ASC
     search_query: Optional[str] = None
     name: Optional[str] = None
@@ -152,6 +161,7 @@ class PaginationParams(BaseModel):
 class CleandayLog(Log):
     user: Optional[User] = None
     comment: Optional[Comment] = None
+    location: Optional[Location] = None
 
 
 class CleandayLogListResponse(BaseModel):
@@ -199,6 +209,7 @@ class UpdateCleanday(BaseModel):
     description: Optional[str] = None
     recommended_count: Optional[int] = None
     tags: Optional[list[CleanDayTag]] = None
+    status: Optional[UpdateCleanDayStatus] = None
 
 
 class GetMember(GetUser):
@@ -247,3 +258,18 @@ class ImageListResponse(BaseModel):
 
 class SetAvatar(BaseModel):
     photo: str
+
+
+class UpdateParticipation(BaseModel):
+    type: Optional[ParticipationType] = None
+    requirement_keys: Optional[list[str]] = None
+
+
+class CreateParticipation(BaseModel):
+    type: ParticipationType
+
+
+class CleandayResults(BaseModel):
+    participated_user_keys: list[str]
+    results: list[str]
+    images: list[CreateImage]

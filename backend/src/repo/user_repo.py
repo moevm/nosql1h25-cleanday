@@ -409,6 +409,14 @@ class UserRepo:
                                     RETURN user.login
                         )
                         
+                        LET organizer_key = FIRST(
+                            FOR par IN INBOUND cdId participation_in
+                                FILTER par.type == "Организатор"
+                                LIMIT 1
+                                FOR user IN INBOUND par has_participation
+                                    RETURN user._key
+                        )
+                        
                         RETURN MERGE(cl_day,
                         {
                             "key": cl_day._key,
@@ -419,6 +427,7 @@ class UserRepo:
                             "created_at": created_at,
                             "updated_at": updated_at,
                             "organizer": organizer,
+                            "organizer_key": organizer_key
                         }
                         )
             )
@@ -507,6 +516,13 @@ class UserRepo:
                                 FOR user IN INBOUND par has_participation
                                     RETURN user.login
                         )
+                        LET organizer_key = FIRST(
+                            FOR par IN INBOUND cdId participation_in
+                                FILTER par.type == "Организатор"
+                                LIMIT 1
+                                FOR user IN INBOUND par has_participation
+                                    RETURN user._key
+                        )
                         
                         RETURN MERGE(cl_day,
                         {
@@ -517,7 +533,8 @@ class UserRepo:
                             "location": loc,
                             "created_at": created_at,
                             "updated_at": updated_at,
-                            "organizer": organizer
+                            "organizer": organizer,
+                            "organizer_key": organizer_key
                         }
                         )
             )
