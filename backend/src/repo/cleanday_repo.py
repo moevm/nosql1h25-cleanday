@@ -7,7 +7,7 @@ from arango.database import StandardDatabase
 
 from data.entity import CleanDay, CleanDayTag, CleanDayStatus, ParticipationType, Requirement, Image
 from data.query import GetCleanday, GetCleandaysParams, GetUser, GetMembersParams, PaginationParams, CleandayLog, \
-    GetComment, GetMember
+    GetComment, GetMember, GetCleandayLogsParams
 from repo import util
 from repo.client import database
 from repo.location_repo import LocationRepo
@@ -20,6 +20,12 @@ class DeleteReqResult(StrEnum):
     REQUIREMENT_DOES_NOT_EXIST = auto()
     CLEANDAY_DOES_NOT_MATCH = auto()
     SUCCESS = auto()
+
+
+log_contains_filters = ['type', 'description']
+log_from_filters = ['date_from']
+log_to_filters = ['date_to']
+time_fields = ['date']
 
 
 class CleandayRepo:
@@ -388,56 +394,144 @@ class CleandayRepo:
         return page_dict["count"], list(map(lambda u: GetMember.model_validate(u), page_dict["page"]))
         pass
 
-    def get_logs(self, cleanday_key: str, params: PaginationParams) -> Optional[Tuple[int, list[CleandayLog]]]:
+    def get_logs(self, cleanday_key: str, params: GetCleandayLogsParams) -> Optional[Tuple[int, list[CleandayLog]]]:
         if self.get_raw_by_key(cleanday_key) is None:
             return None
 
-        bind_vars = params.model_dump()
+        bind_vars = params.model_dump(exclude_none=True)
         bind_vars["cleanday_key"] = cleanday_key
+        bind_vars.pop('sort_order')
+        bind_vars.pop('sort_by')
 
-        cursor = self.db.aql.execute(
-            """
+        filters = []
+
+        for contains_filter in log_contains_filters:
+            if contains_filter in bind_vars:
+                filters.append(
+                    f"    FILTER CONTAINS(LOWER(full_log.{contains_filter}), LOWER(@{contains_filter}))"
+                )
+
+        for from_filter in log_from_filters:
+            if from_filter in bind_vars:
+                field_name = from_filter[:-5]
+                filters.append(
+                    f"    FILTER full_log.{field_name} >= @{from_filter}"
+                )
+                if field_name in time_fields:
+                    bind_vars[from_filter] = bind_vars[from_filter].isoformat()
+
+        for to_filter in log_to_filters:
+            if to_filter in bind_vars:
+                field_name = to_filter[:-3]
+                filters.append(
+                    f"    FILTER full_log.{field_name} <= @{to_filter}"
+                )
+                if field_name in time_fields:
+                    bind_vars[to_filter] = bind_vars[to_filter].isoformat()
+
+        if 'user_login' in bind_vars:
+            filters.append(
+                f"    FILTER CONTAINS(LOWER(full_log.user.login), LOWER(@user_login))"
+            )
+
+        if 'location_address' in bind_vars:
+            filters.append(
+                f"    FILTER CONTAINS(LOWER(full_log.location.address), LOWER(@location_address))"
+            )
+
+        if 'comment_text' in bind_vars:
+            filters.append(
+                f"    FILTER CONTAINS(LOWER(full_log.comment.text), LOWER(@comment_text))"
+            )
+
+        if 'search_query' in bind_vars and bind_vars['search_query'] == "":
+            bind_vars.pop('search_query')
+
+        if 'search_query' in bind_vars:
+            filters.append(
+                f"    FILTER (CONTAINS(LOWER(full_log.comment.text), LOWER(@search_query)) OR "
+                f"FILTER CONTAINS(LOWER(full_log.location.address), LOWER(@search_query)) OR "
+                f"FILTER CONTAINS(LOWER(full_log.user.login), LOWER(@search_query)) OR "
+                f"FILTER CONTAINS(LOWER(full_log.type), LOWER(@search_query)) OR "
+                f"FILTER CONTAINS(LOWER(full_log.description), LOWER(@search_query)))"
+            )
+
+        query = f"""
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
             
             LET count = COUNT(
                 FOR log IN INBOUND cdId relates_to_cleanday
+                    LET user = FIRST(
+                        FOR usr IN OUTBOUND log relates_to_user
+                            LIMIT 1
+                            RETURN MERGE(usr, {{password: "", key: usr._key}})
+                    )
+                    LET comment = FIRST(
+                        FOR comm IN OUTBOUND log relates_to_comment
+                            LIMIT 1
+                            RETURN MERGE(comm, {{key: comm._key}})
+                    )
+                    LET location = FIRST(
+                        FOR loc IN OUTBOUND log relates_to_location
+                            LIMIT 1
+                            RETURN MERGE(loc, {{key: loc._key}})
+                    )
+                    
+                    LET full_log = MERGE(log, {{
+                        user: user,
+                        comment: comment,
+                        key: log._key,
+                        location: location
+                    }})
+                    
+                    {'\n'.join(filters)}
+                    
                     RETURN 1
             )
             
             LET page = (
                 FOR log IN INBOUND cdId relates_to_cleanday
-                    SORT log.date
-                    
+                             
                     LET user = FIRST(
                         FOR usr IN OUTBOUND log relates_to_user
                             LIMIT 1
-                            RETURN MERGE(usr, {password: "", key: usr._key})
+                            RETURN MERGE(usr, {{password: "", key: usr._key}})
                     )
                     LET comment = FIRST(
                         FOR comm IN OUTBOUND log relates_to_comment
                             LIMIT 1
-                            RETURN MERGE(comm, {key: comm._key})
+                            RETURN MERGE(comm, {{key: comm._key}})
                     )
                     LET location = FIRST(
                         FOR loc IN OUTBOUND log relates_to_location
                             LIMIT 1
-                            RETURN MERGE(loc, {key: loc._key})
+                            RETURN MERGE(loc, {{key: loc._key}})
                     )
-                    LIMIT @offset, @limit
                     
-                    RETURN MERGE(log, {
+                    LET full_log = MERGE(log, {{
                         user: user,
                         comment: comment,
                         key: log._key,
                         location: location
-                    })
+                    }})
+                    
+                    {'\n'.join(filters)}
+                    
+                    LIMIT @offset, @limit
+                    SORT full_log.{params.sort_by} {params.sort_order}
+                    
+                    RETURN full_log
             )
             
-            RETURN {
+            RETURN {{
                 page: page,
                 count: count
-            }
-            """,
+            }}
+            """
+        print(query)
+
+        cursor = self.db.aql.execute(
+            query,
             bind_vars=bind_vars
         )
 
