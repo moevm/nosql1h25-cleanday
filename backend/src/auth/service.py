@@ -10,10 +10,10 @@ from passlib.context import CryptContext
 from data.entity import User
 from repo.client import database
 from repo.user_repo import UserRepo
+from config.environment import SECRET_KEY
+
 
 ALGORITHM = "HS256"
-# This key will be moved to env soon
-SECRET_KEY = "secret"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
