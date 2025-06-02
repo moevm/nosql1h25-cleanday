@@ -12,6 +12,7 @@ from repo.client import database
 from repo.user_repo import UserRepo
 
 ALGORITHM = "HS256"
+# This key will be moved to env soon
 SECRET_KEY = "secret"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
