@@ -24,8 +24,8 @@ import {TimePicker} from '@mui/x-date-pickers/TimePicker';
 // import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
 // import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs, {Dayjs} from 'dayjs';
-import CleanDayTag from "../../models/User.ts";
-import {Location, Cleanday} from "../../models/User.ts";
+import {CleanDayTag, Location, Cleanday} from "../../models/User.ts";
+import CreateLocationDialog from "./CreateLocationDialog.tsx";
 
 /**
  * Интерфейс для пропсов компонента EditCleandayDialog.
@@ -151,6 +151,17 @@ const EditCleandayDialog: React.FC<EditCleandayDialogProps> = ({
                                                                }: EditCleandayDialogProps): React.JSX.Element => {
     // Состояние формы, инициализируется данными из переданного субботника
     const [formState, setFormState] = React.useState<FormState>(getInitialFormState(cleanday, locations));
+
+    const [isLocationDialogOpen, setLocationDialogOpen] = React.useState(false); // State for location dialog
+    const [localLocations, setLocalLocations] = React.useState<Location[]>(locations); // Local copy of locations
+
+    const handleNewLocation = (newLocation: Location) => {
+        setLocalLocations(prev => [...prev, newLocation]); // Update local locations list
+        setFormState(prevState => ({
+            ...prevState,
+            selectedLocation: newLocation, // Automatically select the new location
+        }));
+    };
 
     /**
      * useEffect hook для обновления состояния формы при изменении данных субботника или открытии диалога.
@@ -379,7 +390,11 @@ const EditCleandayDialog: React.FC<EditCleandayDialogProps> = ({
                                         backgroundColor: '#345e51',
                                     },
                                     borderRadius: '10%'
-                                }} tabIndex={-1}>
+                                }} tabIndex={-1}
+                                            onClick={() => {
+                                                setLocationDialogOpen(true)
+                                            }}
+                                >
                                     <AddIcon/>
                                 </IconButton>
                             </Box>
@@ -601,6 +616,21 @@ const EditCleandayDialog: React.FC<EditCleandayDialogProps> = ({
                 <Button onClick={onClose} variant="contained" color="primary">Отмена</Button>
                 <Button onClick={handleSubmit} variant="contained" color="success">Сохранить</Button>
             </DialogActions>
+            {/* Location Dialog */}
+            <CreateLocationDialog
+                open={isLocationDialogOpen}
+                onClose={() => setLocationDialogOpen(false)}
+                onSubmit={(locationData) => {
+                    const newLocation: Location = {
+                        address: locationData.address,
+                        instructions: locationData.additionalInfo,
+                        key: Math.max(...localLocations.map(loc => loc.key)) + 1, // Generate new unique key
+                        city: locationData.city,
+                    };
+                    handleNewLocation(newLocation);
+                    setLocationDialogOpen(false);
+                }}
+            />
         </Dialog>
     );
 };

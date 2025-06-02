@@ -14,32 +14,7 @@ import {
     Divider,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
-
-/**
- * Перечисление статусов участия
- */
-enum ParticipationStatus {
-    GOING = 'Точно пойду (+5 опыта)',
-    LATE = 'Опоздаю (+4 опыта)',
-    MAYBE = 'Возможно, пойду (+3 опыта)',
-    NOT_GOING = 'Не пойду',
-}
-
-/**
- * Интерфейс для требований субботника
- */
-interface Requirement {
-    id: number;
-    name: string;
-}
-
-/**
- * Интерфейс для данных об участии
- */
-interface ParticipationData {
-    status: ParticipationStatus;
-    selectedRequirements: number[];
-}
+import {ParticipationData, ParticipationStatus, Requirement} from "../../models/User.ts";
 
 /**
  * Интерфейс для пропсов компонента ParticipationDialog
@@ -139,7 +114,7 @@ const ParticipationDialog: React.FC<ParticipationDialogProps> = ({
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
             <DialogTitle>
                 Участие в субботнике
-                <Typography variant="subtitle1" color="text.secondary">
+                <Typography component="div" variant="subtitle1" color="text.secondary">
                     {cleandayName}
                 </Typography>
             </DialogTitle>

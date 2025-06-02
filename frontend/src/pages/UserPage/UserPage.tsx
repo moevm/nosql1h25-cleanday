@@ -118,11 +118,6 @@ const UserPage: React.FC = (): React.JSX.Element => {
     return (
         <Box className={"user-profile-box"}>
             <Box display='flex' flexDirection='column' alignItems='flex-start'>
-                {/* Кнопка возврата к списку пользователей */}
-                <Button onClick={handleGoBack} startIcon={<ArrowBackIcon />} sx={{ mb: 2 }}>
-                    Назад к списку пользователей
-                </Button>
-
                 {/* Контейнер с основной информацией о пользователе */}
                 <Box sx={{
                     display: "flex",
@@ -227,6 +222,21 @@ const UserPage: React.FC = (): React.JSX.Element => {
                         </Box>
                     </Box>
                 </Box>
+                {/* Кнопка возврата к списку пользователей */}
+                <Button onClick={handleGoBack}
+                        variant="contained"
+                        startIcon={<ArrowBackIcon />}
+                        sx={{
+                            backgroundColor: '#3C6C5F',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: '#345e51',
+                            },
+                            height: '45px',
+                            width: '100%',
+                            mb: 2 }}>
+                    Назад к списку пользователей
+                </Button>
             </Box>
 
             {/* Компонент уведомления */}

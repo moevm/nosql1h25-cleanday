@@ -16,19 +16,9 @@ import {
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import {CleandayResults} from "../../models/User.ts";
 
-/**
- * Интерфейс для данных результатов субботника
- */
-interface CleandayResults {
-    id: string | number;
-    name: string;
-    date: string;
-    location: string;
-    results: string[];
-    photos: string[]; // URLs изображений
-    participantsCount: number;
-}
+
 
 /**
  * Интерфейс для пропсов компонента ViewCleandayResultsDialog
@@ -76,7 +66,7 @@ const ViewCleandayResultsDialog: React.FC<ViewCleandayResultsDialogProps> = ({
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle>
                 Результаты субботника
-                <Typography variant="subtitle1" color="text.secondary">
+                <Typography component="div" variant="subtitle1" color="text.secondary">
                     {results.name}
                 </Typography>
             </DialogTitle>

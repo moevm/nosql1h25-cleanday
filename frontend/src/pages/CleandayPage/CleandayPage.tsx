@@ -22,10 +22,21 @@ import ArrowLeft from '@mui/icons-material/ArrowLeft';
 import ArrowRight from '@mui/icons-material/ArrowRight';
 
 import './CleandayPage.css';
-import CleanDayTag, {Cleanday, CleandayComments, CleandayPics, Comment, Location} from "../../models/User.ts";
+import {
+    CleanDayTag,
+    Cleanday,
+    CleandayComments,
+    CleandayPics,
+    Comment,
+    Location,
+    Requirement, ParticipationStatus, Participant, ParticipantStatus, CompletionData, CleandayResults
+} from "../../models/User.ts";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import {Link} from "react-router-dom";
 import EditCleandayDialog from '../../components/dialog/EditCleandayDialog.tsx';
+import ParticipationDialog from "../../components/dialog/ParticipationDialog.tsx";
+import CleandayCompletionDialog from "../../components/dialog/CleandayCompletionDialog.tsx";
+import ViewCleandayResultsDialog from '../../components/dialog/ViewCleandayResultsDialog.tsx';
 
 
 // TODO: Реализуйте запрос
@@ -56,6 +67,18 @@ const mockCleanup: Cleanday = {
     requirements: ['Перчатки', 'Хорошее настроение'],
     created_at: '2025-03-10T00:12:00Z',
     updated_at: '2025-03-10T00:12:00Z',
+};
+
+// TODO: Реализуйте запрос
+// Mock data for CleandayResults
+const mockCleandayResults: CleandayResults = {
+    id: 1,
+    name: 'Уборка сквера',
+    date: '2025-03-12',
+    location: 'Малая Монетная 52, Санкт-Петербург',
+    results: ['Собрано 10 мешков мусора', 'Посажено 5 деревьев'],
+    photos: ['/img_1.png', '/img_2.png', '/img_3.png', '/img_4.png'],
+    participantsCount: 15,
 };
 
 
@@ -185,6 +208,59 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
         setNotificationMessage('');
     }, [setNotificationMessage]);
 
+    const [participationDialogOpen, setParticipationDialogOpen] = React.useState(false);
+    const [participationRequirements] = React.useState<Requirement[]>([
+        {id: 1, name: 'Перчатки'},
+        {id: 2, name: 'Хорошее настроение'},
+    ]);
+    const [participationStatus, setParticipationStatus] = React.useState<ParticipationStatus>(ParticipationStatus.GOING);
+    const [participationSelectedRequirements, setParticipationSelectedRequirements] = React.useState<number[]>([1]);
+
+    const handleParticipationDialogOpen = () => {
+        setParticipationDialogOpen(true);
+    };
+
+    // Close ParticipationDialog
+    const handleParticipationDialogClose = () => {
+        setParticipationDialogOpen(false);
+    };
+
+    // Handle submission from ParticipationDialog
+    const handleParticipationSubmit = (data: { status: ParticipationStatus; selectedRequirements: number[] }) => {
+        setParticipationStatus(data.status);
+        setParticipationSelectedRequirements(data.selectedRequirements);
+        setNotificationMessage('Участие успешно обновлено');
+        setNotificationSeverity('success');
+        setParticipationDialogOpen(false);
+    };
+
+    const [completionDialogOpen, setCompletionDialogOpen] = React.useState(false);
+
+    // Mock participants for the dialog
+    const participants: Participant[] = [
+        { id: 1, name: 'Иван Иванов', status: ParticipantStatus.UNKNOWN  },
+        { id: 2, name: 'Мария Смирнова', status: ParticipantStatus.UNKNOWN  },
+        { id: 3, name: 'Пётр Петров', status: ParticipantStatus.UNKNOWN  },
+    ];
+
+    // Handler to open the completion dialog
+    const handleOpenCompletionDialog = () => {
+        setCompletionDialogOpen(true);
+    };
+
+    // Handler to close the completion dialog
+    const handleCloseCompletionDialog = () => {
+        setCompletionDialogOpen(false);
+    };
+
+    // Handler for submitting completion data
+    const handleSubmitCompletionData = (data: CompletionData) => {
+        console.log('Completion Data:', data);
+        setNotificationMessage('Субботник успешно завершен!');
+        setNotificationSeverity('success');
+        setCompletionDialogOpen(false);
+    };
+
     /**
      * Обработчик добавления нового комментария.
      * Проверяет наличие текста в комментарии и добавляет его в список.
@@ -285,6 +361,19 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
     const handleRequirementClick = (requirement: string) => {
         setSelectedRequirement(requirement);
         setOpenReqDialog(true);
+    };
+
+    // State for managing ViewCleandayResultsDialog
+    const [resultsDialogOpen, setResultsDialogOpen] = React.useState(false);
+
+    // Handler to open the dialog
+    const handleResultsDialogOpen = () => {
+        setResultsDialogOpen(true);
+    };
+
+    // Handler to close the dialog
+    const handleResultsDialogClose = () => {
+        setResultsDialogOpen(false);
     };
 
     return (
@@ -520,7 +609,9 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                                 },
                                                 height: '45px',
                                                 width: '100%',
-                                            }}>
+                                            }}
+                                            onClick={handleResultsDialogOpen}
+                                    >
                                         итоги субботника
                                     </Button>
 
@@ -577,7 +668,8 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                             sx={{
                                                 height: '45px',
                                                 width: '100%',
-                                            }}>
+                                            }}
+                                    onClick={handleParticipationDialogOpen}>
                                         изменить участие в субботнике
                                     </Button>
                                 </Grid>
@@ -606,7 +698,9 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                             sx={{
                                                 height: '45px',
                                                 width: '100%',
-                                            }}>
+                                            }}
+                                            onClick={handleOpenCompletionDialog}
+                                    >
                                         завершить субботник (+10 опыта)
                                     </Button>
                                 </Grid>
@@ -708,6 +802,32 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 onSubmit={handleEditSave}
                 locations={mockLocations}
                 cleanday={cleanup}
+            />
+            {/* ParticipationDialog */}
+            <ParticipationDialog
+                open={participationDialogOpen}
+                onClose={handleParticipationDialogClose}
+                onSubmit={handleParticipationSubmit}
+                requirements={participationRequirements}
+                initialStatus={participationStatus}
+                initialRequirements={participationSelectedRequirements}
+                cleandayName={cleanup.name}
+            />
+
+            {/* CleandayCompletionDialog */}
+            <CleandayCompletionDialog
+                open={completionDialogOpen}
+                onClose={handleCloseCompletionDialog}
+                onSubmit={handleSubmitCompletionData}
+                cleandayName={cleanup.name}
+                participants={participants}
+            />
+
+            {/* ViewCleandayResultsDialog Component */}
+            <ViewCleandayResultsDialog
+                open={resultsDialogOpen}
+                onClose={handleResultsDialogClose}
+                results={mockCleandayResults}
             />
 
             {/* Компонент для отображения уведомлений */}

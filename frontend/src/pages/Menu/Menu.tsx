@@ -8,6 +8,7 @@ import {Container, Typography, Box, Toolbar, Button, Avatar, AppBar, IconButton}
 import {ExitToApp} from '@mui/icons-material';
 
 import {createContext, useContext} from 'react';
+import LogoutConfirmationDialog from "../../components/dialog/LogoutConfirmationDialog.tsx";
 
 /**
  * Интерфейс `AuthContextType` определяет структуру контекста аутентификации.
@@ -109,6 +110,15 @@ export const Menu = (): React.JSX.Element => {
     const {isLoggedIn, username, UserLogoutToken} = useAuth();
     const navigate = useNavigate(); // Используем useNavigate
 
+    // Состояние для диалога подтверждения выхода
+    const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
+
+    // Обработчик подтверждения выхода
+    const handleLogout = () => {
+        UserLogoutToken();
+        navigate('/'); // Перенаправляем на главную после логаута
+    };
+
     return (
         <div className="menuContainer">
             <Typography color={'#345e51'} variant="h4" fontWeight="bold">Вместе — к чистой планете! </Typography>
@@ -139,8 +149,7 @@ export const Menu = (): React.JSX.Element => {
                             color="inherit"
                             sx={{'&:focus': {outline: 'none'},}}
                             onClick={() => {
-                                UserLogoutToken();
-                                navigate('/');  // Перенаправляем на главную после логаута
+                                setLogoutDialogOpen(true);
                             }}
                         >
                             <ExitToApp/>
@@ -227,6 +236,12 @@ export const Menu = (): React.JSX.Element => {
                     <img src="/img.png" alt="Statistics Page" style={{ maxWidth: '100%', height: 'auto' }} />
                 </Box>
             </Container>
+            {/* Диалог подтверждения выхода */}
+            <LogoutConfirmationDialog
+                open={logoutDialogOpen}
+                onClose={() => setLogoutDialogOpen(false)}
+                onConfirm={handleLogout}
+            />
         </div>
     );
 }

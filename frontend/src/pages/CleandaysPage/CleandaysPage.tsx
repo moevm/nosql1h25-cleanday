@@ -13,7 +13,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
 import Notification from '../../components/Notification';
-import CleanDayTag, {Cleanday} from "../../models/User.ts";
+import {Cleanday, CleanDayTag} from "../../models/User.ts";
 import {useNavigate} from "react-router-dom";
 
 
