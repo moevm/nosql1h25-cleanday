@@ -161,11 +161,6 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     return (
         <Box className={"user-profile-box"}>
             <Box display='flex' flexDirection='column' alignItems='flex-start'>
-                {/* Кнопка возврата к списку пользователей */}
-                <Button onClick={handleGoBack} startIcon={<ArrowBackIcon />} sx={{ mb: 2 }}>
-                    Назад к списку пользователей
-                </Button>
-
                 {/* Контейнер с основной информацией о пользователе */}
                 <Box sx={{
                     display: "flex",
@@ -287,12 +282,9 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                             Редактировать профиль
                         </Button>
                     </Box>
-
-                    {/* Блок с кнопкой изменения участия в субботнике */}
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
+                    {/* Кнопка возврата к списку пользователей */}
+                    <Button onClick={handleGoBack}
                             variant="contained"
-                            onClick={handleParticipateInSubbotnik}
                             startIcon={<ArrowBackIcon />}
                             sx={{
                                 backgroundColor: '#3C6C5F',
@@ -302,11 +294,9 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                                 },
                                 height: '45px',
                                 width: '100%',
-                            }}
-                        >
-                            Изменить участие в субботнике
-                        </Button>
-                    </Box>
+                                mb: 2 }}>
+                        Назад к списку пользователей
+                    </Button>
 
                 </Box>
             </Box>
