@@ -47,11 +47,12 @@ const Registration = (): React.JSX.Element => {
         password: '',
     });
 
-    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
-        const {id, value, type, checked, name} = event.target;
+    const handleInputChange = (
+        event: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
+    ) => {
+        const {id, value, type, name} = event.target;
 
-        const newValue = type === 'radio' ? name === 'gender' ? value : formData[name as keyof CreateUser] : type === 'checkbox' ? checked : value;
-
+        const newValue = type === 'radio' ? name === 'gender' ? value : formData[name as keyof CreateUser] : type === 'checkbox';
 
         setFormData(prevState => {
             const newFormData = {
@@ -86,15 +87,14 @@ const Registration = (): React.JSX.Element => {
         return ''; // Возвращаем true, если ошибок нет
     };
 
-
-    const handleSubmit = async (event) => {
+    // TODO: Реализуйте обработку
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         if (formData.password !== confirmPassword) {
             alert("Пароли не совпадают");
             return;
         }
-
 
         try {
             const response = await fetch('POPA', { // Заменить endpoint
@@ -208,6 +208,7 @@ const Registration = (): React.JSX.Element => {
                             value={formData.gender}
                             onChange={handleInputChange}
                             row
+                            sx ={{color: 'black', borderColor: 'black'}}
                         >
                             <FormControlLabel value="female" control={<Radio id="gender" name="gender"/>}
                                               label="Женский"/>
@@ -295,10 +296,11 @@ const Registration = (): React.JSX.Element => {
                     </Box>
                 </form>
             </Box>
+            <Box mt={4} display="flex" justifyContent="center">
+                <img src="/img.png" alt="Statistics Page" style={{ maxWidth: '100%', height: 'auto' }} />
+            </Box>
         </Container>
     );
 };
 
 export default Registration;
-
-
