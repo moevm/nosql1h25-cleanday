@@ -1,6 +1,6 @@
-import './Registration.css'
+import './Registration.css';
 
-import * as React from 'react'
+import * as React from 'react';
 
 import {
     TextField,
@@ -11,24 +11,21 @@ import {
     Radio,
     Box, Typography, Toolbar,
     Container, FormLabel,
+    Autocomplete
 } from '@mui/material';
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 
-import {CreateUser} from "../../models/User.ts"
+import {City, CreateUser} from "../../models/User.ts";
 
 /**
  * Registration: Функциональный компонент, представляющий форму регистрации пользователя.
  *
- *  Этот компонент включает в себя поля для ввода имени, фамилии, логина, города, выбора пола, ввода и подтверждения пароля.
- *  Он также содержит валидацию пароля и отправляет данные на сервер при успешной регистрации.
- *
- * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий форму регистрации.
+ * @returns {JSX.Element}
  */
 const Registration = (): React.JSX.Element => {
     const [confirmPassword, setConfirmPassword] = React.useState('');
 
     const staticHelperText = "Пароль должен содержать не менее 8 символов, среди которых не менее 1 цифры, не менее 1 строчной буквы, не менее 1 прописной буквы, не менее 1 специального символа.";
-
 
     const [formData, setFormData] = React.useState<CreateUser>({
         firstname: '',
@@ -47,10 +44,18 @@ const Registration = (): React.JSX.Element => {
         password: '',
     });
 
+    const cities: City[] = [
+        { key: '1', name: 'Москва' },
+        { key: '2', name: 'Санкт-Петербург' },
+        { key: '3', name: 'Новосибирск' },
+        { key: '4', name: 'Екатеринбург' },
+        { key: '5', name: 'Казань' },
+    ];
+
     const handleInputChange = (
         event: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
     ) => {
-        const {id, value, type, name} = event.target;
+        const { id, value, type, name } = event.target;
 
         const newValue = type === 'radio' ? name === 'gender' ? value : formData[name as keyof CreateUser] : type === 'checkbox';
 
@@ -71,8 +76,17 @@ const Registration = (): React.JSX.Element => {
         });
     };
 
+    const handleCityChange = (
+        _event: React.SyntheticEvent<Element, Event>, // Обратите внимание на "_event"
+        value: City | null
+    ) => {
+        setFormData(prevState => ({
+            ...prevState,
+            city: value ? value.name : '',
+        }));
+    };
+
     const validatePassword = (password: string | undefined) => {
-        // Валидация пароля
         if (!password || password.length < 8)
             return "Пароль должен содержать не менее 8 символов.";
         if (!/[0-9]/.test(password))
@@ -84,10 +98,9 @@ const Registration = (): React.JSX.Element => {
         if (!/[*\-#]/.test(password))
             return "Пароль должен содержать не менее 1 специального символа.";
 
-        return ''; // Возвращаем true, если ошибок нет
+        return '';
     };
 
-    // TODO: Реализуйте обработку
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
@@ -115,8 +128,7 @@ const Registration = (): React.JSX.Element => {
                     city: '',
                     gender: 'other',
                     password: '',
-                })
-
+                });
             } else {
                 console.error('Registration failed:', response.status);
                 const errorData = await response.json();
@@ -177,7 +189,6 @@ const Registration = (): React.JSX.Element => {
                         fullWidth
                         margin="normal"
                     />
-
                     <TextField
                         sx={textFieldStyle}
                         required
@@ -189,16 +200,16 @@ const Registration = (): React.JSX.Element => {
                         fullWidth
                         margin="normal"
                     />
-                    <TextField
-                        sx={textFieldStyle}
-                        required
-                        id="city"
-                        label="Город"
-                        variant="outlined"
-                        value={formData.city}
-                        onChange={handleInputChange}
+                    <Autocomplete
                         fullWidth
-                        margin="normal"
+                        sx={textFieldStyle}
+                        options={cities}
+                        getOptionLabel={(option) => option.name}
+                        value={cities.find(city => city.name === formData.city) || null}
+                        onChange={handleCityChange}
+                        renderInput={(params) => (
+                            <TextField {...params} label="Город" variant="outlined" required fullWidth margin="normal" />
+                        )}
                     />
                     <FormControl component="fieldset" className="radio-gender">
                         <FormLabel id="radio-buttons-group">Пол</FormLabel>
@@ -208,14 +219,11 @@ const Registration = (): React.JSX.Element => {
                             value={formData.gender}
                             onChange={handleInputChange}
                             row
-                            sx ={{color: 'black', borderColor: 'black'}}
+                            sx={{ color: 'black', borderColor: 'black' }}
                         >
-                            <FormControlLabel value="female" control={<Radio id="gender" name="gender"/>}
-                                              label="Женский"/>
-                            <FormControlLabel value="male" control={<Radio id="gender" name="gender"/>}
-                                              label="Мужской"/>
-                            <FormControlLabel value="other" control={<Radio id="gender" name="gender"/>}
-                                              label="Другое"/>
+                            <FormControlLabel value="female" control={<Radio id="gender" name="gender" />} label="Женский" />
+                            <FormControlLabel value="male" control={<Radio id="gender" name="gender" />} label="Мужской" />
+                            <FormControlLabel value="other" control={<Radio id="gender" name="gender" />} label="Другое" />
                         </RadioGroup>
                     </FormControl>
                     <Box width="100%">
@@ -234,7 +242,6 @@ const Registration = (): React.JSX.Element => {
                             helperText={errors.password || staticHelperText}
                         />
                     </Box>
-
                     <TextField
                         sx={textFieldStyle}
                         required
