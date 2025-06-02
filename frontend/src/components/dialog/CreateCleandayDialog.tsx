@@ -433,7 +433,7 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                                     helperText: errors.endDateTime,
                                 },
                             }}
-                        />`
+                        />
                     </Grid>
 
                     {/* Поле "Организация" */}
