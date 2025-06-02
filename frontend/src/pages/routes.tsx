@@ -1,6 +1,5 @@
 import * as React from "react";
 
-
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import PeopleIcon from "@mui/icons-material/People";
 import LayersIcon from "@mui/icons-material/Layers";
@@ -12,6 +11,7 @@ import UsersPage from './UsersPage/UsersPage.tsx';
 import StatisticsPage from './StatisticsPage/StatisticsPage.tsx';
 import Authorization from './Authorization/Authorization.tsx'
 import Registration from './Registration/Registration.tsx';
+import UserProfilePage from "./UserProfilePage/UserProfilePage.tsx";
 
 /**
  * Интерфейс `RouteItem` определяет структуру элемента для роутинга.
@@ -39,33 +39,40 @@ export const routes: RouteItem[] = [
     {
         path: "/statistics",
         label: "Статистика",
-        icon: <AutoAwesomeMosaicIcon />,
-        element: <StatisticsPage />,
+        icon: <AutoAwesomeMosaicIcon/>,
+        element: <StatisticsPage/>,
     },
     {
         path: "/users",
         label: "Пользователи",
-        icon: <PeopleIcon />,
-        element: <UsersPage />,
+        icon: <PeopleIcon/>,
+        element: <UsersPage/>,
     },
     {
         path: "/cleandays",
         label: "Субботники",
-        icon: <LayersIcon />,
-        element: <CleandaysPage />,
+        icon: <LayersIcon/>,
+        element: <CleandaysPage/>,
     },
     {
         path: "/register",
         label: "Регистрация",
-        icon: <VisibilityIcon />,
-        element: <Registration />,
+        icon: <VisibilityIcon/>,
+        element: <Registration/>,
     },
     {
         path: "/authorization",
         label: "Авторизация",
-        icon: <VisibilityIcon />,
-        element: <Authorization />,
+        icon: <VisibilityIcon/>,
+        element: <Authorization/>,
     },
+    {
+        path: "/profile",
+        label: "Профиль",
+        icon: <VisibilityIcon/>,
+        element: <UserProfilePage/>,
+    },
+
 ];
 
 

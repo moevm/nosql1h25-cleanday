@@ -21,7 +21,7 @@ import {LogIn} from '../../models/User.ts';
  *
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий форму авторизации.
  */
-export const Authorization = (): React.JSX.Element=> {
+export const Authorization = (): React.JSX.Element => {
     const [username, setUsername] = React.useState('');
     const [password, setPassword] = React.useState('');
     // Хук для навигации по страницам
@@ -45,6 +45,7 @@ export const Authorization = (): React.JSX.Element=> {
         //     alert('Неверный логин или пароль');
         // }
 
+        // TODO: Реализуйте запрос
         try {
             const response = await fetch('/api/login', { // Заменить на эндпоинтом API
                 method: 'POST',
@@ -171,6 +172,9 @@ export const Authorization = (): React.JSX.Element=> {
                             Регистрация
                         </Button>
                     </Box>
+                </Box>
+                <Box mt={4} display="flex" justifyContent="center">
+                    <img src="/img.png" alt="Statistics Page" style={{maxWidth: '100%', height: 'auto'}}/>
                 </Box>
             </Box>
         </Container>
