@@ -20,9 +20,9 @@ import {TimePicker} from '@mui/x-date-pickers/TimePicker';
 import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
 import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
 import {Dayjs} from 'dayjs';
-import {Location, CreateCleanday} from "../../models/User.ts";
-import CleanDayTag from "../../models/User.ts"
+import {CleanDayTag, Location, CreateCleanday} from "../../models/User.ts";
 import AddIcon from "@mui/icons-material/Add";
+import CreateLocationDialog from './CreateLocationDialog.tsx';
 
 
 /**
@@ -112,6 +112,17 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                                                                    }: CreateCleandayDialogProps): React.JSX.Element => {
     // Состояние формы, хранит данные формы и ошибки валидации
     const [formState, setFormState] = React.useState<FormState>(defaultFormState);
+
+    const [isLocationDialogOpen, setLocationDialogOpen] = React.useState(false); // State for location dialog
+    const [localLocations, setLocalLocations] = React.useState<Location[]>(locations); // Local copy of locations
+
+    const handleNewLocation = (newLocation: Location) => {
+        setLocalLocations(prev => [...prev, newLocation]); // Update local locations list
+        setFormState(prevState => ({
+            ...prevState,
+            selectedLocation: newLocation, // Automatically select the new location
+        }));
+    };
 
     // Деструктуризация состояния формы для удобства доступа к полям
     const {
@@ -354,7 +365,8 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                                         backgroundColor: '#345e51',
                                     },
                                     borderRadius: '10%'
-                                }} tabIndex={-1}>
+                                }} tabIndex={-1}
+                                onClick={() => {setLocationDialogOpen(true)}}>
                                     <AddIcon/>
                                 </IconButton>
                             </Box>
@@ -574,6 +586,21 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                     Создать
                 </Button>
             </DialogActions>
+            {/* Location Dialog */}
+            <CreateLocationDialog
+                open={isLocationDialogOpen}
+                onClose={() => setLocationDialogOpen(false)}
+                onSubmit={(locationData) => {
+                    const newLocation: Location = {
+                        address: locationData.address,
+                        instructions: locationData.additionalInfo,
+                        key: Math.max(...localLocations.map(loc => loc.key)) + 1, // Generate new unique key
+                        city: locationData.city,
+                    };
+                    handleNewLocation(newLocation);
+                    setLocationDialogOpen(false);
+                }}
+            />
         </Dialog>
     );
 };
