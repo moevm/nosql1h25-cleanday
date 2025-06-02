@@ -126,7 +126,7 @@ export type Location = {
     city: string;
 };
 
-enum CleanDayTag {
+export enum CleanDayTag {
     TRASH_COLLECTING = "Сбор мусора",
     TRASH_SORTING = "Сортировка мусора",
     PLANTING = "Посадка растений",
@@ -144,4 +144,64 @@ enum CleanDayTag {
     PICNIC = "Пикник",
 }
 
-export default CleanDayTag;
+
+export enum ParticipationStatus {
+    GOING = 'Точно пойду (+5 опыта)',
+    LATE = 'Опоздаю (+4 опыта)',
+    MAYBE = 'Возможно, пойду (+3 опыта)',
+    NOT_GOING = 'Не пойду',
+}
+
+
+export interface Requirement {
+    id: number;
+    name: string;
+}
+
+
+export interface ParticipationData {
+    status: ParticipationStatus;
+    selectedRequirements: number[];
+}
+
+
+export interface Participant {
+    id: number;
+    name: string;
+    status: ParticipantStatus;
+}
+
+
+export enum ParticipantStatus {
+    CONFIRMED = 'Подтвержден',
+    PARTICIPATED = 'Участвовал',
+    NOT_PARTICIPATED = 'Не участвовал',
+    UNKNOWN = 'Неизвестно'
+}
+
+
+export interface CompletionData {
+    results: string[];
+    images: File[];
+    participantStatuses: { [userId: number]: ParticipantStatus };
+}
+
+
+export interface CleandayResults {
+    id: string | number;
+    name: string;
+    date: string;
+    location: string;
+    results: string[];
+    photos: string[]; // URLs изображений
+    participantsCount: number;
+}
+
+
+export interface CreateLocationData {
+    name: string;
+    city: string;
+    address: string;
+    images: File[];
+    additionalInfo: string;
+}
