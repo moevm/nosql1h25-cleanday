@@ -450,10 +450,10 @@ class CleandayRepo:
         if 'search_query' in bind_vars:
             filters.append(
                 f"    FILTER (CONTAINS(LOWER(full_log.comment.text), LOWER(@search_query)) OR "
-                f"FILTER CONTAINS(LOWER(full_log.location.address), LOWER(@search_query)) OR "
-                f"FILTER CONTAINS(LOWER(full_log.user.login), LOWER(@search_query)) OR "
-                f"FILTER CONTAINS(LOWER(full_log.type), LOWER(@search_query)) OR "
-                f"FILTER CONTAINS(LOWER(full_log.description), LOWER(@search_query)))"
+                f"CONTAINS(LOWER(full_log.location.address), LOWER(@search_query)) OR "
+                f"CONTAINS(LOWER(full_log.user.login), LOWER(@search_query)) OR "
+                f"CONTAINS(LOWER(full_log.type), LOWER(@search_query)) OR "
+                f"CONTAINS(LOWER(full_log.description), LOWER(@search_query)))"
             )
 
         query = f"""
