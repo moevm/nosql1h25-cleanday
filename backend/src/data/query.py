@@ -243,3 +243,7 @@ class CreateImages(BaseModel):
 
 class ImageListResponse(BaseModel):
     contents: list[Image]
+
+
+class SetAvatar(BaseModel):
+    photo: str
