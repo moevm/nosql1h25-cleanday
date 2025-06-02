@@ -1,7 +1,11 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Depends
 from fastapi.responses import StreamingResponse
 
-router = APIRouter(prefix="/stats", tags=["stats"])
+from auth.service import get_current_user
+
+router = APIRouter(prefix="/stats", tags=["stats"],
+                   dependencies=[Depends(get_current_user)])
+
 
 @router.get("/")
 async def get_stats() -> dict:

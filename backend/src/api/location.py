@@ -1,12 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 
+from auth.service import get_current_user
 from data.entity import Location, City
 from data.query import CreateLocation, GetLocationsParams, LocationListResponse, CreateImages, ImageListResponse, \
     GetLocation
 
-router = APIRouter(prefix="/locations", tags=["location"])
+router = APIRouter(prefix="/locations", tags=["location"],
+                   dependencies=[Depends(get_current_user)])
 
 
 @router.post("/")
