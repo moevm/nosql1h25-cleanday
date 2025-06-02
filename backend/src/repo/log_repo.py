@@ -29,7 +29,7 @@ class LogRepo:
     def create(self, log: CreateLog) -> Log:
         log_data = log.model_dump()
         log_data.pop('keys')
-        log_data['date'] = str(log_data['date'])
+        log_data['date'] = log_data['date'].isoformat()
         bind_vars = {"data": log_data}
 
         relation_keys = log.keys.model_dump(exclude_none=True)

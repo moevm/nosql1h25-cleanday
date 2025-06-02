@@ -338,8 +338,8 @@ class CleandayRepo:
     def create(self, user_key: str, cleanday: CreateCleanday) -> CleanDay:
         cleanday_dict = cleanday.model_dump()
         cleanday_dict.pop('requirements')
-        cleanday_dict['begin_date'] = str(cleanday_dict['begin_date'])
-        cleanday_dict['end_date'] = str(cleanday_dict['end_date'])
+        cleanday_dict['begin_date'] = cleanday_dict['begin_date'].isoformat()
+        cleanday_dict['end_date'] = cleanday_dict['end_date'].isoformat()
 
         cursor = self.db.aql.execute(
             """
