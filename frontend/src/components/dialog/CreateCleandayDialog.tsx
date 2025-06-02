@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -13,15 +13,16 @@ import {
     FormHelperText,
     Grid,
     Box,
-    Tooltip,
+    Tooltip, IconButton,
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Dayjs } from 'dayjs';
-import { Location, CreateCleanday } from "../../models/User.ts";
+import {DatePicker} from '@mui/x-date-pickers/DatePicker';
+import {TimePicker} from '@mui/x-date-pickers/TimePicker';
+import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
+import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
+import {Dayjs} from 'dayjs';
+import {Location, CreateCleanday} from "../../models/User.ts";
 import CleanDayTag from "../../models/User.ts"
+import AddIcon from "@mui/icons-material/Add";
 
 
 /**
@@ -110,7 +111,7 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                                                                        locations,
                                                                    }: CreateCleandayDialogProps): React.JSX.Element => {
     // Состояние формы, хранит данные формы и ошибки валидации
-    const [formState, setFormState] = useState<FormState>(defaultFormState);
+    const [formState, setFormState] = React.useState<FormState>(defaultFormState);
 
     // Деструктуризация состояния формы для удобства доступа к полям
     const {
@@ -135,7 +136,7 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
      *
      * @param {open} - Зависимость useEffect. Вызывается при изменении значения `open`.
      */
-    useEffect(() => {
+    React.useEffect(() => {
         if (open) {
             setFormState(defaultFormState);
         }
@@ -169,8 +170,7 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
         }
         if (area === undefined || area === null) {
             newErrors.area = 'Введите площадь';
-        } else if (area <= 0)
-        {
+        } else if (area <= 0) {
             newErrors.area = 'Площадь должна быть больше 0';
         }
         if (!description) {
@@ -186,7 +186,7 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
         }
 
         // Обновление состояния формы с ошибками валидации
-        setFormState(prevState => ({ ...prevState, errors: newErrors }));
+        setFormState(prevState => ({...prevState, errors: newErrors}));
         // Возвращает true, если ошибок нет
         return Object.keys(newErrors).length === 0;
     };
@@ -267,7 +267,7 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
         // Удаление условия по индексу
         newConditions.splice(index, 1);
         // Обновление состояния формы
-        setFormState(prevState => ({ ...prevState, conditions: newConditions }));
+        setFormState(prevState => ({...prevState, conditions: newConditions}));
     };
 
     /**
@@ -294,7 +294,7 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
      */
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         // Получение имени и значения поля
-        const { name, value } = event.target;
+        const {name, value} = event.target;
 
         // Обновление состояния формы
         setFormState(prevState => ({
@@ -324,13 +324,56 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                         />
                     </Grid>
 
+                    <Grid item xs={12}>
+                        <FormControl sx={{width: '100%'}} error={!!errors.location}>
+                            <InputLabel id="location-label">Локация</InputLabel>
+                            <Box display="flex" flexDirection='row'>
+                                <Select
+                                    fullWidth
+                                    labelId="location-label"
+                                    id="location"
+                                    value={selectedLocation ? selectedLocation.key : ''}
+                                    label="Локация"
+                                    onChange={(e) => {
+                                        const selectedId = parseInt(e.target.value as string);
+                                        const location = locations.find((loc) => loc.key === selectedId) || null;
+                                        setFormState(prev => ({...prev, selectedLocation: location}));
+                                    }}
+                                >
+                                    {locations.map((location) => (
+                                        <MenuItem key={location.key} value={location.key}>
+                                            {location.address}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                                <Box sx={{flexGrow: 1}}/>
+                                <IconButton edge="end" color="primary" size="large" sx={{
+                                    backgroundColor: '#3C6C5F',
+                                    color: 'white',
+                                    '&:hover': {
+                                        backgroundColor: '#345e51',
+                                    },
+                                    borderRadius: '10%'
+                                }} tabIndex={-1}>
+                                    <AddIcon/>
+                                </IconButton>
+                            </Box>
+                            {errors.location && (
+                                <FormHelperText>{errors.location}</FormHelperText>
+                            )}
+                        </FormControl>
+                    </Grid>
+
                     {/* Поля "Дата начала" и "Время начала" */}
                     <Grid item xs={12} sm={6}>
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <DatePicker
                                 label="Дата начала"
                                 value={beginDateDay}
-                                onChange={(newValue) => setFormState(prevState => ({ ...prevState, beginDateDay: newValue }))}
+                                onChange={(newValue) => setFormState(prevState => ({
+                                    ...prevState,
+                                    beginDateDay: newValue
+                                }))}
                                 slotProps={{
                                     textField: {
                                         fullWidth: true,
@@ -346,7 +389,10 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                             <TimePicker
                                 label="Время начала"
                                 value={beginDateTime}
-                                onChange={(newValue) => setFormState(prevState => ({ ...prevState, beginDateTime: newValue }))}
+                                onChange={(newValue) => setFormState(prevState => ({
+                                    ...prevState,
+                                    beginDateTime: newValue
+                                }))}
                                 slotProps={{
                                     textField: {
                                         fullWidth: true,
@@ -364,7 +410,10 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                             <DatePicker
                                 label="Дата конца"
                                 value={endDateDay}
-                                onChange={(newValue) => setFormState(prevState => ({ ...prevState, endDateDay: newValue }))}
+                                onChange={(newValue) => setFormState(prevState => ({
+                                    ...prevState,
+                                    endDateDay: newValue
+                                }))}
                                 slotProps={{
                                     textField: {
                                         fullWidth: true,
@@ -380,14 +429,17 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                             <TimePicker
                                 label="Время конца"
                                 value={endDateTime}
-                                onChange={(newValue) => setFormState(prevState => ({ ...prevState, endDateTime: newValue }))}
+                                onChange={(newValue) => setFormState(prevState => ({
+                                    ...prevState,
+                                    endDateTime: newValue
+                                }))}
                                 slotProps={{
                                     textField: {
                                         fullWidth: true,
                                         error: !!errors.endDateTime,
                                         helperText: errors.endDateTime,
                                     },
-                                }} />
+                                }}/>
                         </LocalizationProvider>
                     </Grid>
 
@@ -456,33 +508,6 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                         />
                     </Grid>
 
-                    {/* Выбор локации */}
-                    <Grid item xs={12}>
-                        <FormControl fullWidth error={!!errors.location}>
-                            <InputLabel id="location-label">Локация</InputLabel>
-                            <Select
-                                labelId="location-label"
-                                id="location"
-                                value={selectedLocation ? selectedLocation.id : ''} // Use location ID as value
-                                label="Локация"
-                                onChange={(e) => {
-                                    const selectedId = parseInt(e.target.value as string); // Parse selected value to number
-                                    const location = locations.find((loc) => loc.id === selectedId) || null; // Find the Location object
-                                    setFormState(prevState => ({ ...prevState, selectedLocation: location }));
-                                }}
-                            >
-                                {/* Отображение списка локаций */}
-                                {locations.map((location) => (
-                                    <MenuItem key={location.id} value={location.id}>
-                                        {location.address}
-                                    </MenuItem>
-                                ))}
-                                {/* Отображение ошибки валидации */}
-                                {errors.location && (
-                                    <FormHelperText>{errors.location}</FormHelperText>)}
-                            </Select>
-                        </FormControl>
-                    </Grid>
 
                     {/* Выбор тегов */}
                     <Grid item xs={12}>
@@ -494,7 +519,10 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                                 multiple
                                 value={selectedTags.map(tag => tag)}
                                 onChange={(e) => {
-                                    setFormState(prevState => ({ ...prevState, selectedTags: e.target.value as CleanDayTag[] }));
+                                    setFormState(prevState => ({
+                                        ...prevState,
+                                        selectedTags: e.target.value as CleanDayTag[]
+                                    }));
                                 }}
                                 label="Тэги"
                                 renderValue={(selected) => {
@@ -513,10 +541,11 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
 
                     {/* Список условий */}
                     <Grid item xs={12}>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 0.5}}>
                             {conditions.map((condition, index) => (
                                 <Tooltip key={index} title={`Удалить условие "${condition}"`} placement="top">
-                                    <Button variant="outlined" color="primary" onClick={() => handleDeleteCondition(index)}>
+                                    <Button variant="outlined" color="primary"
+                                            onClick={() => handleDeleteCondition(index)}>
                                         {condition}
                                     </Button>
                                 </Tooltip>
