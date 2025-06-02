@@ -3,7 +3,7 @@ services:
     container_name: db
     image: arangodb:3.12
     environment:
-      - ARANGO_ROOT_PASSWORD=${ARANGO_PASS}
+      - ARANGO_ROOT_PASSWORD=${ARANGO_ROOT_PASSWORD}
     volumes:
       - arango_data:/var/lib/arangodb3
       - arango_apps:/var/lib/arangodb3-apps
@@ -20,6 +20,8 @@ services:
       - ./backend:/app
     environment:
       - PYTHONPATH=/app
+      - ARANGO_ROOT_PASSWORD=${ARANGO_ROOT_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       - arangodb
 
