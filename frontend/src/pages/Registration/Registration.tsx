@@ -57,7 +57,13 @@ const Registration = (): React.JSX.Element => {
     ) => {
         const { id, value, type, name } = event.target;
 
-        const newValue = type === 'radio' ? name === 'gender' ? value : formData[name as keyof CreateUser] : type === 'checkbox';
+        const newValue = type === 'radio' 
+            ? name === 'gender' 
+                ? value 
+                : formData[name as keyof CreateUser] 
+            : type === 'checkbox' 
+                ? event.target.checked 
+                : value;
 
         setFormData(prevState => {
             const newFormData = {
