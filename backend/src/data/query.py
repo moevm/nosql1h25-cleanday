@@ -292,3 +292,15 @@ class GetCleandayLogsParams(PaginationParams):
 
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None
+
+
+class GetCommentsParams(PaginationParams):
+    sort_by: LogSortField = LogSortField.DATE
+    sort_order: SortOrder = SortOrder.DESC
+
+    search_query: Optional[str] = None
+
+    user_login: Optional[str] = None
+    text: Optional[str] = None
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None

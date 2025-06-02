@@ -7,7 +7,7 @@ from arango.database import StandardDatabase
 
 from data.entity import CleanDay, CleanDayTag, CleanDayStatus, ParticipationType, Requirement, Image
 from data.query import GetCleanday, GetCleandaysParams, GetUser, GetMembersParams, PaginationParams, CleandayLog, \
-    GetComment, GetMember, GetCleandayLogsParams
+    GetComment, GetMember, GetCleandayLogsParams, GetCommentsParams
 from repo import util
 from repo.client import database
 from repo.location_repo import LocationRepo
@@ -26,6 +26,10 @@ log_contains_filters = ['type', 'description']
 log_from_filters = ['date_from']
 log_to_filters = ['date_to']
 time_fields = ['date']
+
+comment_contains_filters = ['text']
+comment_from_filters = ['date_from']
+comment_to_filters = ['date_to']
 
 
 class CleandayRepo:
@@ -540,24 +544,57 @@ class CleandayRepo:
         page = list(map(lambda c: CleandayLog.model_validate(c), result_dict["page"]))
         return result_dict["count"], page
 
-    def get_comments(self, cleanday_key: str, params: PaginationParams) -> Optional[Tuple[int, list[GetComment]]]:
+    def get_comments(self, cleanday_key: str, params: GetCommentsParams) -> Optional[Tuple[int, list[GetComment]]]:
         if self.get_raw_by_key(cleanday_key) is None:
             return None
 
-        bind_vars = params.model_dump()
+        bind_vars = params.model_dump(exclude_none=True)
         bind_vars["cleanday_key"] = cleanday_key
 
-        cursor = self.db.aql.execute(
-            """
+        bind_vars.pop('sort_order')
+        bind_vars.pop('sort_by')
+
+        filters = []
+
+        for contains_filter in comment_contains_filters:
+            if contains_filter in bind_vars:
+                filters.append(
+                    f"    FILTER CONTAINS(LOWER(full_comment.{contains_filter}), LOWER(@{contains_filter}))"
+                )
+
+        for from_filter in comment_from_filters:
+            if from_filter in bind_vars:
+                field_name = from_filter[:-5]
+                filters.append(
+                    f"    FILTER full_comment.{field_name} >= @{from_filter}"
+                )
+                if field_name in time_fields:
+                    bind_vars[from_filter] = bind_vars[from_filter].isoformat()
+
+        for to_filter in comment_to_filters:
+            if to_filter in bind_vars:
+                field_name = to_filter[:-3]
+                filters.append(
+                    f"    FILTER full_comment.{field_name} <= @{to_filter}"
+                )
+                if field_name in time_fields:
+                    bind_vars[to_filter] = bind_vars[to_filter].isoformat()
+
+        if 'user_login' in bind_vars:
+            filters.append(
+                f"    FILTER CONTAINS(LOWER(full_comment.author.login), LOWER(@user_login))"
+            )
+
+        if 'search_query' in bind_vars:
+            filters.append(
+                f"    FILTER (CONTAINS(LOWER(full_comment.text), LOWER(@search_query)) OR "
+                f"CONTAINS(LOWER(full_comment.author.login), LOWER(@search_query)))"
+            )
+
+        query = f"""
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
             LET count = COUNT(
                 FOR comment IN OUTBOUND cdId has_comment
-                    RETURN 1
-            )
-            LET page = (
-                FOR comment IN OUTBOUND cdId has_comment
-                    SORT comment.time DESC
-                    LIMIT @offset, @limit
                     LET user = FIRST(
                         FOR par IN INBOUND comment._id authored
                             FOR u IN INBOUND par has_participation
@@ -585,22 +622,78 @@ class CleandayRepo:
                                   FOR p IN OUTBOUND u._id has_participation
                                         RETURN p.stat
                               )
-                              RETURN MERGE(u, {
+                              RETURN MERGE(u, {{
                                 "key": u._key,
                                 "city": city.name,
                                 "cleanday_count": parCount,
                                 "organized_count": orgCount,
                                 "stat": stat
-                              })
+                              }})
                     )
-                    RETURN MERGE(comment, {"author": user, key: comment._key})
+                    LET full_comment = MERGE(comment, {{"author": user, key: comment._key}})
+                    
+                    {'\n'.join(filters)}
+                    
+                    RETURN 1
+            )
+            LET page = (
+                FOR comment IN OUTBOUND cdId has_comment
+                    LET user = FIRST(
+                        FOR par IN INBOUND comment._id authored
+                            FOR u IN INBOUND par has_participation
+                              LIMIT 1
+                              LET city = FIRST(
+                                  FOR city IN OUTBOUND u._id lives_in
+                                    LIMIT 1
+                                    RETURN city
+                              )
+                              
+                              LET parCount = COUNT(
+                                  FOR p IN OUTBOUND u._id has_participation
+                                    FOR cl_day IN OUTBOUND p participation_in
+                                      RETURN cl_day
+                              )
+                              
+                              LET orgCount = COUNT(
+                                  FOR p IN OUTBOUND u._id has_participation
+                                    FILTER p.type == "Организатор"
+                                    FOR cl_day IN OUTBOUND p participation_in
+                                      RETURN cl_day
+                              )
+                              
+                              LET stat = SUM(
+                                  FOR p IN OUTBOUND u._id has_participation
+                                        RETURN p.stat
+                              )
+                              RETURN MERGE(u, {{
+                                "key": u._key,
+                                "city": city.name,
+                                "cleanday_count": parCount,
+                                "organized_count": orgCount,
+                                "stat": stat
+                              }})
+                    )
+                    LET full_comment = MERGE(comment, {{"author": user, key: comment._key}})
+                    
+                    {'\n'.join(filters)}
+                    
+                    SORT comment.{params.sort_by} {params.sort_order}
+                    
+                    LIMIT @offset, @limit
+                    
+                    RETURN full_comment
             )
             
-            RETURN {
+            RETURN {{
                 page: page,
                 count: count
-            }
-            """,
+            }}
+            """
+
+        print(query)
+
+        cursor = self.db.aql.execute(
+            query,
             bind_vars=bind_vars
         )
 
