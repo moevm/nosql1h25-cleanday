@@ -61,6 +61,15 @@ def setup_get_users_params(params: GetUsersParams) -> (dict, list[str]):
             )
             bind_vars[to_filter] = params_dict[to_filter]
 
+    if 'search_query' in params_dict and 'search_query' != "":
+        all_contains = [
+            f'CONTAINS(LOWER(usr.{contains_filter}), LOWER(@search_query))' for contains_filter in contains_filters
+            ]
+        filters.append(
+            f"    FILTER({' OR '.join(all_contains)})"
+        )
+        bind_vars['search_query'] = params_dict['search_query']
+
     return bind_vars, filters
 
 
