@@ -1,6 +1,6 @@
 import './app.css';
 
-import {Route, Routes} from 'react-router-dom';
+import {Route, Routes, useLocation} from 'react-router-dom';
 
 import {Box} from '@mui/material';
 
@@ -13,6 +13,7 @@ import {useAuth} from "@hooks/authorization/useAuth.tsx";
 
 const App = () => {
     const {isAuthenticated} = useAuth();
+    const location = useLocation();
 
     return (
         <Box sx={{
@@ -24,7 +25,7 @@ const App = () => {
             top: 0,
             right: 0,
         }}>
-            <Appbar open={isAuthenticated}/>
+            <Appbar open={isAuthenticated && location.pathname !== '/'}/>
             <Routes>
                 <Route path="*" element={<AppRoutes/>}/>
             </Routes>
