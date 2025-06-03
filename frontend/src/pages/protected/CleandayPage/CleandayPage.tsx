@@ -250,9 +250,9 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
 
     // Mock participants for the dialog
     const participants: Participant[] = [
-        { id: 1, name: 'Иван Иванов', status: ParticipantStatus.UNKNOWN  },
-        { id: 2, name: 'Мария Смирнова', status: ParticipantStatus.UNKNOWN  },
-        { id: 3, name: 'Пётр Петров', status: ParticipantStatus.UNKNOWN  },
+        { id: 1, firstName: 'Иван', lastName: 'Иванов', username: 'ivanov', status: ParticipantStatus.UNKNOWN },
+        { id: 2, firstName: 'Мария', lastName: 'Смирнова', username: 'smirnova', status: ParticipantStatus.UNKNOWN },
+        { id: 3, firstName: 'Пётр', lastName: 'Петров', username: 'petrov', status: ParticipantStatus.UNKNOWN },
     ];
 
     // Handler to open the completion dialog
@@ -424,73 +424,75 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
     const [historyEntries] = React.useState<CleanDayHistoryEntry[]>([
         {
             id: 1,
-            userName: 'Иванов Иван',
+            firstName: 'Иван',
+            lastName: 'Иванов',
             date: '2025-03-10 14:32',
             action: 'Создание',
             details: 'Создан субботник "Уборка сквера"'
         },
         {
             id: 2,
-            userName: 'Петров Петр',
+            firstName: 'Петров',
+            lastName: 'Петр',
             date: '2025-03-10 15:45',
             action: 'Присоединение',
             details: 'Пользователь присоединился к субботнику'
         },
         {
             id: 3,
-            userName: 'Сидоров Сидор',
+            firstName: 'Сидоров',
+            lastName: 'Сидор',
             date: '2025-03-11 09:15',
             action: 'Присоединение',
             details: 'Пользователь присоединился к субботнику'
         },
         {
             id: 4,
-            userName: 'Иванов Иван',
+            firstName: 'Иван',
+            lastName: 'Иванов',
             date: '2025-03-11 10:30',
             action: 'Редактирование',
             details: 'Изменено описание субботника: добавлена информация о необходимом инвентаре'
         },
         {
             id: 5,
-            userName: 'Сидоров Сидор',
+            firstName: 'Сидоров',
+            lastName: 'Сидор',
             date: '2025-03-11 12:20',
             action: 'Отмена участия',
             details: 'Пользователь отменил участие в субботнике'
         },
         {
             id: 6,
-            userName: 'Смирнова Анна',
+            firstName: 'Смирнова',
+            lastName: 'Анна',
             date: '2025-03-11 14:05',
             action: 'Присоединение',
             details: 'Пользователь присоединился к субботнику'
         },
         {
             id: 7,
-            userName: 'Иванов Иван',
+            firstName: 'Иван',
+            lastName: 'Иванов',
             date: '2025-03-11 16:40',
             action: 'Загрузка фото',
             details: 'Добавлены 3 новые фотографии локации'
         },
         {
             id: 8,
-            userName: 'Козлов Дмитрий',
+            firstName: 'Козлов',
+            lastName: 'Дмитрий',
             date: '2025-03-12 08:30',
             action: 'Присоединение',
             details: 'Пользователь присоединился к субботнику'
         },
         {
             id: 9,
-            userName: 'Иванов Иван',
+            firstName: 'Иван',
+            lastName: 'Иванов',
             date: '2025-03-12 09:00',
             action: 'Комментарий',
             details: 'Добавлен комментарий: "Напоминаю всем, что встречаемся у центрального входа в сквер"'
-        },
-        {
-            id: 10,
-            userName: 'Система',
-            date: '2025-03-12 12:00',
-            action: 'Автоматическое',
-            details: 'Статус субботника изменен на "Проходит"'
         }
     ]);
     
@@ -515,91 +517,106 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
     const [cleandayParticipants] = React.useState<CleandayParticipant[]>([
         {
             id: 1,
-            name: 'Иванов Иван',
+            firstName: 'Иван',
+            lastName: 'Иванов',
             login: 'ivanov',
             status: ParticipationStatus.GOING
         },
         {
             id: 2,
-            name: 'Петрова Мария',
+            firstName: 'Петрова',
+            lastName: 'Мария',
             login: 'petrova',
             status: ParticipationStatus.GOING
         },
         {
             id: 3,
-            name: 'Сидоров Алексей',
+            firstName: 'Сидоров',
+            lastName: 'Алексей',
             login: 'sidorov',
             status: ParticipationStatus.LATE
         },
         {
             id: 4,
-            name: 'Смирнова Елена',
+            firstName: 'Смирнова',
+            lastName: 'Елена',
             login: 'smirnova',
             status: ParticipationStatus.MAYBE
         },
         {
             id: 5,
-            name: 'Козлов Дмитрий',
+            firstName: 'Козлов',
+            lastName: 'Дмитрий',
             login: 'kozlov',
             status: ParticipationStatus.GOING
         },
         {
             id: 6,
-            name: 'Новикова Ольга',
+            firstName: 'Новикова',
+            lastName: 'Ольга',
             login: 'novikova',
             status: ParticipationStatus.MAYBE
         },
         {
             id: 7,
-            name: 'Морозов Павел',
+            firstName: 'Морозов',
+            lastName: 'Павел',
             login: 'morozov',
             status: ParticipationStatus.GOING
         },
         {
             id: 8,
-            name: 'Волкова Анна',
+            firstName: 'Волкова',
+            lastName: 'Анна',
             login: 'volkova',
             status: ParticipationStatus.LATE
         },
         {
             id: 9,
-            name: 'Лебедев Сергей',
+            firstName: 'Лебедев',
+            lastName: 'Сергей',
             login: 'lebedev',
             status: ParticipationStatus.GOING
         },
         {
             id: 10,
-            name: 'Кузнецова Наталья',
+            firstName: 'Кузнецова',
+            lastName: 'Наталья',
             login: 'kuznetsova',
             status: ParticipationStatus.MAYBE
         },
         {
             id: 11,
-            name: 'Соколов Игорь',
+            firstName: 'Соколов',
+            lastName: 'Игорь',
             login: 'sokolov',
             status: ParticipationStatus.GOING
         },
         {
             id: 12,
-            name: 'Попова Екатерина',
+            firstName: 'Попова',
+            lastName: 'Екатерина',
             login: 'popova',
             status: ParticipationStatus.GOING
         },
         {
             id: 13,
-            name: 'Лебедева Татьяна',
+            firstName: 'Лебедева',
+            lastName: 'Татьяна',
             login: 'lebedeva',
             status: ParticipationStatus.MAYBE
         },
         {
             id: 14,
-            name: 'Кузнецов Андрей',
+            firstName: 'Кузнецов',
+            lastName: 'Андрей',
             login: 'kuznetsov',
             status: ParticipationStatus.GOING
         },
         {
             id: 15,
-            name: 'Соколова Юлия',
+            firstName: 'Соколова',
+            lastName: 'Юлия',
             login: 'sokolova',
             status: ParticipationStatus.GOING
         }
