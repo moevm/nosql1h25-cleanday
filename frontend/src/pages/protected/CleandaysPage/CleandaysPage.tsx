@@ -1,20 +1,19 @@
 import './CleandaysPage.css'
 
 import React from 'react';
-import {
-    Box,
-    TextField,
-    InputAdornment,
-    Button,
-    FormControlLabel,
-    Checkbox,
-    Typography, Chip,
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
-import Notification from '../../components/Notification';
-import {Cleanday, CleanDayTag} from "../../models/User.ts";
+
 import {useNavigate} from "react-router-dom";
+
+import {MaterialReactTable, type MRT_ColumnDef, useMaterialReactTable} from 'material-react-table';
+
+import {Box, Button, Checkbox, Chip, FormControlLabel, InputAdornment, TextField, Typography,} from '@mui/material';
+
+import SearchIcon from '@mui/icons-material/Search';
+
+
+import {Cleanday, CleanDayTag} from "@models/User.ts";
+
+import Notification from '@components/Notification.tsx';
 
 
 // TODO: Реализуйте запрос
@@ -31,7 +30,7 @@ const cleandayData: Cleanday[] = [
         participant_count: 25,
         recommended_count: 30,
         city: "Москва",
-        location: { address: "Парк Горького", instructions: "У центрального входа", key: 101, city: "Москва" },
+        location: {address: "Парк Горького", instructions: "У центрального входа", key: 101, city: "Москва"},
         begin_date: "2025-04-15",
         end_date: "2025-04-15",
         organizer: "Иванов И.И.",
@@ -50,7 +49,12 @@ const cleandayData: Cleanday[] = [
         participant_count: 18,
         recommended_count: 20,
         city: "Санкт-Петербург",
-        location: { address: "Набережная реки Фонтанки", instructions: "У моста Белинского", key: 205, city: "Санкт-Петербург" },
+        location: {
+            address: "Набережная реки Фонтанки",
+            instructions: "У моста Белинского",
+            key: 205,
+            city: "Санкт-Петербург"
+        },
         begin_date: "2025-05-20",
         end_date: "2025-05-20",
         organizer: "Петрова А.С.",
@@ -69,7 +73,12 @@ const cleandayData: Cleanday[] = [
         participant_count: 12,
         recommended_count: 15,
         city: "Новосибирск",
-        location: { address: "Сквер у Оперного театра", instructions: "За главным зданием", key: 310, city: "Новосибирск" },
+        location: {
+            address: "Сквер у Оперного театра",
+            instructions: "За главным зданием",
+            key: 310,
+            city: "Новосибирск"
+        },
         begin_date: "2025-06-10",
         end_date: "2025-06-10",
         organizer: "Сидоров В.К.",
@@ -211,10 +220,10 @@ export const CleandaysPage = (): React.JSX.Element => {
                 header: 'Тип',
                 id: 'type',
                 // Кастомное отображение тегов как компонентов Chip
-                Cell: ({ row }) => (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                Cell: ({row}) => (
+                    <Box sx={{display: 'flex', gap: 1}}>
                         {row.original.tags.map((tag) => (
-                            <Chip key={tag} label={tag} size="small" />
+                            <Chip key={tag} label={tag} size="small"/>
                         ))}
                     </Box>
                 ),
@@ -223,7 +232,7 @@ export const CleandaysPage = (): React.JSX.Element => {
                 header: 'Статус',
                 accessorKey: 'status',
                 // Кастомное отображение статуса с цветовым выделением
-                Cell: ({ row }) => {
+                Cell: ({row}) => {
                     let color: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | undefined;
                     switch (row.original.status) {
                         case 'Запланировано':
@@ -244,7 +253,7 @@ export const CleandaysPage = (): React.JSX.Element => {
                         default:
                             break;
                     }
-                    return <Chip label={row.original.status} size="small" color={color} />;
+                    return <Chip label={row.original.status} size="small" color={color}/>;
                 },
             },
         ],
@@ -305,7 +314,7 @@ export const CleandaysPage = (): React.JSX.Element => {
         enableGlobalFilter: false,
         initialState: {
             density: "compact",
-            pagination: { pageIndex: 0, pageSize: 10 },
+            pagination: {pageIndex: 0, pageSize: 10},
         },
         muiTablePaperProps: {
             elevation: 0,
@@ -341,10 +350,10 @@ export const CleandaysPage = (): React.JSX.Element => {
         <Box className={"cleandays-box"}>
             {/* Заголовок и панель управления */}
             <Box>
-                <Typography variant="h4" sx={{ margin: '10px 0px 0px 20px'  }}>
+                <Typography variant="h4" sx={{margin: '10px 0px 0px 20px'}}>
                     Субботники
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', margin: '10px 20px 0px 20px' }}>
+                <Box sx={{display: 'flex', alignItems: 'center', margin: '10px 20px 0px 20px'}}>
                     {/* Поле поиска */}
                     <TextField
                         label="Поиск"
@@ -353,25 +362,26 @@ export const CleandaysPage = (): React.JSX.Element => {
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    <SearchIcon />
+                                    <SearchIcon/>
                                 </InputAdornment>
                             ),
                         }}
                         size="small"
-                        sx={{ mr: 2 }}
+                        sx={{mr: 2}}
                     />
                     {/* Кнопка построения графика */}
-                    <Button variant="outlined" onClick={handlePlotButtonClick} sx={{ml: "20px", color: 'black', borderColor: 'black'}}>
+                    <Button variant="outlined" onClick={handlePlotButtonClick}
+                            sx={{ml: "20px", color: 'black', borderColor: 'black'}}>
                         Построить график
                     </Button>
                     <Box sx={{flexGrow: 1}}/>
                     {/* Чекбоксы для фильтрации */}
                     <FormControlLabel
-                        control={<Checkbox checked={showPrevious} onChange={handleShowPreviousChange} />}
+                        control={<Checkbox checked={showPrevious} onChange={handleShowPreviousChange}/>}
                         label="Предстоящие субботники"
                     />
                     <FormControlLabel
-                        control={<Checkbox checked={showMyParticipation} onChange={handleMyParticipationChange} />}
+                        control={<Checkbox checked={showMyParticipation} onChange={handleMyParticipationChange}/>}
                         label="С моим участием"
                     />
                 </Box>

@@ -12,10 +12,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import './UserProfilePage.css';
-import { UserProfile, UserProfileEdit } from "../../models/User.ts";
-import Notification from '../../components/Notification.tsx';
+import { UserProfile, UserProfileEdit } from "@models/User.ts";
+import Notification from '@components/Notification.tsx';
 import { useNavigate } from "react-router-dom";
-import EditUserProfileDialog from "../../components/dialog/EditUserProfileDialog.tsx";
+import EditUserProfileDialog from "@components/dialog/EditUserProfileDialog.tsx";
 
 
 // TODO: Реализуйте запрос

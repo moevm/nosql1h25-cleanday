@@ -1,28 +1,32 @@
-import './Registration.css';
+import './RegistrationPage.css';
 
 import * as React from 'react';
 
+import {Link} from "react-router-dom";
+
 import {
-    TextField,
+    Autocomplete,
+    Box,
     Button,
+    Container,
     FormControl,
     FormControlLabel,
-    RadioGroup,
+    FormLabel,
     Radio,
-    Box, Typography, Toolbar,
-    Container, FormLabel,
-    Autocomplete
+    RadioGroup,
+    TextField,
+    Toolbar,
+    Typography
 } from '@mui/material';
-import { Link } from "react-router-dom";
 
-import {City, CreateUser} from "../../models/User.ts";
+import {City, CreateUser} from "@models/User.ts";
 
 /**
- * Registration: Функциональный компонент, представляющий форму регистрации пользователя.
+ * RegistrationPage: Функциональный компонент, представляющий форму регистрации пользователя.
  *
  * @returns {JSX.Element}
  */
-const Registration = (): React.JSX.Element => {
+const RegistrationPage = (): React.JSX.Element => {
     const [confirmPassword, setConfirmPassword] = React.useState('');
 
     const staticHelperText = "Пароль должен содержать не менее 8 символов, среди которых не менее 1 цифры, не менее 1 строчной буквы, не менее 1 прописной буквы, не менее 1 специального символа.";
@@ -45,22 +49,22 @@ const Registration = (): React.JSX.Element => {
     });
 
     const cities: City[] = [
-        { key: '1', name: 'Москва' },
-        { key: '2', name: 'Санкт-Петербург' },
-        { key: '3', name: 'Новосибирск' },
-        { key: '4', name: 'Екатеринбург' },
-        { key: '5', name: 'Казань' },
+        {key: '1', name: 'Москва'},
+        {key: '2', name: 'Санкт-Петербург'},
+        {key: '3', name: 'Новосибирск'},
+        {key: '4', name: 'Екатеринбург'},
+        {key: '5', name: 'Казань'},
     ];
 
     const handleInputChange = (
         event: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
     ) => {
-        const { id, value, type, name } = event.target;
+        const {id, value, type, name} = event.target;
 
-        const newValue = type === 'radio' 
-            ? name === 'gender' 
-                ? value 
-                : formData[name as keyof CreateUser] 
+        const newValue = type === 'radio'
+            ? name === 'gender'
+                ? value
+                : formData[name as keyof CreateUser]
             : type === 'checkbox'
                 ? event.target.value
                 : value;
@@ -125,7 +129,7 @@ const Registration = (): React.JSX.Element => {
             });
 
             if (response.ok) {
-                console.log('Registration successful!');
+                console.log('RegistrationPage successful!');
                 alert("Регистрация прошла успешно!");
                 setFormData({
                     firstname: '',
@@ -136,7 +140,7 @@ const Registration = (): React.JSX.Element => {
                     password: '',
                 });
             } else {
-                console.error('Registration failed:', response.status);
+                console.error('RegistrationPage failed:', response.status);
                 const errorData = await response.json();
                 console.error("Error Data:", errorData);
                 alert(`Ошибка регистрации: ${response.status}`);
@@ -214,7 +218,7 @@ const Registration = (): React.JSX.Element => {
                         value={cities.find(city => city.name === formData.city) || null}
                         onChange={handleCityChange}
                         renderInput={(params) => (
-                            <TextField {...params} label="Город" variant="outlined" required fullWidth margin="normal" />
+                            <TextField {...params} label="Город" variant="outlined" required fullWidth margin="normal"/>
                         )}
                     />
                     <FormControl component="fieldset" className="radio-gender">
@@ -225,11 +229,14 @@ const Registration = (): React.JSX.Element => {
                             value={formData.gender}
                             onChange={handleInputChange}
                             row
-                            sx={{ color: 'black', borderColor: 'black' }}
+                            sx={{color: 'black', borderColor: 'black'}}
                         >
-                            <FormControlLabel value="female" control={<Radio id="gender" name="gender" />} label="Женский" />
-                            <FormControlLabel value="male" control={<Radio id="gender" name="gender" />} label="Мужской" />
-                            <FormControlLabel value="other" control={<Radio id="gender" name="gender" />} label="Другое" />
+                            <FormControlLabel value="female" control={<Radio id="gender" name="gender"/>}
+                                              label="Женский"/>
+                            <FormControlLabel value="male" control={<Radio id="gender" name="gender"/>}
+                                              label="Мужской"/>
+                            <FormControlLabel value="other" control={<Radio id="gender" name="gender"/>}
+                                              label="Другое"/>
                         </RadioGroup>
                     </FormControl>
                     <Box width="100%">
@@ -310,10 +317,10 @@ const Registration = (): React.JSX.Element => {
                 </form>
             </Box>
             <Box mt={4} display="flex" justifyContent="center">
-                <img src="/img.png" alt="Statistics Page" style={{ maxWidth: '100%', height: 'auto' }} />
+                <img src="/basementMenuImage.png" alt="Statistics Page" style={{maxWidth: '100%', height: 'auto'}}/>
             </Box>
         </Container>
     );
 };
 
-export default Registration;
+export default RegistrationPage;

@@ -1,123 +1,31 @@
-import './Menu.css';
+import './MenuPage.css';
 
 import * as React from 'react';
 
 import {Link, useNavigate} from 'react-router-dom';
-import {Container, Typography, Box, Toolbar, Button, Avatar, AppBar, IconButton} from '@mui/material';
+
+import {AppBar, Avatar, Box, Button, Container, IconButton, Toolbar, Typography} from '@mui/material';
 
 import {ExitToApp} from '@mui/icons-material';
 
-import {createContext, useContext} from 'react';
-import LogoutConfirmationDialog from "../../components/dialog/LogoutConfirmationDialog.tsx";
-
-/**
- * Интерфейс `AuthContextType` определяет структуру контекста аутентификации.
- * @param {boolean} isLoggedIn - Флаг, показывающий, залогинен ли пользователь.
- * @param {string} username - Имя пользователя.
- * @param {function} loginUT - Функция для логина пользователя. Принимает токен и имя пользователя.
- * @param {function} logout - Функция для выхода пользователя из системы.
- */
-interface AuthContextType {
-    isLoggedIn: boolean;
-    username: string;
-    UserLoginToken: (token: string, username: string) => void;
-    UserLogoutToken: () => void;
-}
-
-/**
- * `AuthContext`: Создание контекста аутентификации.
- * createContext() создает объект контекста, который может быть использован для передачи данных между компонентами без необходимости явной передачи через props.
- * Значение по умолчанию включает в себя флаг isLoggedIn, имя пользователя и пустые функции для loginUT и logout.
- */
-const AuthContext = createContext<AuthContextType>({
-    isLoggedIn: false,
-    username: '',
-    UserLoginToken: () => {
-    },
-    UserLogoutToken: () => {
-    },
-});
-
-/**
- * Интерфейс `AuthProviderProps` определяет структуру props для AuthProvider.
- * @param {React.ReactNode} children - Дочерние элементы, которые будут обернуты провайдером контекста.
- */
-interface AuthProviderProps {
-    children: React.ReactNode;
-}
-
-/**
- * `AuthProvider`: Функциональный компонент, предоставляющий контекст аутентификации.
- * Оборачивает дочерние компоненты и предоставляет им доступ к данным аутентификации (isLoggedIn, username) и функциям для управления состоянием аутентификации (login, logout).
- * Использует useState для хранения состояния аутентификации и localStorage для сохранения данных между сессиями.
- *
- * @param {AuthProviderProps} { children } -  children: React-элементы, которые необходимо "обернуть" данным провайдером.
- * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий AuthContext.Provider, который предоставляет значение контекста всем дочерним компонентам.
- */
-export const AuthProvider: React.FC<AuthProviderProps> = ({children}: AuthProviderProps): React.JSX.Element => {
-    const [isLoggedIn, setIsLoggedIn] = React.useState(!!localStorage.getItem('token'));
-    const [username, setUsername] = React.useState(localStorage.getItem('username') || '');
-
-    const login = (token: string, username: string) => {
-        localStorage.setItem('token', token); //бахните проверку токена
-        localStorage.setItem('username', username);
-        setIsLoggedIn(true);
-        setUsername(username);
-    };
-
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        setIsLoggedIn(false);
-        setUsername('');
-    };
-
-    const value: AuthContextType = {
-        isLoggedIn,
-        username,
-        UserLoginToken: login,
-        UserLogoutToken: logout,
-    };
-
-    return (
-        <AuthContext.Provider value={value}>
-            {children}
-        </AuthContext.Provider>
-    );
-};
+import LogoutConfirmationDialog from "@components/dialog/LogoutConfirmationDialog.tsx";
+import {useAuth} from "@hooks/authorization/useAuth.tsx";
 
 
 /**
- * `useAuth`: Кастомный хук для использования контекста аутентификации.
- * Позволяет компонентам подписываться на контекст аутентификации и получать доступ к данным и функциям аутентификации.
- *
- * @returns {AuthContextType} - Возвращает значение контекста AuthContext.
- */
-export const useAuth = () => {
-    return useContext(AuthContext);
-};
-
-
-/**
- * `Menu`: Функциональный компонент, представляющий меню приложения.
+ * `MenuPage`: Функциональный компонент, представляющий меню приложения.
  * Отображает панель навигации с кнопками для перехода между страницами и кнопками аутентификации.
  * Использует хук `useAuth` для получения данных аутентификации и хук `useNavigate` для навигации.
  *
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий меню приложения.
  */
 
-export const Menu = (): React.JSX.Element => {
-    const {isLoggedIn, username, UserLogoutToken} = useAuth();
+export const MenuPage = (): React.JSX.Element => {
+    const {isAuthenticated, username, logout} = useAuth();
     const navigate = useNavigate(); // Используем useNavigate
 
     // Состояние для диалога подтверждения выхода
     const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
-
-    // Обработчик подтверждения выхода
-    const handleLogout = () => {
-        UserLogoutToken();
-        navigate('/'); // Перенаправляем на главную после логаута
-    };
 
     return (
         <div className="menuContainer">
@@ -132,7 +40,7 @@ export const Menu = (): React.JSX.Element => {
                     color: 'black',
                 }}
             >
-                {isLoggedIn && (
+                {isAuthenticated && (
                     <Toolbar>
                         <Box sx={{flexGrow: 1}}/>
                         <Avatar style={{marginRight: '10px'}}
@@ -157,8 +65,8 @@ export const Menu = (): React.JSX.Element => {
                     </Toolbar>
                 )}
             </AppBar>
-            <Toolbar sx = {{ borderRadius: '8%'}}  className="menuToolbar">
-                <Box   className="toolbarContent">
+            <Toolbar sx={{borderRadius: '8%'}} className="menuToolbar">
+                <Box className="toolbarContent">
                     <Typography variant="h2" component="div">
                         Сервис организации субботников
                     </Typography>
@@ -178,6 +86,7 @@ export const Menu = (): React.JSX.Element => {
                                 },
                                 height: '50px',
                             }}
+                            disabled={!isAuthenticated}
                             component={Link} to="/cleandays" variant="contained" color="success">
                             <h2>Субботники</h2>
                         </Button>
@@ -190,6 +99,7 @@ export const Menu = (): React.JSX.Element => {
                                 },
                                 height: '50px',
                             }}
+                            disabled={!isAuthenticated}
                             component={Link} to="/users" variant="contained" color="success">
                             <h2>Пользователи</h2>
                         </Button>
@@ -202,13 +112,14 @@ export const Menu = (): React.JSX.Element => {
                                 },
                                 height: '50px',
                             }}
+                            disabled={!isAuthenticated}
                             component={Link} to="/statistics" variant="contained" color="success">
                             <h2>Статистика</h2>
                         </Button>
                     </Box>
 
                     {/* Кнопки аутентификации */}
-                    {!isLoggedIn && (
+                    {!isAuthenticated && (
                         <Box className="authButtons">
                             <Button
                                 sx={{
@@ -233,18 +144,18 @@ export const Menu = (): React.JSX.Element => {
                 </Box>
 
                 <Box mt={4} display="flex" justifyContent="center">
-                    <img src="/img.png" alt="Statistics Page" style={{ maxWidth: '100%', height: 'auto' }} />
+                    <img src={"/basementMenuImage.png"} alt="Statistics Page" style={{maxWidth: '100%', height: 'auto'}}/>
                 </Box>
             </Container>
             {/* Диалог подтверждения выхода */}
             <LogoutConfirmationDialog
                 open={logoutDialogOpen}
                 onClose={() => setLogoutDialogOpen(false)}
-                onConfirm={handleLogout}
+                onConfirm={logout}
             />
         </div>
     );
 }
 
-export default Menu;
+export default MenuPage;
 

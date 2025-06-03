@@ -2,13 +2,13 @@ import './StatisticsPage.css';
 
 import React, { useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
-import Notification from '../../components/Notification';
+import Notification from '@components/Notification.tsx';
 
 
 import './StatisticsPage.css'; // You can create this file for custom styling
-import { StatisticData } from '../../models/User';
-import ExportConfirmationDialog from "../../components/dialog/ExportConfirmationDialog.tsx";
-import ImportDialog from "../../components/dialog/ImportDialog.tsx";
+import { StatisticData } from '@models/User.ts';
+import ExportConfirmationDialog from "@components/dialog/ExportConfirmationDialog.tsx";
+import ImportDialog from "@components/dialog/ImportDialog.tsx";
 
 /**
  * StatisticsPage: Компонент страницы для отображения статистики приложения.
@@ -139,7 +139,7 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
 
             {/* Блок для отображения графического представления статистики */}
             <Box mt={4} display="flex" justifyContent="center">
-                <img src="/img.png" alt="Statistics Page" style={{ maxWidth: '100%', height: 'auto' }} />
+                <img src="/basementMenuImage.png" alt="Statistics Page" style={{ maxWidth: '100%', height: 'auto' }} />
             </Box>
 
             {/* Компонент уведомления */}

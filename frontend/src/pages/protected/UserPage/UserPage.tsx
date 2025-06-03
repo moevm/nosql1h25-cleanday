@@ -10,8 +10,8 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {useParams, useNavigate} from 'react-router-dom';
 import './UserPage.css';
-import {UserProfile} from "../../models/User.ts";
-import Notification from '../../components/Notification.tsx';
+import {UserProfile} from "@models/User.ts";
+import Notification from '@components/Notification.tsx';
 
 // TODO: Реализуйте запрос
 /**

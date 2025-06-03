@@ -1,4 +1,9 @@
+import './CleandayPage.css';
+
 import React from 'react';
+
+import {Link} from "react-router-dom";
+
 import {
     Box,
     Button,
@@ -15,13 +20,14 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import Notification from '../../components/Notification';
 
 import SendIcon from '@mui/icons-material/Send';
 import ArrowLeft from '@mui/icons-material/ArrowLeft';
 import ArrowRight from '@mui/icons-material/ArrowRight';
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
-import './CleandayPage.css';
+import Notification from '@components/Notification.tsx';
+
 import {
     CleanDayTag,
     Cleanday,
@@ -29,14 +35,18 @@ import {
     CleandayPics,
     Comment,
     Location,
-    Requirement, ParticipationStatus, Participant, ParticipantStatus, CompletionData, CleandayResults
-} from "../../models/User.ts";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import {Link} from "react-router-dom";
-import EditCleandayDialog from '../../components/dialog/EditCleandayDialog.tsx';
-import ParticipationDialog from "../../components/dialog/ParticipationDialog.tsx";
-import CleandayCompletionDialog from "../../components/dialog/CleandayCompletionDialog.tsx";
-import ViewCleandayResultsDialog from '../../components/dialog/ViewCleandayResultsDialog.tsx';
+    Requirement,
+    ParticipationStatus,
+    Participant,
+    ParticipantStatus,
+    CompletionData,
+    CleandayResults
+} from "@models/User.ts";
+
+import EditCleandayDialog from '@components/dialog/EditCleandayDialog.tsx';
+import ParticipationDialog from "@components/dialog/ParticipationDialog.tsx";
+import CleandayCompletionDialog from "@components/dialog/CleandayCompletionDialog.tsx";
+import ViewCleandayResultsDialog from '@components/dialog/ViewCleandayResultsDialog.tsx';
 
 
 // TODO: Реализуйте запрос

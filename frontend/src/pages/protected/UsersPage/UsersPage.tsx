@@ -8,8 +8,8 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import {MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef} from 'material-react-table';
-import Notification from '../../components/Notification.tsx';
-import {User} from "../../models/User.ts";
+import Notification from '@components/Notification.tsx';
+import {User} from "@models/User.ts";
 import Typography from "@mui/material/Typography";
 import {useNavigate} from 'react-router-dom';
 

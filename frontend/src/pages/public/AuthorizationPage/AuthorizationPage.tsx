@@ -1,72 +1,34 @@
-import './Authorization.css';
+import './AuthorizationPage.css';
 
 import * as React from 'react';
 
-import {
-    Container,
-    Typography,
-    TextField,
-    Button,
-    Box,
-    Toolbar,
-} from '@mui/material';
-import {Link, useNavigate} from 'react-router-dom';
-import {useAuth} from '../Menu/Menu';
-import {LogIn} from '../../models/User.ts';
+import {Link} from 'react-router-dom';
+
+import {Box, Button, Container, TextField, Toolbar, Typography,} from '@mui/material';
+
+import {useGetAuth} from "@hooks/authorization/useGetAuth.tsx";
+
 
 /**
- * `Authorization`: Функциональный компонент, отвечающий за отображение формы авторизации пользователя.
+ * `AuthorizationPage`: Функциональный компонент, отвечающий за отображение формы авторизации пользователя.
  * Использует Material UI для стилизации и управления формой.
  * Отправляет данные для авторизации на сервер и перенаправляет пользователя в случае успеха.
  *
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий форму авторизации.
  */
-export const Authorization = (): React.JSX.Element => {
+export const AuthorizationPage = (): React.JSX.Element => {
+    const mutation = useGetAuth();
+
     const [username, setUsername] = React.useState('');
     const [password, setPassword] = React.useState('');
-    // Хук для навигации по страницам
-    const navigate = useNavigate();
-    const {UserLoginToken} = useAuth();
+
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        const loginData: LogIn = {
-            login: username,
-            password: password,
-        };
-
-        // Раскомментить для тестов, тогда логин - user, пароль - password.
-        // if (username === 'user' && password === 'password') {
-        //     const token = 'fake_token';
-        //     UserLoginToken(token, username);
-        //     navigate('/');
-        // } else {
-        //     alert('Неверный логин или пароль');
-        // }
-
-        // TODO: Реализуйте запрос
-        try {
-            const response = await fetch('/api/login', { // Заменить на эндпоинтом API
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(loginData),
-            });
-
-            if (response.ok) {
-                const data = await response.json(); // API возвращает токен !!! Он должен совпадать с token в Меню
-                const token = data.token; // Извлекаем токен из ответа API
-                UserLoginToken(token, username);
-                navigate('/');
-            } else {
-                console.error('Ошибка авторизации:', response.status);
-                alert('Неверный логин или пароль');
-            }
-        } catch (error) {
-            console.error('Ошибка при отправке запроса:', error);
-            alert('Произошла ошибка при попытке входа.');
+        mutation.mutate({username: username, password: password});
+        if (mutation.error) {
+            console.error(mutation.error);
         }
     };
 
@@ -174,12 +136,13 @@ export const Authorization = (): React.JSX.Element => {
                     </Box>
                 </Box>
                 <Box mt={4} display="flex" justifyContent="center">
-                    <img src="/img.png" alt="Statistics Page" style={{maxWidth: '100%', height: 'auto'}}/>
+                    <img src={"/basementMenuImage.png"} alt="Statistics Page"
+                         style={{maxWidth: '100%', height: 'auto'}}/>
                 </Box>
             </Box>
         </Container>
     );
 }
 
-export default Authorization;
+export default AuthorizationPage;
 
