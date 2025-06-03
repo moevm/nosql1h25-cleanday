@@ -47,6 +47,7 @@ import EditCleandayDialog from '@components/dialog/EditCleandayDialog.tsx';
 import ParticipationDialog from "@components/dialog/ParticipationDialog.tsx";
 import CleandayCompletionDialog from "@components/dialog/CleandayCompletionDialog.tsx";
 import ViewCleandayResultsDialog from '@components/dialog/ViewCleandayResultsDialog.tsx';
+import CancelCleandayDialog from '@/components/dialog/CancelCleandayDialog';
 
 
 // TODO: Реализуйте запрос
@@ -386,6 +387,35 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
         setResultsDialogOpen(false);
     };
 
+    // State for CancelCleandayDialog
+    const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
+
+    /**
+     * Handler to open the cancel cleanday dialog
+     */
+    const handleCancelCleandayOpen = () => {
+        setCancelDialogOpen(true);
+    };
+
+    /**
+     * Handler to close the cancel cleanday dialog
+     */
+    const handleCancelCleandayClose = () => {
+        setCancelDialogOpen(false);
+    };
+
+    /**
+     * Handler for confirming cleanday cancellation
+     */
+    const handleCancelCleandayConfirm = () => {
+        // TODO: Implement actual API call to cancel the cleanday
+        setCleanup({
+            ...cleanup,
+            status: 'Отменен'
+        });
+        showNotification('Субботник успешно отменен', 'success');
+    };
+
     return (
         <Box className={"cleanday-box"}>
             <Box sx={{margin: '10px 0px 0px 20px'}}>
@@ -699,7 +729,8 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                             sx={{
                                                 height: '45px',
                                                 width: '100%',
-                                            }}>
+                                            }}
+                                            onClick={handleCancelCleandayOpen}>
                                         отменить субботник
                                     </Button>
                                 </Grid>
@@ -838,6 +869,15 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 open={resultsDialogOpen}
                 onClose={handleResultsDialogClose}
                 results={mockCleandayResults}
+            />
+
+            {/* CancelCleandayDialog */}
+            <CancelCleandayDialog
+                open={cancelDialogOpen}
+                onClose={handleCancelCleandayClose}
+                onConfirm={handleCancelCleandayConfirm}
+                // title="Отмена субботника"
+                // message={`Вы уверены, что хотите отменить субботник "${cleanup.name}"? Это действие нельзя будет отменить.`}
             />
 
             {/* Компонент для отображения уведомлений */}
