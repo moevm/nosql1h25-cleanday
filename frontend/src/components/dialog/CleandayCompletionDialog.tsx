@@ -16,7 +16,6 @@ import {
     Divider,
     Alert,
     Checkbox,
-    InputAdornment
 } from '@mui/material';
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
@@ -28,7 +27,6 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import SearchIcon from '@mui/icons-material/Search';
 import {CompletionData, Participant, ParticipantStatus, ParticipationStatus} from '../../models/User';
 
 /**
@@ -98,8 +96,9 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
     );
     // Track if form has unsaved changes
     const [hasChanges, setHasChanges] = useState<boolean>(false);
-    // Add state for search text
-    const [searchText, setSearchText] = useState<string>('');
+    
+    // Remove custom search state as we'll use MRT's built-in search
+    // const [searchText, setSearchText] = useState<string>('');
 
     // Ref для скрытого input загрузки файлов
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -276,26 +275,9 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
         onClose();
     };
     
-    // Move search handling and filtered participants before the table configuration
-    /**
-     * Обработчик изменения текста в поле поиска
-     */
-    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchText(event.target.value);
-    };
-
-    // Filter participants based on search text
-    const filteredParticipants = useMemo(() => {
-        if (!searchText) {
-            return participants;
-        }
-        const lowerCaseSearchText = searchText.toLowerCase();
-        return participants.filter((participant) =>
-            participant.name.toLowerCase().includes(lowerCaseSearchText) ||
-            participant.username.toLowerCase().includes(lowerCaseSearchText)
-        );
-    }, [participants, searchText]);
-
+    // Remove custom search handler and filtered participants
+    // as we'll use MRT's built-in search functionality
+    
     /**
      * Получить цвет для статуса участника
      */
@@ -339,10 +321,16 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
     (
         () => [
             {
-                id: 'name',
-                header: 'Имя и фамилия',
-                accessorFn: (row) => row.name,
-                Cell: ({ row }) => <span>{row.original.name}</span>,
+                id: 'firstName',
+                header: 'Имя',
+                accessorKey: 'firstName',
+                size: 120,
+            },
+            {
+                id: 'lastName',
+                header: 'Фамилия',
+                accessorKey: 'lastName',
+                size: 120,
             },
             {
                 accessorKey: 'username',
@@ -384,19 +372,21 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
     );
 
     /**
-     * Конфигурация таблицы MaterialReactTable
+     * Конфигурация таблицы MaterialReactTable с включенным встроенным поиском
      */
     const table = useMaterialReactTable({
         columns,
-        data: filteredParticipants,
+        data: participants,
         enableColumnOrdering: false,
         enableRowSelection: false,
         enableSorting: true,
         enableColumnFilters: true,
-        enableGlobalFilter: false,
+        enableGlobalFilter: true, // Enable built-in search
+        enableColumnFilterModes: true,
         initialState: {
             density: "compact",
             pagination: { pageIndex: 0, pageSize: 10 },
+            showGlobalFilter: true, // Show search bar by default
         },
         muiTablePaperProps: {
             elevation: 0,
@@ -404,6 +394,13 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
                 border: '1px solid rgba(224, 224, 224, 1)',
                 borderRadius: '4px',
             },
+        },
+        // Configure the search input appearance
+        muiSearchTextFieldProps: {
+            placeholder: 'Поиск участников',
+            size: 'small',
+            sx: { mb: 2 },
+            variant: 'outlined',
         },
     });
 
@@ -443,23 +440,7 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
                             Учёт участников
                         </Typography>
                         
-                        {/* Add search bar above the table */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                            <TextField
-                                label="Поиск участников"
-                                value={searchText}
-                                onChange={handleSearchChange}
-                                InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <SearchIcon />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                size="small"
-                                sx={{ mr: 2 }}
-                            />
-                        </Box>
+                        {/* Remove custom search bar and use MRT's built-in search */}
                         
                         <MaterialReactTable table={table} />
                     </Grid>
