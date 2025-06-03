@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -7,12 +7,9 @@ import {
     Button,
     Box,
     Typography,
-    TextField,
-    InputAdornment,
     Chip
 } from '@mui/material';
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
-import SearchIcon from '@mui/icons-material/Search';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -23,7 +20,8 @@ import { ParticipationStatus } from '@/models/User';
 // Interface for a participant
 export interface CleandayParticipant {
     id: number;
-    name: string;
+    firstName: string;
+    lastName: string;
     login: string;
     status: ParticipationStatus;
 }
@@ -49,28 +47,6 @@ const CleandayParticipantsDialog: React.FC<CleandayParticipantsDialogProps> = ({
     cleandayName,
     participants
 }: CleandayParticipantsDialogProps): React.JSX.Element => {
-    // State for search functionality
-    const [searchText, setSearchText] = useState<string>('');
-
-    // Handle search input changes
-    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchText(event.target.value);
-    };
-
-    // Filter participants based on search text
-    const filteredParticipants = React.useMemo(() => {
-        if (!searchText) {
-            return participants;
-        }
-        
-        const lowerCaseSearchText = searchText.toLowerCase();
-        return participants.filter((participant) => 
-            participant.name.toLowerCase().includes(lowerCaseSearchText) ||
-            participant.login.toLowerCase().includes(lowerCaseSearchText) ||
-            participant.status.toLowerCase().includes(lowerCaseSearchText)
-        );
-    }, [participants, searchText]);
-
     /**
      * Получить цвет для статуса участника
      */
@@ -108,13 +84,20 @@ const CleandayParticipantsDialog: React.FC<CleandayParticipantsDialogProps> = ({
     };
 
     // Define table columns
-    const columns = React.useMemo<MRT_ColumnDef<CleandayParticipant>[]>(
+    const columns = React.useMemo<MRT_ColumnDef<CleandayParticipant>[]>
+    (
         () => [
             {
-                id: 'name',
-                header: 'Имя и фамилия',
-                accessorKey: 'name',
-                size: 200,
+                id: 'firstName',
+                header: 'Имя',
+                accessorKey: 'firstName',
+                size: 120,
+            },
+            {
+                id: 'lastName',
+                header: 'Фамилия',
+                accessorKey: 'lastName',
+                size: 120,
             },
             {
                 id: 'login',
@@ -140,19 +123,21 @@ const CleandayParticipantsDialog: React.FC<CleandayParticipantsDialogProps> = ({
         []
     );
 
-    // Configure the table
+    // Configure the table with built-in search functionality
     const table = useMaterialReactTable({
         columns,
-        data: filteredParticipants,
+        data: participants,
         enableColumnOrdering: false,
         enableRowSelection: false,
         enableSorting: true,
         enableColumnFilters: true,
-        enableGlobalFilter: false,
+        enableGlobalFilter: true, // Enable built-in search
+        enableColumnFilterModes: true,
         initialState: {
             density: 'compact',
             pagination: { pageIndex: 0, pageSize: 10 },
             sorting: [{ id: 'status', desc: false }], // Sort by status by default
+            showGlobalFilter: true, // Show search bar by default
         },
         muiTablePaperProps: {
             elevation: 0,
@@ -160,6 +145,13 @@ const CleandayParticipantsDialog: React.FC<CleandayParticipantsDialogProps> = ({
                 border: '1px solid rgba(224, 224, 224, 1)',
                 borderRadius: '4px',
             },
+        },
+        // Configure the search input appearance
+        muiSearchTextFieldProps: {
+            placeholder: 'Поиск участников',
+            size: 'small',
+            sx: { mb: 2 },
+            variant: 'outlined',
         },
     });
 
@@ -179,26 +171,11 @@ const CleandayParticipantsDialog: React.FC<CleandayParticipantsDialogProps> = ({
             </DialogTitle>
             
             <DialogContent>
-                <Box sx={{ mb: 2, mt: 1 }}>
-                    <TextField
-                        label="Поиск участников"
-                        value={searchText}
-                        onChange={handleSearchChange}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon />
-                                </InputAdornment>
-                            ),
-                        }}
-                        size="small"
-                        fullWidth
-                    />
-                </Box>
+                {/* Remove custom search TextField since we're using MRT's built-in search */}
                 
                 <MaterialReactTable table={table} />
                 
-                {filteredParticipants.length === 0 && (
+                {participants.length === 0 && (
                     <Box sx={{ 
                         display: 'flex', 
                         justifyContent: 'center', 
@@ -206,7 +183,7 @@ const CleandayParticipantsDialog: React.FC<CleandayParticipantsDialogProps> = ({
                         p: 4 
                     }}>
                         <Typography color="text.secondary">
-                            {searchText ? 'Нет участников, соответствующих поисковому запросу' : 'Нет зарегистрированных участников'}
+                            Нет зарегистрированных участников
                         </Typography>
                     </Box>
                 )}
