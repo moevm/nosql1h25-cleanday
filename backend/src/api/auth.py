@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
@@ -47,7 +47,7 @@ async def register(register_user: RegisterUser) -> AuthToken:
 
         log_repo.create(
             CreateLog(
-                date=datetime.now(),
+                date=datetime.now(UTC),
                 type='CreateUser',
                 description=f"Создан пользователь с логином '{user.login}'",
                 keys=LogRelations(user_key=user.key)

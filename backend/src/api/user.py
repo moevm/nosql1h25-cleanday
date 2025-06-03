@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Annotated
 
 from fastapi import APIRouter, Query, Depends, HTTPException, status
@@ -61,7 +61,7 @@ async def update_user(user_id: str, payload: UpdateUser,
 
         log_repo.create(
             CreateLog(
-                date=datetime.now(),
+                date=datetime.now(UTC),
                 type="UpdateUser",
                 description=f"Пользователь '{update.login}' обновил данные профиля",
                 keys=LogRelations(
@@ -77,7 +77,7 @@ async def update_user(user_id: str, payload: UpdateUser,
 
             log_repo.create(
                 CreateLog(
-                    date=datetime.now(),
+                    date=datetime.now(UTC),
                     type="UpdateUserCity",
                     description=f"Пользователь '{update.login}' обновил свой город",
                     keys=LogRelations(
@@ -125,7 +125,7 @@ async def upload_user_avatar(user_id: str, avatar: SetAvatar,
 
         log_repo.create(
             CreateLog(
-                date=datetime.now(),
+                date=datetime.now(UTC),
                 type="UpdateUserAvatar",
                 description=f"Пользователь '{current_user.login}' обновил свой аватар",
                 keys=LogRelations(
