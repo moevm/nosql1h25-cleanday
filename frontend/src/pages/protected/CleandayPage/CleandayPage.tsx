@@ -49,6 +49,7 @@ import CleandayCompletionDialog from "@components/dialog/CleandayCompletionDialo
 import ViewCleandayResultsDialog from '@components/dialog/ViewCleandayResultsDialog.tsx';
 import CancelCleandayDialog from '@/components/dialog/CancelCleandayDialog';
 import CleandayHistoryDialog, { CleanDayHistoryEntry } from '@/components/dialog/CleandayHistoryDialog';
+import CleandayParticipantsDialog, { CleandayParticipant } from '@/components/dialog/CleandayParticipantsDialog';
 
 // TODO: Реализуйте запрос
 /**
@@ -321,7 +322,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
      * Отображает уведомление о показе списка участников.
      */
     const handleClick = () => {
-        setNotificationMessage("Показать участников")
+        handleParticipantsDialogOpen();
     }
 
     /**
@@ -505,6 +506,117 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
      */
     const handleHistoryDialogClose = () => {
         setHistoryDialogOpen(false);
+    };
+    
+    // State for CleandayParticipantsDialog
+    const [participantsDialogOpen, setParticipantsDialogOpen] = React.useState(false);
+    
+    // Mock data for cleanday participants
+    const [cleandayParticipants] = React.useState<CleandayParticipant[]>([
+        {
+            id: 1,
+            name: 'Иванов Иван',
+            login: 'ivanov',
+            status: ParticipationStatus.GOING
+        },
+        {
+            id: 2,
+            name: 'Петрова Мария',
+            login: 'petrova',
+            status: ParticipationStatus.GOING
+        },
+        {
+            id: 3,
+            name: 'Сидоров Алексей',
+            login: 'sidorov',
+            status: ParticipationStatus.LATE
+        },
+        {
+            id: 4,
+            name: 'Смирнова Елена',
+            login: 'smirnova',
+            status: ParticipationStatus.MAYBE
+        },
+        {
+            id: 5,
+            name: 'Козлов Дмитрий',
+            login: 'kozlov',
+            status: ParticipationStatus.GOING
+        },
+        {
+            id: 6,
+            name: 'Новикова Ольга',
+            login: 'novikova',
+            status: ParticipationStatus.MAYBE
+        },
+        {
+            id: 7,
+            name: 'Морозов Павел',
+            login: 'morozov',
+            status: ParticipationStatus.GOING
+        },
+        {
+            id: 8,
+            name: 'Волкова Анна',
+            login: 'volkova',
+            status: ParticipationStatus.LATE
+        },
+        {
+            id: 9,
+            name: 'Лебедев Сергей',
+            login: 'lebedev',
+            status: ParticipationStatus.GOING
+        },
+        {
+            id: 10,
+            name: 'Кузнецова Наталья',
+            login: 'kuznetsova',
+            status: ParticipationStatus.MAYBE
+        },
+        {
+            id: 11,
+            name: 'Соколов Игорь',
+            login: 'sokolov',
+            status: ParticipationStatus.GOING
+        },
+        {
+            id: 12,
+            name: 'Попова Екатерина',
+            login: 'popova',
+            status: ParticipationStatus.GOING
+        },
+        {
+            id: 13,
+            name: 'Лебедева Татьяна',
+            login: 'lebedeva',
+            status: ParticipationStatus.MAYBE
+        },
+        {
+            id: 14,
+            name: 'Кузнецов Андрей',
+            login: 'kuznetsov',
+            status: ParticipationStatus.GOING
+        },
+        {
+            id: 15,
+            name: 'Соколова Юлия',
+            login: 'sokolova',
+            status: ParticipationStatus.GOING
+        }
+    ]);
+    
+    /**
+     * Handler to open the participants dialog
+     */
+    const handleParticipantsDialogOpen = () => {
+        setParticipantsDialogOpen(true);
+    };
+    
+    /**
+     * Handler to close the participants dialog
+     */
+    const handleParticipantsDialogClose = () => {
+        setParticipantsDialogOpen(false);
     };
     
     return (
@@ -980,10 +1092,19 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 historyEntries={historyEntries}
             />
 
+            {/* CleandayParticipantsDialog */}
+            <CleandayParticipantsDialog
+                open={participantsDialogOpen}
+                onClose={handleParticipantsDialogClose}
+                cleandayName={cleanup.name}
+                participants={cleandayParticipants}
+            />
+
             {/* Компонент для отображения уведомлений */}
             <Notification message={notificationMessage} severity={notificationSeverity}
                           onClose={handleNotificationClose}/>
         </Box>
     );
 };
+
 export default CleandayPage;
