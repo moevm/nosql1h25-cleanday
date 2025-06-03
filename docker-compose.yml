@@ -22,6 +22,7 @@ services:
       - PYTHONPATH=/app
       - ARANGO_ROOT_PASSWORD=${ARANGO_ROOT_PASSWORD}
       - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_NAME=cleanday
     depends_on:
       - arangodb
 
