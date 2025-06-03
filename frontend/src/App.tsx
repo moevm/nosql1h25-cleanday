@@ -1,16 +1,18 @@
 import './app.css';
 
-import {BrowserRouter as Router, Route, Routes} from 'react-router-dom';
-import Menu from './pages/Menu/Menu.tsx';
-import AppRoutes from './pages/AppRoutes.tsx';
+import {Route, Routes} from 'react-router-dom';
+
 import {Box} from '@mui/material';
-import {AuthProvider} from './pages/Menu/Menu.tsx';
+
+import AppRoutes from '@pages/routes/AppRoutes.tsx';
+
 import Appbar from "./components/layout/Appbar.tsx";
-import CleandayPage from "./pages/CleandayPage/CleandayPage.tsx";
-import UserPage from "./pages/UserPage/UserPage.tsx";
+
+import {useAuth} from "@hooks/authorization/useAuth.tsx";
 
 
-function AppContent() {
+const App = () => {
+    const {isAuthenticated} = useAuth();
 
     return (
         <Box sx={{
@@ -22,24 +24,11 @@ function AppContent() {
             top: 0,
             right: 0,
         }}>
-            <Appbar/>
+            <Appbar open={isAuthenticated}/>
             <Routes>
-                <Route path="/" element={<Menu/>}/>
                 <Route path="*" element={<AppRoutes/>}/>
-                <Route path="/users/:id" element={<UserPage />} />
-                <Route path="/cleandays/:id" element={<CleandayPage />} />
             </Routes>
         </Box>
-    );
-}
-
-const App = () => {
-    return (
-        <AuthProvider>
-            <Router>
-                <AppContent/>
-            </Router>
-        </AuthProvider>
     );
 }
 
