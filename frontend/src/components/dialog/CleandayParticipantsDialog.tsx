@@ -131,6 +131,7 @@ const CleandayParticipantsDialog: React.FC<CleandayParticipantsDialogProps> = ({
         enableRowSelection: false,
         enableSorting: true,
         enableColumnFilters: true,
+        positionGlobalFilter: 'left',
         enableGlobalFilter: true, // Enable built-in search
         enableColumnFilterModes: true,
         initialState: {
