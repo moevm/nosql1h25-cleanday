@@ -893,10 +893,10 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                         <List sx={{width: '100%'}}>
                                             {cleanup.requirements.map((req, idx) => (
                                                 <ListItem key={idx} disablePadding sx={{border: 'medium'}}>
-                                                    <ListItemButton onClick={() => handleRequirementClick(req)}>
+                                                    <ListItemButton onClick={handleParticipantsDialogOpen}>
                                                         <TextField
                                                             fullWidth
-                                                            label={"Условие " + (idx + 1) + " (нажмите для списка)"}
+                                                            label={"Условие " + (idx + 1) + " (нажмите для списка участников)"}
                                                             value={req}
                                                             InputProps={{readOnly: true}}
                                                         />
