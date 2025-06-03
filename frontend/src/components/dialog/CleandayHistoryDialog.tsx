@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -6,17 +6,15 @@ import {
     DialogActions,
     Button,
     Box,
-    Typography,
-    TextField,
-    InputAdornment
+    Typography
 } from '@mui/material';
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
-import SearchIcon from '@mui/icons-material/Search';
 
 // Interface for a history entry
 export interface CleanDayHistoryEntry {
     id: number;
-    userName: string;
+    firstName: string;
+    lastName: string;
     date: string;
     action: string;
     details: string;
@@ -43,37 +41,21 @@ const CleandayHistoryDialog: React.FC<CleandayHistoryDialogProps> = ({
     cleandayName,
     historyEntries
 }: CleandayHistoryDialogProps): React.JSX.Element => {
-    // State for search functionality
-    const [searchText, setSearchText] = useState<string>('');
-
-    // Handle search input changes
-    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchText(event.target.value);
-    };
-
-    // Filter history entries based on search text
-    const filteredHistoryEntries = React.useMemo(() => {
-        if (!searchText) {
-            return historyEntries;
-        }
-        
-        const lowerCaseSearchText = searchText.toLowerCase();
-        return historyEntries.filter((entry) => 
-            entry.userName.toLowerCase().includes(lowerCaseSearchText) ||
-            entry.action.toLowerCase().includes(lowerCaseSearchText) ||
-            entry.details.toLowerCase().includes(lowerCaseSearchText) ||
-            entry.date.toLowerCase().includes(lowerCaseSearchText)
-        );
-    }, [historyEntries, searchText]);
-
     // Define table columns
-    const columns = React.useMemo<MRT_ColumnDef<CleanDayHistoryEntry>[]>(
+    const columns = React.useMemo<MRT_ColumnDef<CleanDayHistoryEntry>[]>
+    (
         () => [
             {
-                id: 'userName',
-                header: 'Пользователь',
-                accessorKey: 'userName',
-                size: 180,
+                id: 'firstName',
+                header: 'Имя',
+                accessorKey: 'firstName',
+                size: 120,
+            },
+            {
+                id: 'lastName',
+                header: 'Фамилия',
+                accessorKey: 'lastName',
+                size: 120,
             },
             {
                 id: 'date',
@@ -107,19 +89,21 @@ const CleandayHistoryDialog: React.FC<CleandayHistoryDialogProps> = ({
         []
     );
 
-    // Configure the table
+    // Configure the table with built-in search functionality
     const table = useMaterialReactTable({
         columns,
-        data: filteredHistoryEntries,
+        data: historyEntries,
         enableColumnOrdering: false,
         enableRowSelection: false,
         enableSorting: true,
         enableColumnFilters: true,
-        enableGlobalFilter: false,
+        enableGlobalFilter: true, // Enable built-in search
+        enableColumnFilterModes: true,
         initialState: {
             density: 'compact',
             pagination: { pageIndex: 0, pageSize: 10 },
             sorting: [{ id: 'date', desc: true }], // Sort by date descending by default
+            showGlobalFilter: true, // Show search bar by default
         },
         muiTablePaperProps: {
             elevation: 0,
@@ -127,6 +111,13 @@ const CleandayHistoryDialog: React.FC<CleandayHistoryDialogProps> = ({
                 border: '1px solid rgba(224, 224, 224, 1)',
                 borderRadius: '4px',
             },
+        },
+        // Configure the search input appearance
+        muiSearchTextFieldProps: {
+            placeholder: 'Поиск по истории',
+            size: 'small',
+            sx: { mb: 2 },
+            variant: 'outlined',
         },
     });
 
@@ -146,26 +137,11 @@ const CleandayHistoryDialog: React.FC<CleandayHistoryDialogProps> = ({
             </DialogTitle>
             
             <DialogContent>
-                <Box sx={{ mb: 2, mt: 1 }}>
-                    <TextField
-                        label="Поиск по истории"
-                        value={searchText}
-                        onChange={handleSearchChange}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon />
-                                </InputAdornment>
-                            ),
-                        }}
-                        size="small"
-                        fullWidth
-                    />
-                </Box>
+                {/* Remove custom search TextField since we're using MRT's built-in search */}
                 
                 <MaterialReactTable table={table} />
                 
-                {filteredHistoryEntries.length === 0 && (
+                {historyEntries.length === 0 && (
                     <Box sx={{ 
                         display: 'flex', 
                         justifyContent: 'center', 
@@ -173,7 +149,7 @@ const CleandayHistoryDialog: React.FC<CleandayHistoryDialogProps> = ({
                         p: 4 
                     }}>
                         <Typography color="text.secondary">
-                            {searchText ? 'Нет записей, соответствующих поисковому запросу' : 'История активности пуста'}
+                            История активности пуста
                         </Typography>
                     </Box>
                 )}
