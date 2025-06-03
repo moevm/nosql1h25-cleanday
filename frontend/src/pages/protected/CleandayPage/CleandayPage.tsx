@@ -48,7 +48,7 @@ import ParticipationDialog from "@components/dialog/ParticipationDialog.tsx";
 import CleandayCompletionDialog from "@components/dialog/CleandayCompletionDialog.tsx";
 import ViewCleandayResultsDialog from '@components/dialog/ViewCleandayResultsDialog.tsx';
 import CancelCleandayDialog from '@/components/dialog/CancelCleandayDialog';
-
+import CleandayHistoryDialog, { CleanDayHistoryEntry } from '@/components/dialog/CleandayHistoryDialog';
 
 // TODO: Реализуйте запрос
 /**
@@ -416,6 +416,97 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
         showNotification('Субботник успешно отменен', 'success');
     };
 
+    // State for CleandayHistoryDialog
+    const [historyDialogOpen, setHistoryDialogOpen] = React.useState(false);
+    
+    // Mock data for history entries
+    const [historyEntries] = React.useState<CleanDayHistoryEntry[]>([
+        {
+            id: 1,
+            userName: 'Иванов Иван',
+            date: '2025-03-10 14:32',
+            action: 'Создание',
+            details: 'Создан субботник "Уборка сквера"'
+        },
+        {
+            id: 2,
+            userName: 'Петров Петр',
+            date: '2025-03-10 15:45',
+            action: 'Присоединение',
+            details: 'Пользователь присоединился к субботнику'
+        },
+        {
+            id: 3,
+            userName: 'Сидоров Сидор',
+            date: '2025-03-11 09:15',
+            action: 'Присоединение',
+            details: 'Пользователь присоединился к субботнику'
+        },
+        {
+            id: 4,
+            userName: 'Иванов Иван',
+            date: '2025-03-11 10:30',
+            action: 'Редактирование',
+            details: 'Изменено описание субботника: добавлена информация о необходимом инвентаре'
+        },
+        {
+            id: 5,
+            userName: 'Сидоров Сидор',
+            date: '2025-03-11 12:20',
+            action: 'Отмена участия',
+            details: 'Пользователь отменил участие в субботнике'
+        },
+        {
+            id: 6,
+            userName: 'Смирнова Анна',
+            date: '2025-03-11 14:05',
+            action: 'Присоединение',
+            details: 'Пользователь присоединился к субботнику'
+        },
+        {
+            id: 7,
+            userName: 'Иванов Иван',
+            date: '2025-03-11 16:40',
+            action: 'Загрузка фото',
+            details: 'Добавлены 3 новые фотографии локации'
+        },
+        {
+            id: 8,
+            userName: 'Козлов Дмитрий',
+            date: '2025-03-12 08:30',
+            action: 'Присоединение',
+            details: 'Пользователь присоединился к субботнику'
+        },
+        {
+            id: 9,
+            userName: 'Иванов Иван',
+            date: '2025-03-12 09:00',
+            action: 'Комментарий',
+            details: 'Добавлен комментарий: "Напоминаю всем, что встречаемся у центрального входа в сквер"'
+        },
+        {
+            id: 10,
+            userName: 'Система',
+            date: '2025-03-12 12:00',
+            action: 'Автоматическое',
+            details: 'Статус субботника изменен на "Проходит"'
+        }
+    ]);
+    
+    /**
+     * Handler to open the history dialog
+     */
+    const handleHistoryDialogOpen = () => {
+        setHistoryDialogOpen(true);
+    };
+    
+    /**
+     * Handler to close the history dialog
+     */
+    const handleHistoryDialogClose = () => {
+        setHistoryDialogOpen(false);
+    };
+    
     return (
         <Box className={"cleanday-box"}>
             <Box sx={{margin: '10px 0px 0px 20px'}}>
@@ -757,6 +848,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                             height: '45px',
                                             width: '100%',
                                         }}
+                                        onClick={handleHistoryDialogOpen}
                                     >
                                         история активности субботника
                                     </Button>
@@ -878,6 +970,14 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 onConfirm={handleCancelCleandayConfirm}
                 // title="Отмена субботника"
                 // message={`Вы уверены, что хотите отменить субботник "${cleanup.name}"? Это действие нельзя будет отменить.`}
+            />
+
+            {/* CleandayHistoryDialog */}
+            <CleandayHistoryDialog
+                open={historyDialogOpen}
+                onClose={handleHistoryDialogClose}
+                cleandayName={cleanup.name}
+                historyEntries={historyEntries}
             />
 
             {/* Компонент для отображения уведомлений */}
