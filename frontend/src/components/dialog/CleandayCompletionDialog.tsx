@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -10,18 +10,14 @@ import {
     Box,
     Typography,
     Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
     Chip,
     IconButton,
     Tooltip,
     Divider,
-    Alert
+    Alert,
+    Checkbox,
 } from '@mui/material';
+import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -29,7 +25,9 @@ import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import {CompletionData, Participant, ParticipantStatus} from '../../models/User';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import {CompletionData, Participant, ParticipantStatus, ParticipationStatus} from '../../models/User';
 
 /**
  * Интерфейс для пропсов компонента CleandayCompletionDialog
@@ -63,29 +61,76 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
     participants,
 }: CleandayCompletionDialogProps): React.JSX.Element => {
     // Состояния
-    const [participantStatuses, setParticipantStatuses] = useState<{ [userId: number]: ParticipantStatus }>(
+    const [participantStatuses, setParticipantStatuses] = useState<{ [userId: number]: ParticipationStatus }>(
         participants.reduce((acc, participant) => {
-            acc[participant.id] = participant.status;
+            // Map ParticipantStatus to ParticipationStatus for initial state
+            let status: ParticipationStatus;
+            switch (participant.status) {
+                case ParticipantStatus.PARTICIPATED:
+                    status = ParticipationStatus.GOING;
+                    break;
+                case ParticipantStatus.NOT_PARTICIPATED:
+                    status = ParticipationStatus.NOT_GOING;
+                    break;
+                case ParticipantStatus.CONFIRMED:
+                    status = ParticipationStatus.MAYBE;
+                    break;
+                default:
+                    status = ParticipationStatus.NOT_GOING;
+            }
+            acc[participant.id] = status;
             return acc;
-        }, {} as { [userId: number]: ParticipantStatus })
+        }, {} as { [userId: number]: ParticipationStatus })
     );
     const [result, setResult] = useState<string>('');
     const [results, setResults] = useState<string[]>([]);
     const [images, setImages] = useState<File[]>([]);
     const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
     const [fileError, setFileError] = useState<string | null>(null);
+    const [convertedStatuses, setConvertedStatuses] = useState<{ [userId: number]: ParticipantStatus }>(
+        participants.reduce((acc, participant) => {
+            // Default to the current participant status
+            acc[participant.id] = participant.status;
+            return acc;
+        }, {} as { [userId: number]: ParticipantStatus })
+    );
+    // Track if form has unsaved changes
+    const [hasChanges, setHasChanges] = useState<boolean>(false);
+    
+    // Remove custom search state as we'll use MRT's built-in search
+    // const [searchText, setSearchText] = useState<string>('');
 
     // Ref для скрытого input загрузки файлов
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Reset state when dialog opens/closes
+    useEffect(() => {
+        if (open) {
+            setHasChanges(false);
+        }
+    }, [open]);
+
     /**
      * Обработчик изменения статуса участника
      */
-    const handleStatusChange = (userId: number, newStatus: ParticipantStatus) => {
+    const handleStatusChange = (userId: number, newStatus: ParticipationStatus) => {
         setParticipantStatuses(prev => ({
             ...prev,
             [userId]: newStatus
         }));
+        setHasChanges(true);
+    };
+
+    /**
+     * Обработчик изменения фактического присутствия участника
+     */
+    const handleAttendanceChange = (userId: number, attended: boolean) => {
+        const newConvertedStatuses = { ...convertedStatuses };
+        newConvertedStatuses[userId] = attended 
+            ? ParticipantStatus.PARTICIPATED 
+            : ParticipantStatus.NOT_PARTICIPATED;
+        setConvertedStatuses(newConvertedStatuses);
+        setHasChanges(true);
     };
 
     /**
@@ -95,6 +140,7 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
         if (result.trim() !== '') {
             setResults(prev => [...prev, result.trim()]);
             setResult('');
+            setHasChanges(true);
         }
     };
 
@@ -173,6 +219,10 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+
+        if (validFiles.length > 0) {
+            setHasChanges(true);
+        }
     };
 
     /**
@@ -189,6 +239,8 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
         if (currentImageIndex >= images.length - 1) {
             setCurrentImageIndex(Math.max(0, images.length - 2));
         }
+
+        setHasChanges(true);
     };
 
     /**
@@ -213,27 +265,32 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
      * Обработчик отправки формы
      */
     const handleSubmit = () => {
+        // No need to convert statuses here anymore, as we're tracking them directly
         const completionData: CompletionData = {
             results,
             images,
-            participantStatuses
+            participantStatuses: convertedStatuses
         };
         onSubmit(completionData);
         onClose();
     };
-
+    
+    // Remove custom search handler and filtered participants
+    // as we'll use MRT's built-in search functionality
+    
     /**
      * Получить цвет для статуса участника
      */
-    const getStatusColor = (status: ParticipantStatus): "success" | "error" | "warning" | "default" => {
+    const getStatusColor = (status: ParticipationStatus): "success" | "error" | "warning" | "info" | "default" => {
         switch (status) {
-            case ParticipantStatus.PARTICIPATED:
+            case ParticipationStatus.GOING:
                 return "success";
-            case ParticipantStatus.NOT_PARTICIPATED:
-                return "error";
-            case ParticipantStatus.CONFIRMED:
+            case ParticipationStatus.LATE:
+                return "info";
+            case ParticipationStatus.MAYBE:
                 return "warning";
-            case ParticipantStatus.UNKNOWN:
+            case ParticipationStatus.NOT_GOING:
+                return "error";
             default:
                 return "default";
         }
@@ -242,22 +299,134 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
     /**
      * Получить иконку для статуса участника
      */
-    const getStatusIcon = (status: ParticipantStatus) => {
+    const getStatusIcon = (status: ParticipationStatus) => {
         switch (status) {
-            case ParticipantStatus.PARTICIPATED:
+            case ParticipationStatus.GOING:
                 return <CheckCircleIcon fontSize="small" />;
-            case ParticipantStatus.NOT_PARTICIPATED:
+            case ParticipationStatus.LATE:
+                return <AccessTimeIcon fontSize="small" />;
+            case ParticipationStatus.MAYBE:
+                return <HourglassEmptyIcon fontSize="small" />;
+            case ParticipationStatus.NOT_GOING:
                 return <CancelIcon fontSize="small" />;
-            case ParticipantStatus.CONFIRMED:
-            case ParticipantStatus.UNKNOWN:
             default:
                 return <HelpOutlineIcon fontSize="small" />;
         }
     };
 
+    /**
+     * Определение столбцов для таблицы участников
+     */
+    const columns = useMemo<MRT_ColumnDef<Participant>[]>
+    (
+        () => [
+            {
+                id: 'firstName',
+                header: 'Имя',
+                accessorKey: 'firstName',
+                size: 120,
+            },
+            {
+                id: 'lastName',
+                header: 'Фамилия',
+                accessorKey: 'lastName',
+                size: 120,
+            },
+            {
+                accessorKey: 'username',
+                header: 'Имя пользователя',
+                size: 150,
+            },
+            {
+                id: 'planned_status',
+                header: 'Заявленный статус',
+                Cell: ({ row }) => (
+                    <Chip
+                        label={participantStatuses[row.original.id]}
+                        color={getStatusColor(participantStatuses[row.original.id])}
+                        icon={getStatusIcon(participantStatuses[row.original.id])}
+                        size="small"
+                    />
+                ),
+                size: 180,
+            },
+            {
+                id: 'actual_participation',
+                header: 'Присутствовал',
+                Cell: ({ row }) => (
+                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                        <Checkbox
+                            checked={
+                                convertedStatuses[row.original.id] === ParticipantStatus.PARTICIPATED
+                            }
+                            onChange={(e) => handleAttendanceChange(row.original.id, e.target.checked)}
+                            color="success"
+                            aria-label={`Отметить присутствие ${row.original.name}`}
+                        />
+                    </Box>
+                ),
+                size: 120,
+            },
+        ],
+        [participantStatuses, convertedStatuses]
+    );
+
+    /**
+     * Конфигурация таблицы MaterialReactTable с включенным встроенным поиском
+     */
+    const table = useMaterialReactTable({
+        columns,
+        data: participants,
+        enableColumnOrdering: false,
+        enableRowSelection: false,
+        enableSorting: true,
+        enableColumnFilters: true,
+        positionGlobalFilter: 'left',
+        enableGlobalFilter: true, // Enable built-in search
+        enableColumnFilterModes: true,
+        initialState: {
+            density: "compact",
+            pagination: { pageIndex: 0, pageSize: 10 },
+            showGlobalFilter: true, // Show search bar by default
+        },
+        muiTablePaperProps: {
+            elevation: 0,
+            sx: {
+                border: '1px solid rgba(224, 224, 224, 1)',
+                borderRadius: '4px',
+            },
+        },
+        // Configure the search input appearance
+        muiSearchTextFieldProps: {
+            placeholder: 'Поиск участников',
+            size: 'small',
+            sx: { mb: 2 },
+            variant: 'outlined',
+        },
+    });
+
+    /**
+     * Обработчик закрытия с проверкой несохраненных изменений
+     */
+    const handleClose = () => {
+        if (hasChanges) {
+            if (window.confirm('У вас есть несохраненные изменения. Вы уверены, что хотите закрыть?')) {
+                onClose();
+            }
+        } else {
+            onClose();
+        }
+    };
+
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle>
+        <Dialog 
+            open={open} 
+            onClose={handleClose} 
+            maxWidth="md" 
+            fullWidth
+            aria-labelledby="cleanday-completion-dialog-title"
+        >
+            <DialogTitle id="cleanday-completion-dialog-title">
                 Завершение субботника
                 <Typography component="div" variant="subtitle1" color="text.secondary">
                     {cleandayName}
@@ -271,52 +440,10 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
                         <Typography variant="h6" gutterBottom>
                             Учёт участников
                         </Typography>
-                        <TableContainer component={Paper}>
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Участник</TableCell>
-                                        <TableCell>Статус</TableCell>
-                                        <TableCell>Действия</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {participants.map((participant) => (
-                                        <TableRow key={participant.id}>
-                                            <TableCell>{participant.name}</TableCell>
-                                            <TableCell>
-                                                <Chip
-                                                    label={participantStatuses[participant.id]}
-                                                    color={getStatusColor(participantStatuses[participant.id])}
-                                                    icon={getStatusIcon(participantStatuses[participant.id])}
-                                                    size="small"
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                                    <Button
-                                                        size="small"
-                                                        variant={participantStatuses[participant.id] === ParticipantStatus.PARTICIPATED ? "contained" : "outlined"}
-                                                        color="success"
-                                                        onClick={() => handleStatusChange(participant.id, ParticipantStatus.PARTICIPATED)}
-                                                    >
-                                                        Участвовал
-                                                    </Button>
-                                                    <Button
-                                                        size="small"
-                                                        variant={participantStatuses[participant.id] === ParticipantStatus.NOT_PARTICIPATED ? "contained" : "outlined"}
-                                                        color="error"
-                                                        onClick={() => handleStatusChange(participant.id, ParticipantStatus.NOT_PARTICIPATED)}
-                                                    >
-                                                        Не участвовал
-                                                    </Button>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
+                        
+                        {/* Remove custom search bar and use MRT's built-in search */}
+                        
+                        <MaterialReactTable table={table} />
                     </Grid>
 
                     <Grid item xs={12}>
@@ -458,13 +585,14 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
             </DialogContent>
 
             <DialogActions>
-                <Button onClick={onClose} color="primary" variant="text">
+                <Button onClick={handleClose} color="primary" variant="text">
                     Отмена
                 </Button>
                 <Button 
                     onClick={handleSubmit} 
                     color="success" 
                     variant="contained"
+                    disabled={!hasChanges}
                 >
                     Завершить субботник
                 </Button>

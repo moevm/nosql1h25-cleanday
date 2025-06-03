@@ -9,14 +9,14 @@ import {
 } from '@mui/material';
 
 /**
- * Интерфейс для пропсов компонента DeleteCleandayDialog.
+ * Интерфейс для пропсов компонента CancelCleandayDialog.
  * @param {boolean} open - Определяет, открыт ли диалог.
  * @param {() => void} onClose - Функция, вызываемая при закрытии диалога.
- * @param {() => void} onConfirm - Функция, вызываемая при подтверждении удаления.
+ * @param {() => void} onConfirm - Функция, вызываемая при подтверждении отмены.
  * @param {string} [title] - Заголовок диалога (опционально).
  * @param {string} [message] - Сообщение в диалоге (опционально).
  */
-interface DeleteCleandayDialogProps {
+interface CancelCleandayDialogProps {
     open: boolean;
     onClose: () => void;
     onConfirm: () => void;
@@ -25,22 +25,22 @@ interface DeleteCleandayDialogProps {
 }
 
 /**
- * DeleteCleandayDialog: Компонент для подтверждения удаления субботника.
+ * CancelCleandayDialog: Компонент для подтверждения отмены субботника.
  * Предоставляет диалог с кнопками подтверждения/отмены.
  *
- * @param {DeleteCleandayDialogProps} props - Пропсы компонента.
- * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий диалоговое окно для подтверждения удаления.
+ * @param {CancelCleandayDialogProps} props - Пропсы компонента.
+ * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий диалоговое окно для подтверждения отмены.
  */
-const DeleteCleandayDialog: React.FC<DeleteCleandayDialogProps> = ({
+const CancelCleandayDialog: React.FC<CancelCleandayDialogProps> = ({
     open,
     onClose,
     onConfirm,
-    title = 'Подтверждение удаления субботника',
-    message = 'Уверены, что хотите удалить субботник?',
-}: DeleteCleandayDialogProps): React.JSX.Element => {
+    title = 'Подтверждение отмены субботника',
+    message = 'Уверены, что хотите отменить субботник?',
+}: CancelCleandayDialogProps): React.JSX.Element => {
 
     /**
-     * Обработчик подтверждения удаления.
+     * Обработчик подтверждения отмены.
      * Вызывает функцию onConfirm и закрывает диалог.
      */
     const handleConfirm = () => {
@@ -63,7 +63,7 @@ const DeleteCleandayDialog: React.FC<DeleteCleandayDialogProps> = ({
             {/* Кнопки действий */}
             <DialogActions>
                 <Button onClick={handleConfirm} color="error" variant="contained">
-                    Удалить
+                    Подтвердить
                 </Button>
                 <Button onClick={onClose} color="primary" variant="text">
                     Отмена
@@ -73,4 +73,4 @@ const DeleteCleandayDialog: React.FC<DeleteCleandayDialogProps> = ({
     );
 };
 
-export default DeleteCleandayDialog;
+export default CancelCleandayDialog;
