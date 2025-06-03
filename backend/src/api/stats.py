@@ -90,7 +90,7 @@ async def import_db(
                 "arangorestore",
                 "--server.endpoint", "tcp://db:8529",  # adjust if needed
                 "--server.username", "root",
-                "--server.password", "password",
+                "--server.password", ARANGO_ROOT_PASSWORD,
                 "--input-directory", extract_dir,
                 "--server.database", DATABASE_NAME,
                 "--overwrite", "true"
