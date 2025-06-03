@@ -83,8 +83,6 @@ def get_cleanday_page(db: StandardDatabase, header_query: str, params: GetCleand
 
                 LET participant_count = COUNT(
                     FOR par IN INBOUND cdId participation_in
-                      FOR user IN INBOUND par has_participation
-                        LIMIT 1
                         RETURN 1
                 )
 
