@@ -167,7 +167,9 @@ export interface ParticipationData {
 
 export interface Participant {
     id: number;
-    name: string;
+    firstName: string;
+    lastName: string;
+    username?: string; // Keep the username field if it exists
     status: ParticipantStatus;
 }
 
