@@ -1,18 +1,20 @@
+import './Appbar.css';
+
 import React from 'react';
 
-import './Appbar.css';
-import {
-    AppBar, Avatar,
-    Box, Button,
-    IconButton,
-    Toolbar,
-} from '@mui/material';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from "../../pages/Menu/Menu.tsx";
-import { ExitToApp } from "@mui/icons-material";
+import {Link} from 'react-router-dom';
+
+import {AppBar, Avatar, Box, Button, IconButton, Toolbar,} from '@mui/material';
+
+import {ExitToApp} from "@mui/icons-material";
+
+import {CreateCleanday, Location} from "@models/User.ts";
+
+import {useAuth} from "@hooks/authorization/useAuth.tsx";
+
 import CreateCleandayDialog from "../dialog/CreateCleandayDialog.tsx";
-import { Location, CreateCleanday } from "../../models/User.ts";
 import LogoutConfirmationDialog from "../dialog/LogoutConfirmationDialog";
+
 
 const locationsMock: Location[] = [
     {
@@ -29,14 +31,17 @@ const locationsMock: Location[] = [
     }
 ];
 
-const Appbar = ({}) => {
-    const { isLoggedIn, username, UserLogoutToken } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
-    const showAppbar = location.pathname !== "/" && location.pathname !== "/register" && location.pathname !== "/authorization";
+interface AppbarProps {
+    open: boolean;
+}
+
+const Appbar = ({open}: AppbarProps): React.JSX.Element => {
+    const {username, logout} = useAuth();
+    // const location = useLocation();
+    // const showAppbar = location.pathname !== "/" && location.pathname !== "/register" && location.pathname !== "/authorization";
 
     // Состояние открытия диалога для создания субботника
-    const [openDialog, setOpenDialog] = React.useState(false);
+    const [cleandayDialogOpen, setCleandayDialogOpen] = React.useState(false);
 
     // Состояние для диалога подтверждения выхода
     const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
@@ -45,12 +50,6 @@ const Appbar = ({}) => {
     const handleCleandaySubmit = (data: CreateCleanday) => {
         // Например, сделать POST-запрос, добавить в список, обновить состояние и т.д.
         console.log('Создан субботник:', data);
-    };
-
-    // Обработчик подтверждения выхода
-    const handleLogout = () => {
-        UserLogoutToken();
-        navigate('/'); // Перенаправляем на главную после логаута
     };
 
     return (
@@ -62,7 +61,7 @@ const Appbar = ({}) => {
                 height: 64,
                 backgroundColor: '#a9e3d4',
                 color: 'black',
-                display: showAppbar && isLoggedIn ? 'flex' : 'none',
+                display: open ? 'flex' : 'none',
             }}
         >
             <Toolbar>
@@ -116,30 +115,30 @@ const Appbar = ({}) => {
                     component={Link} to="/statistics" variant="contained" color="success">
                     <h2>Статистика</h2>
                 </Button>
-                <Box sx={{ flexGrow: 1 }} />
+                <Box sx={{flexGrow: 1}}/>
                 <Button
                     variant="outlined"
-                    sx={{ ml: "20px", height: '50px', color: 'black', borderColor: 'black' }}
-                    onClick={() => setOpenDialog(true)}
+                    sx={{ml: "20px", height: '50px', color: 'black', borderColor: 'black'}}
+                    onClick={() => setCleandayDialogOpen(true)}
                 >
                     <h2>организация субботников</h2>
                 </Button>
-                <Avatar style={{ marginRight: '10px', marginLeft: '10px' }}
+                <Avatar style={{marginRight: '10px', marginLeft: '10px'}}
                         component={Link} to="/profile"
                 >{username.charAt(0).toUpperCase()}</Avatar>
                 <IconButton
                     size="large"
                     color="inherit"
-                    sx={{ '&:focus': { outline: 'none' }, }}
+                    sx={{'&:focus': {outline: 'none'},}}
                     onClick={() => setLogoutDialogOpen(true)} // Открытие диалога подтверждения
                 >
-                    <ExitToApp />
+                    <ExitToApp/>
                 </IconButton>
             </Toolbar>
             {/* Диалог создания субботника */}
             <CreateCleandayDialog
-                open={openDialog}
-                onClose={() => setOpenDialog(false)}
+                open={cleandayDialogOpen}
+                onClose={() => setCleandayDialogOpen(false)}
                 onSubmit={handleCleandaySubmit}
                 locations={locationsMock}
             />
@@ -147,7 +146,7 @@ const Appbar = ({}) => {
             <LogoutConfirmationDialog
                 open={logoutDialogOpen}
                 onClose={() => setLogoutDialogOpen(false)}
-                onConfirm={handleLogout}
+                onConfirm={logout}
             />
         </AppBar>
     );
