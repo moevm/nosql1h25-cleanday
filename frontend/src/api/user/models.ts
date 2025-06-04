@@ -1,6 +1,7 @@
-import ApiModel from "@api/ApiModel.ts";
+import {BaseApiModel, BaseGetResponseModel} from "@api/BaseApiModel";
 
-export interface UserApiModel extends ApiModel {
+
+export interface UserApiModel extends BaseApiModel {
     first_name: string;
     last_name: string;
     login: string;
@@ -16,6 +17,10 @@ export interface UserApiModel extends ApiModel {
     updated_at?: string;
 }
 
+export interface GetUsersResponse extends BaseGetResponseModel {
+    users: Array<UserApiModel>;
+}
+
 export interface UpdateUserApiModel {
     first_name?: string;
     last_name?: string;
@@ -23,4 +28,8 @@ export interface UpdateUserApiModel {
     city_id?: string;
     about_me?: string;
     password?: string;
+}
+
+export interface UpdateUserApiModelWithKey extends BaseApiModel, UpdateUserApiModel {
+
 }
