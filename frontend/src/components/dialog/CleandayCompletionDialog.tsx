@@ -27,7 +27,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import {CompletionData, Participant, ParticipantStatus, ParticipationStatus} from '../../models/User';
+import {CompletionData, Participant, ParticipantStatus, ParticipationStatus} from '@models/deleteMeLater.ts';
 
 /**
  * Интерфейс для пропсов компонента CleandayCompletionDialog

@@ -6,7 +6,7 @@ import Notification from '@components/Notification.tsx';
 
 
 import './StatisticsPage.css'; // You can create this file for custom styling
-import { StatisticData } from '@models/User.ts';
+import { StatisticData } from '@models/deleteMeLater.ts';
 import ExportConfirmationDialog from "@components/dialog/ExportConfirmationDialog.tsx";
 import ImportDialog from "@components/dialog/ImportDialog.tsx";
 

@@ -12,7 +12,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import './UserProfilePage.css';
-import { UserProfile, UserProfileEdit, Cleanday, CleanDayTag } from "@models/User.ts";
+import { UserProfile, UserProfileEdit, Cleanday, CleanDayTag } from "@models/deleteMeLater.ts";
 import Notification from '@components/Notification.tsx';
 import { useNavigate } from "react-router-dom";
 import EditUserProfileDialog from "@components/dialog/EditUserProfileDialog.tsx";

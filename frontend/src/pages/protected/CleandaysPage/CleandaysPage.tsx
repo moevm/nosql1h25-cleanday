@@ -11,7 +11,7 @@ import {Box, Button, Checkbox, Chip, FormControlLabel, InputAdornment, TextField
 import SearchIcon from '@mui/icons-material/Search';
 
 
-import {Cleanday, CleanDayTag} from "@models/User.ts";
+import {Cleanday, CleanDayTag} from "@models/deleteMeLater.ts";
 
 import Notification from '@components/Notification.tsx';
 

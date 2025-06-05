@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
 import { useNavigate } from 'react-router-dom';
-import { Cleanday, CleanDayTag } from '@/models/User';
+import { Cleanday, CleanDayTag } from '@models/deleteMeLater.ts';
 
 // Interface for the dialog props
 interface OrganizedCleandaysDialogProps {

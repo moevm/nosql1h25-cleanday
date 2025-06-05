@@ -41,7 +41,7 @@ import {
     ParticipantStatus,
     CompletionData,
     CleandayResults
-} from "@models/User.ts";
+} from "@models/deleteMeLater.ts";
 
 import EditCleandayDialog from '@components/dialog/EditCleandayDialog.tsx';
 import ParticipationDialog from "@components/dialog/ParticipationDialog.tsx";

@@ -20,7 +20,7 @@ import {TimePicker} from '@mui/x-date-pickers/TimePicker';
 // import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
 // import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
 import {Dayjs} from 'dayjs';
-import {CleanDayTag, Location, CreateCleanday} from "../../models/User.ts";
+import {CleanDayTag, Location, CreateCleanday} from "@models/deleteMeLater.ts";
 import AddIcon from "@mui/icons-material/Add";
 import CreateLocationDialog from './CreateLocationDialog.tsx';
 

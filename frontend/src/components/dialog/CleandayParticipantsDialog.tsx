@@ -15,7 +15,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
-import { ParticipationStatus } from '@/models/User';
+import { ParticipationStatus } from '@models/deleteMeLater.ts';
 
 // Interface for a participant
 export interface CleandayParticipant {

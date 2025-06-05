@@ -1,9 +1,9 @@
-export type AuthFormData = {
+export interface AuthFormData {
     username: string;
     password: string;
 }
 
-export type AuthResponse = {
+export interface AuthResponse {
     access_token: string;
     token_type: string;
 }

@@ -19,7 +19,7 @@ import {
     Typography
 } from '@mui/material';
 
-import {City, CreateUser} from "@models/User.ts";
+import {City, CreateUser} from "@models/deleteMeLater.ts";
 
 /**
  * RegistrationPage: Функциональный компонент, представляющий форму регистрации пользователя.

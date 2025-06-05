@@ -17,7 +17,7 @@ import {
     Autocomplete,
 } from '@mui/material';
 
-import { UserProfile, UserProfileEdit, UserPic } from '../../models/User.ts';
+import { UserProfile, UserProfileEdit, UserPic } from '@models/deleteMeLater.ts';
 
 /**
  * Интерфейс для пропсов компонента EditUserProfileDialog.
