@@ -1,4 +1,4 @@
-import {BaseApiModel, BaseGetResponseModel} from "@api/BaseApiModel";
+import {BaseApiModel} from "@api/BaseApiModel";
 
 import {CityApiModel} from "@api/city/models";
 import {LocationApiModel} from "@api/location/models";
@@ -28,10 +28,6 @@ export interface CleandayApiModel extends BaseApiModel {
     tags: Array<string>;
     requirements: Array<RequirementApiModel>;
     results: Array<string>;
-}
-
-export interface GetCleandaysResponse extends BaseGetResponseModel {
-    cleandays: Array<CleandayApiModel>;
 }
 
 export interface CreateCleandayApiModel {
