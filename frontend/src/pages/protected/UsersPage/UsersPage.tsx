@@ -1,56 +1,27 @@
 import './UsersPage.css'
-import React from 'react';
-import {
-    Box,
-    TextField,
-    InputAdornment,
-    Button,
-} from '@mui/material';
+import React, {useEffect, useState} from 'react';
+import {Box, Button, InputAdornment, TextField,} from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import {MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef} from 'material-react-table';
+import {
+    MaterialReactTable,
+    type MRT_ColumnDef,
+    MRT_ColumnFiltersState,
+    MRT_PaginationState,
+    MRT_SortingState, MRT_Updater,
+    useMaterialReactTable
+} from 'material-react-table';
 import Notification from '@components/Notification.tsx';
-import {User} from "@models/User.ts";
+import {DeleteMeLater} from "@models/deleteMeLater.ts";
 import Typography from "@mui/material/Typography";
 import {useNavigate} from 'react-router-dom';
+import {getStatusByLevel} from "@/utils/user/getStatusByLevel.ts";
+import {useGetUsers} from "@hooks/user/useGetUsers.tsx";
+import {GetUsersParams} from '@api/user/models';
+import {SortOrder} from "@api/BaseApiModel.ts";
+import {User} from "@models/User.ts";
+import {MRT_Localization_RU} from "material-react-table/locales/ru";
 
-// TODO: Реализуйте запрос
-/**
- * Моковые данные пользователей для демонстрации.
- * В реальном приложении этот массив будет загружаться с сервера через API-запрос.
- * Каждый объект представляет пользователя с базовой информацией и статистикой участия в субботниках.
- */
-const userData: User[] = [
-    {
-        key: "1",
-        first_name: "Alice",
-        last_name: "Smith",
-        login: "alice.s",
-        city: "Milan",
-        cleanday_count: 12,       // Количество субботников, в которых участвовал пользователь
-        organized_count: 8,        // Количество организованных пользователем субботников
-        level: 2,                  // Уровень пользователя
-    },
-    {
-        key: "2",
-        first_name: "Bob",
-        last_name: "Johnson",
-        login: "bob.j",
-        city: "Rome",
-        cleanday_count: 5,
-        organized_count: 15,
-        level: 1,
-    },
-    {
-        key: "3",
-        first_name: "Charlie",
-        last_name: "Brown",
-        login: "charlie.b",
-        city: "Florence",
-        cleanday_count: 20,
-        organized_count: 10,
-        level: 3,
-    },
-];
+const userData = [];
 
 /**
  * UsersPage: Компонент страницы для отображения списка пользователей.
@@ -70,28 +41,134 @@ const UsersPage: React.FC = (): React.JSX.Element => {
     // Хук для программной навигации между страницами
     const navigate = useNavigate();
 
-    /**
-     * Функция для преобразования числового уровня пользователя в текстовое описание с эмодзи.
-     * Используется для отображения статуса пользователя в таблице.
-     *
-     * @param {number} level - Числовой уровень пользователя.
-     * @returns {string} - Текстовое представление уровня пользователя с эмодзи.
-     */
-    const getLevelStatus = React.useCallback((level: number) => {
-        if (level == 1) {
-            return 'Новичок👍';
-        } else if (level == 2) {
-            return 'Труженик💪';
-        } else if (level == 3) {
-            return 'Лидер района🤝';
-        } else if (level == 4) {
-            return 'Экоактивист🌱';
-        } else if (level == 5) {
-            return 'Экозвезда🌟';
+    const [pagination, setPagination] = useState<MRT_PaginationState>({
+        pageIndex: 0, pageSize: 10,
+    });
+
+    const [sorting, setSorting] = useState<MRT_SortingState>([]);
+
+    const [columnFilters, setColumnFilters] = useState<MRT_ColumnFiltersState>([]);
+
+    const [globalFilter, setGlobalFilter] = useState<string | undefined>(undefined);
+
+    const [getUsersParams, setGetUsersParams] = useState<GetUsersParams>({
+        offset: pagination.pageIndex * pagination.pageSize, limit: pagination.pageSize,
+    });
+
+    useEffect((): void => {
+        const params: GetUsersParams = {
+            offset: pagination.pageIndex * pagination.pageSize,
+            limit: pagination.pageSize,
+            search_query: globalFilter && globalFilter.trim() !== "" ? globalFilter.trim() : undefined,
+        };
+
+        if (sorting.length > 0) {
+            params.sort_by = sorting[0].id;
+            params.sort_order = sorting[0].desc ? SortOrder.desc : SortOrder.asc;
         } else {
-            return 'Эко-гуру🏆';
+            params.sort_by = undefined;
+            params.sort_order = undefined;
         }
-    }, []);
+
+        columnFilters.forEach(filter => {
+            const filterId = filter.id;
+            const filterValue = filter.value;
+
+            switch (filterId) {
+                case 'firstName':
+                    params.first_name = String(filterValue);
+                    break;
+
+                case 'lastName':
+                    params.last_name = String(filterValue);
+                    break;
+
+                case 'login':
+                    params.login = String(filterValue);
+                    break;
+
+                case 'city':
+                    params.city = String(filterValue);
+                    break;
+
+                case 'participantsCount':
+                    if (filterValue && typeof filterValue === 'object') {
+                        const range = filterValue as { min?: number; max?: number };
+                        if (typeof range.min === 'number') {
+                            params.cleandays_from = String(range.min);
+                        }
+                        if (typeof range.max === 'number') {
+                            params.cleandays_to = String(range.max);
+                        }
+                    }
+                    break;
+
+                case 'cleaned':
+                    if (filterValue && typeof filterValue === 'object') {
+                        const range = filterValue as { min?: number; max?: number };
+                        if (typeof range.min === 'number') {
+                            params.stat_from = String(range.min);
+                        }
+                        if (typeof range.max === 'number') {
+                            params.stat_to = String(range.max);
+                        }
+                    }
+                    break;
+
+                case 'organizedCount':
+                    if (filterValue && typeof filterValue === 'object') {
+                        const range = filterValue as { min?: number; max?: number };
+                        if (typeof range.min === 'number') {
+                            params.organized_from = String(range.min);
+                        }
+                        if (typeof range.max === 'number') {
+                            params.organized_to = String(range.max);
+                        }
+                    }
+                    break;
+
+                case 'level':
+                    if (filterValue && typeof filterValue === 'object') {
+                        const range = filterValue as { min?: number; max?: number };
+                        if (typeof range.min === 'number') {
+                            params.level_from = String(range.min);
+                        }
+                        if (typeof range.max === 'number') {
+                            params.level_to = String(range.max);
+                        }
+                    }
+                    break;
+            }
+        });
+        setGetUsersParams(params);
+    }, [pagination.pageIndex, pagination.pageSize, sorting, columnFilters, globalFilter,]);
+
+    const handleSortingChange = (updaterOrValue: MRT_Updater<MRT_SortingState>): void => {
+        setSorting(updaterOrValue);
+        setPagination(prev => ({...prev, pageIndex: 0}));
+    };
+
+    const handleColumnFiltersChange = (updaterOrValue: MRT_Updater<MRT_ColumnFiltersState>): void => {
+        setColumnFilters(updaterOrValue);
+        setPagination(prev => ({...prev, pageIndex: 0}));
+    };
+
+    const handleGlobalFilterChange = (value: string | undefined): void => {
+        setGlobalFilter(value);
+        setPagination(prev => ({...prev, pageIndex: 0}));
+    }
+
+    const {
+        data,
+        isError: isLoadingUsersError,
+        isFetching: isFetchingUsers,
+        isLoading: isLoadingUsers,
+        error: loadingUsersError,
+    } = useGetUsers(getUsersParams);
+
+    const fetchedUsers = data?.users ?? [];
+    const totalRowCount = data?.totalCount ?? 0;
+
 
     /**
      * Обработчик нажатия на кнопку построения графика.
@@ -117,9 +194,9 @@ const UsersPage: React.FC = (): React.JSX.Element => {
      * Обработчик клика по строке таблицы.
      * Осуществляет переход на страницу детального просмотра выбранного пользователя.
      *
-     * @param {User} user - Объект пользователя, по строке которого был совершен клик.
+     * @param {DeleteMeLater} user - Объект пользователя, по строке которого был совершен клик.
      */
-    const handleRowClick = React.useCallback((user: User) => {
+    const handleRowClick = React.useCallback((user: DeleteMeLater) => {
         navigate(`/users/${user.key}`);
     }, [navigate]);
 
@@ -130,63 +207,65 @@ const UsersPage: React.FC = (): React.JSX.Element => {
     const columns = React.useMemo<MRT_ColumnDef<User>[]>(
         () => [
             {
-                accessorKey: 'key',
-                header: 'ID',
+                accessorKey: 'firstName',
+                header: 'Имя',
             },
             {
-                id: 'user',
-                header: 'User',
-                // Кастомная ячейка для отображения имени и фамилии пользователя
-                Cell: ({row}) => (
-                    <span>{row.original.first_name} {row.original.last_name}</span>
-                ),
-                filterVariant: 'text',
+                accessorKey: 'lastName',
+                header: 'Фамилия',
             },
             {
                 accessorKey: 'login',
-                header: 'Login',
+                header: 'Логин',
             },
             {
                 accessorKey: 'city',
-                header: 'City',
+                header: 'Город',
             },
             {
-                accessorKey: 'cleanday_count',
-                header: 'Area Cleaned, m²',
+                accessorKey: 'participantsCount',
+                header: 'Посещённые субботники',
+                filterVariant: 'range'
             },
             {
-                accessorKey: 'organized_count',
-                header: 'Organized Clean-ups',
+                accessorKey: 'cleaned',
+                header: 'Убрано, м²',
+                filterVariant: 'range'
             },
             {
-                id: 'level',
-                header: 'Level',
+                accessorKey: 'organizedCount',
+                header: 'Организованные субботники',
+                filterVariant: 'range'
+            },
+            {
+                accessorKey: 'level',
+                header: 'Уровень',
                 // Кастомная ячейка для отображения уровня пользователя в текстовом виде
                 Cell: ({row}) => (
-                    <span>{getLevelStatus(row.original.level)}</span>
+                    <span>{getStatusByLevel(row.original.level)}</span>
                 ),
-                filterVariant: 'text',
+                filterVariant: 'range',
                 enableColumnFilter: true,
             },
         ],
-        [getLevelStatus],
+        [],
     );
 
     /**
      * Фильтрация данных пользователей на основе текста поиска.
      * Возвращает массив пользователей, соответствующих поисковому запросу.
      */
-    const filteredUserData = React.useMemo(() => {
-        if (!searchText) {
-            return userData;
-        }
-        const lowerCaseSearchText = searchText.toLowerCase();
-        return userData.filter((user) =>
-            Object.values(user).some((value) =>
-                String(value).toLowerCase().includes(lowerCaseSearchText),
-            ),
-        );
-    }, [searchText]);
+    // const filteredUserData = React.useMemo(() => {
+    //     if (!searchText) {
+    //         return userData;
+    //     }
+    //     const lowerCaseSearchText = searchText.toLowerCase();
+    //     return userData.filter((user) =>
+    //         Object.values(user).some((value) =>
+    //             String(value).toLowerCase().includes(lowerCaseSearchText),
+    //         ),
+    //     );
+    // }, [searchText]);
 
     /**
      * Конфигурация таблицы MaterialReactTable.
@@ -194,16 +273,21 @@ const UsersPage: React.FC = (): React.JSX.Element => {
      */
     const table = useMaterialReactTable({
         columns,
-        data: filteredUserData,
+        data: ,
+
+        localization: MRT_Localization_RU,
+
         enableCellActions: true,
         enableColumnOrdering: false,
         enableRowSelection: false,
         enableSorting: true,
         enableColumnFilters: true,
         enableGlobalFilter: false,
-        initialState: {
-            pagination: {pageIndex: 0, pageSize: 10},
-        },
+
+        // state: {
+        //
+        // }
+
         muiTablePaperProps: {
             elevation: 0,
             sx: {
