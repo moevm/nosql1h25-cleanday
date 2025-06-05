@@ -14,7 +14,7 @@ import {
     Divider,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
-import {ParticipationData, ParticipationStatus, Requirement} from "../../models/User.ts";
+import {ParticipationData, ParticipationStatus, Requirement} from "@models/deleteMeLater.ts";
 
 /**
  * Интерфейс для пропсов компонента ParticipationDialog

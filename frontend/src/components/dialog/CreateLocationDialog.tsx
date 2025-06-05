@@ -17,7 +17,7 @@ import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
-import {City, CreateLocationData} from "../../models/User.ts";
+import {City, CreateLocationData} from "@models/deleteMeLater.ts";
 
 // Максимальный размер файла (3 МБ)
 const MAX_FILE_SIZE = 3 * 1024 * 1024;

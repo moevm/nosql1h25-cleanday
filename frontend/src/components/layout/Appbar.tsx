@@ -8,7 +8,7 @@ import {AppBar, Avatar, Box, Button, IconButton, Toolbar,} from '@mui/material';
 
 import {ExitToApp} from "@mui/icons-material";
 
-import {CreateCleanday, Location} from "@models/User.ts";
+import {CreateCleanday, Location} from "@models/deleteMeLater.ts";
 
 import {useAuth} from "@hooks/authorization/useAuth.tsx";
 
