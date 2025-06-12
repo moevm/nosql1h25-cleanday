@@ -16,7 +16,7 @@ import {
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import {CleandayResults} from "../../models/User.ts";
+import {CleandayResults} from "@models/deleteMeLater.ts";
 
 
 

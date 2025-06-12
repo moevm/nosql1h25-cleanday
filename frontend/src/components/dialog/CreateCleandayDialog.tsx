@@ -14,49 +14,36 @@ import {
     Grid,
     Box,
     Tooltip, IconButton,
+    CircularProgress,
 } from '@mui/material';
 import {DatePicker} from '@mui/x-date-pickers/DatePicker';
 import {TimePicker} from '@mui/x-date-pickers/TimePicker';
-// import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
-// import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
 import {Dayjs} from 'dayjs';
-import {CleanDayTag, Location, CreateCleanday} from "../../models/User.ts";
+import {CleandayTag} from "@models/Cleanday.ts";
+import {Location} from "@models/Location.ts";
 import AddIcon from "@mui/icons-material/Add";
 import CreateLocationDialog from './CreateLocationDialog.tsx';
-
+import {useGetAllLocation} from "@hooks/location/useGetAllLocation";
+import {CreateCleandayApiModel, CreateRequirementApiModel} from "@api/cleanday/models.ts";
+import {CreateLocationApiModel} from "@api/location/models.ts";
+import {useCreateLocation} from "@hooks/location/useCreateLocation";
 
 /**
  • Интерфейс для пропсов компонента CreateCleandayDialog.
  • Определяет, какие данные компонент принимает от родительского элемента.
  • @param {boolean} open - Определяет, открыт ли диалог.
  • @param {() => void} onClose - Функция, вызываемая при закрытии диалога.
- • @param {(data: CreateCleanday) => void} onSubmit - Функция, вызываемая при подтверждении создания субботника. Принимает данные формы (`CreateCleanday`).
- • @param {Location[]} locations - Массив объектов `Location`, представляющих доступные локации для выбора.
+ • @param {(data: CreateCleandayApiModel) => void} onSubmit - Функция, вызываемая при подтверждении создания субботника.
  */
 interface CreateCleandayDialogProps {
     open: boolean;
     onClose: () => void;
-    onSubmit: (data: CreateCleanday) => void;
-    locations: Location[];
+    onSubmit: (data: CreateCleandayApiModel) => void;
 }
 
 /**
  • Интерфейс для состояния формы.
  • Описывает структуру данных, хранящихся в состоянии компонента.
- • @param {string} name - Название субботника.
- • @param {Dayjs | null} beginDateDay - Дата начала субботника.
- • @param {Dayjs | null} beginDateTime - Время начала субботника.
- • @param {Dayjs | null} endDateDay - Дата окончания субботника.
- • @param {Dayjs | null} endDateTime - Время окончания субботника.
- • @param {string} organization - Организация, проводящая субботник.
- • @param {number | undefined} area - Площадь уборки (в квадратных метрах).
- • @param {string} description - Описание субботника.
- • @param {CleanDayTag[]} selectedTags - Выбранные теги для субботника.
- • @param {number | undefined} recommendedCount - Рекомендуемое количество участников.
- • @param {Location | null} selectedLocation - Выбранная локация.
- • @param {string} additionalCondition - Дополнительное условие для субботника.
- • @param {string[]} conditions - Массив условий для субботника.
- * @param {{ [key: string]: string }} errors - Объект, содержащий ошибки валидации формы. Ключ - имя поля, значение - текст ошибки.
  */
 interface FormState {
     name: string;
@@ -67,7 +54,7 @@ interface FormState {
     organization: string;
     area: number | undefined;
     description: string;
-    selectedTags: CleanDayTag[];
+    selectedTags: CleandayTag[];
     recommendedCount: number | undefined;
     selectedLocation: Location | null;
     additionalCondition: string;
@@ -108,21 +95,25 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                                                                        open,
                                                                        onClose,
                                                                        onSubmit,
-                                                                       locations,
                                                                    }: CreateCleandayDialogProps): React.JSX.Element => {
     // Состояние формы, хранит данные формы и ошибки валидации
     const [formState, setFormState] = React.useState<FormState>(defaultFormState);
 
-    const [isLocationDialogOpen, setLocationDialogOpen] = React.useState(false); // State for location dialog
-    const [localLocations, setLocalLocations] = React.useState<Location[]>(locations); // Local copy of locations
+    // Fetch all locations using the hook
+    const { data: locations = [], isLoading: isLocationsLoading, error: locationsError } = useGetAllLocation();
+    
+    // Add the create location hook
+    const { mutateAsync: createLocation} = useCreateLocation();
 
-    const handleNewLocation = (newLocation: Location) => {
-        setLocalLocations(prev => [...prev, newLocation]); // Update local locations list
-        setFormState(prevState => ({
-            ...prevState,
-            selectedLocation: newLocation, // Automatically select the new location
-        }));
-    };
+    const [isLocationDialogOpen, setLocationDialogOpen] = React.useState(false); // State for location dialog
+    const [localLocations, setLocalLocations] = React.useState<Location[]>([]); // Local copy of locations
+
+    // Update localLocations when the locations data is loaded
+    React.useEffect(() => {
+        if (locations && locations.length > 0) {
+            setLocalLocations(locations);
+        }
+    }, [locations]);
 
     // Деструктуризация состояния формы для удобства доступа к полям
     const {
@@ -210,7 +201,7 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
         // Валидация формы
         if (validateForm()) {
             // Проверка, что все даты и время установлены
-            if (!beginDateDay || !beginDateTime || !endDateDay || !endDateTime) {
+            if (!beginDateDay || !beginDateTime || !endDateDay || !endDateTime || !selectedLocation) {
                 return;
             }
 
@@ -232,17 +223,22 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                 endDateTime.minute(),
                 endDateTime.second()
             );
-            // Создание объекта с данными субботника
-            const cleandayData: CreateCleanday = {
+
+
+            // Создание объекта с данными субботника в формате API
+            const cleandayData: CreateCleandayApiModel = {
                 name,
-                beginDate,
-                endDate,
-                organization,
+                location_id: selectedLocation.id,
+                begin_date: beginDate.toISOString(),
+                end_date: endDate.toISOString(),
+                organization: organization || '', // Default value if not provided
                 area: area!,
                 description,
-                tags: selectedTags,
-                recommendedCount: recommendedCount!,
+                recommended_count: recommendedCount!,
+                tags: selectedTags.map(tag => tag.toString()),
+                requirements: conditions as unknown as CreateRequirementApiModel[],
             };
+            
             // Вызов функции отправки данных
             onSubmit(cleandayData);
             // Закрытие диалога
@@ -339,24 +335,35 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                         <FormControl sx={{width: '100%'}} error={!!errors.location}>
                             <InputLabel id="location-label">Локация</InputLabel>
                             <Box display="flex" flexDirection='row'>
-                                <Select
-                                    fullWidth
-                                    labelId="location-label"
-                                    id="location"
-                                    value={selectedLocation ? selectedLocation.key : ''}
-                                    label="Локация"
-                                    onChange={(e) => {
-                                        const selectedId = parseInt(e.target.value as string);
-                                        const location = locations.find((loc) => loc.key === selectedId) || null;
-                                        setFormState(prev => ({...prev, selectedLocation: location}));
-                                    }}
-                                >
-                                    {locations.map((location) => (
-                                        <MenuItem key={location.key} value={location.key}>
-                                            {location.address}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
+                                {isLocationsLoading ? (
+                                    <Box display="flex" justifyContent="center" width="100%" py={2}>
+                                        <CircularProgress />
+                                    </Box>
+                                ) : locationsError ? (
+                                    <Box display="flex" justifyContent="center" width="100%" color="error.main" py={2}>
+                                        Ошибка загрузки локаций
+                                    </Box>
+                                ) : (
+                                    <Select
+                                        fullWidth
+                                        labelId="location-label"
+                                        id="location"
+                                        value={selectedLocation ? selectedLocation.id : ''}
+                                        label="Локация"
+                                        onChange={(e) => {
+                                            const selectedId = e.target.value as string;
+                                            const location = localLocations.find((loc) => loc.id === selectedId) || null;
+                                            setFormState(prev => ({...prev, selectedLocation: location}));
+                                        }}
+                                    >
+                                        {localLocations.map((location) => (
+                                            <MenuItem key={location.id} value={location.id}>
+                                                {location.address}
+                                                {location.city && ` (${location.city.name})`}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                )}
                                 <Box sx={{flexGrow: 1}}/>
                                 <IconButton edge="end" color="primary" size="large" sx={{
                                     backgroundColor: '#3C6C5F',
@@ -526,16 +533,16 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                                 onChange={(e) => {
                                     setFormState(prevState => ({
                                         ...prevState,
-                                        selectedTags: e.target.value as CleanDayTag[]
+                                        selectedTags: e.target.value as CleandayTag[]
                                     }));
                                 }}
                                 label="Тэги"
                                 renderValue={(selected) => {
-                                    return (selected as CleanDayTag[]).join(', ');
+                                    return (selected as CleandayTag[]).join(', ');
                                 }}
                             >
                                 {/* Отображение списка тегов */}
-                                {Object.values(CleanDayTag).map((tag) => (
+                                {Object.values(CleandayTag).map((tag) => (
                                     <MenuItem key={tag} value={tag}>
                                         {tag}
                                     </MenuItem>
@@ -583,15 +590,23 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
             <CreateLocationDialog
                 open={isLocationDialogOpen}
                 onClose={() => setLocationDialogOpen(false)}
-                onSubmit={(locationData) => {
-                    const newLocation: Location = {
-                        address: locationData.address,
-                        instructions: locationData.additionalInfo,
-                        key: Math.max(...localLocations.map(loc => loc.key)) + 1, // Generate new unique key
-                        city: locationData.city,
-                    };
-                    handleNewLocation(newLocation);
-                    setLocationDialogOpen(false);
+                onSubmit={(locationData: CreateLocationApiModel) => {
+                    // Send request to create location
+                    createLocation(locationData)
+                        .then(newLocation => {
+                            // Update local state with the new location
+                            setLocalLocations(prev => [...prev, newLocation]);
+                            // Automatically select the new location
+                            setFormState(prev => ({
+                                ...prev,
+                                selectedLocation: newLocation,
+                            }));
+                            setLocationDialogOpen(false);
+                        })
+                        .catch(error => {
+                            console.error('Failed to create location:', error);
+                            // Optionally show an error message
+                        });
                 }}
             />
         </Dialog>

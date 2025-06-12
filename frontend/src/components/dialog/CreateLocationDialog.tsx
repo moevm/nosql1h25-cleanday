@@ -12,12 +12,15 @@ import {
     IconButton,
     Paper,
     Alert, Autocomplete,
+    CircularProgress
 } from '@mui/material';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
-import {City, CreateLocationData} from "../../models/User.ts";
+import { City } from "@models/City";
+import { CreateLocationApiModel } from "@api/location/models";
+import { useGetAllCities } from "@hooks/city/useGetAllCities";
 
 // Максимальный размер файла (3 МБ)
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
@@ -31,7 +34,7 @@ const ACCEPTED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 interface CreateLocationDialogProps {
     open: boolean;
     onClose: () => void;
-    onSubmit: (data: CreateLocationData) => void;
+    onSubmit: (locationData: CreateLocationApiModel) => void;
 }
 
 /**
@@ -46,6 +49,9 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
     onClose,
     onSubmit,
 }: CreateLocationDialogProps): React.JSX.Element => {
+    // Используем хук для получения списка городов
+    const { data: cities = [], isLoading: isLoadingCities, error: citiesError } = useGetAllCities();
+    
     // Состояния формы
     const [name, setName] = useState<string>('');
     const [city, setCity] = useState<City | null>(null);
@@ -55,14 +61,6 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
     const [fileError, setFileError] = useState<string | null>(null);
-
-    const cities: City[] = [
-        { key: '1', name: 'Москва' },
-        { key: '2', name: 'Санкт-Петербург' },
-        { key: '3', name: 'Новосибирск' },
-        { key: '4', name: 'Екатеринбург' },
-        { key: '5', name: 'Казань' },
-    ];
 
     // Ref для скрытого input загрузки файлов
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,16 +72,12 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
     const validateForm = (): boolean => {
         const newErrors: { [key: string]: string } = {};
 
-        if (!name.trim()) {
-            newErrors.name = 'Введите название локации';
+        if (!address.trim()) {
+            newErrors.address = 'Введите адрес локации';
         }
 
         if (!city) {
             newErrors.city = 'Выберите город';
-        }
-
-        if (!address.trim()) {
-            newErrors.address = 'Введите адрес локации';
         }
 
         setErrors(newErrors);
@@ -117,15 +111,12 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
      */
     const handleSubmit = () => {
         if (validateForm()) {
-            const locationData: CreateLocationData = {
-                name: name.trim(),
-                city: city?.name || '',
+            const locationData: CreateLocationApiModel = {
                 address: address.trim(),
-                images,
-                additionalInfo: additionalInfo.trim(),
+                instructions: additionalInfo.trim(),
+                city_key: city ? city.id : '',
             };
             onSubmit(locationData);
-            handleClose();
         }
     };
 
@@ -218,10 +209,6 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
         }
     };
 
-    const handleCityChange = (_event: any, value: City | null) => {
-        setCity(value);
-    };
-
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
             <DialogTitle>Создание новой локации</DialogTitle>
@@ -234,29 +221,35 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                             label="Название локации"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            error={!!errors.name}
-                            helperText={errors.name}
                         />
                     </Grid>
 
                     {/* Выбор города */}
                     <Grid item xs={12} sm={6}>
-                        <Autocomplete
-                            options={cities}
-                            getOptionLabel={(option) => option.name}
-                            value={city}
-                            onChange={handleCityChange}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Город"
-                                    variant="outlined"
-                                    required
-                                    error={!!errors.city}
-                                    helperText={errors.city}
-                                />
-                            )}
-                        />
+                        {isLoadingCities ? (
+                            <Box display="flex" justifyContent="center" alignItems="center" height="56px">
+                                <CircularProgress size={24} />
+                            </Box>
+                        ) : citiesError ? (
+                            <Alert severity="error">Ошибка загрузки городов</Alert>
+                        ) : (
+                            <Autocomplete
+                                options={cities}
+                                getOptionLabel={(option) => option.name}
+                                value={city}
+                                onChange={(_event, value) => setCity(value)}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Город"
+                                        variant="outlined"
+                                        required
+                                        error={!!errors.city}
+                                        helperText={errors.city}
+                                    />
+                                )}
+                            />
+                        )}
                     </Grid>
 
                     {/* Адрес локации */}
@@ -268,6 +261,7 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                             onChange={(e) => setAddress(e.target.value)}
                             error={!!errors.address}
                             helperText={errors.address}
+                            required
                         />
                     </Grid>
 

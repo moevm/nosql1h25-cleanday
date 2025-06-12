@@ -1,32 +1,24 @@
 import React from 'react';
-
-import {Navigate, Outlet, useLocation} from 'react-router-dom';
-
-import {Box, CircularProgress} from '@mui/material';
+import {Navigate, useLocation, Outlet} from 'react-router-dom';
 
 import {useAuth} from '@hooks/authorization/useAuth';
 
-interface ProtectedRouteProps {
-    children?: React.ReactNode;
-}
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({children}) => {
-    const {isAuthenticated, isLoading} = useAuth();
+/**
+ * ProtectedRoute: Компонент для защиты маршрутов, требующих авторизации.
+ * Перенаправляет неавторизованных пользователей на страницу авторизации.
+ *
+ * @returns {JSX.Element} - Возвращает защищенный маршрут или перенаправление
+ */
+const ProtectedRoute: React.FC = (): React.JSX.Element => {
+    const {isAuthenticated} = useAuth();
     const location = useLocation();
 
-    if (isLoading) {
-        return (
-            <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}>
-                <CircularProgress/>
-            </Box>
-        );
-    }
-
     if (!isAuthenticated) {
-        return <Navigate to="/" state={{from: location}} replace/>;
+        // Сохраняем текущий маршрут для редиректа после авторизации
+        return <Navigate to="/authorization" state={{from: location}} replace/>;
     }
 
-    return children ? <>{children}</> : <Outlet/>;
+    return <Outlet />;
 };
 
 export default ProtectedRoute;

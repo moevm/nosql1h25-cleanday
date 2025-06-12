@@ -8,7 +8,8 @@ import {AppBar, Avatar, Box, Button, IconButton, Toolbar,} from '@mui/material';
 
 import {ExitToApp} from "@mui/icons-material";
 
-import {CreateCleanday, Location} from "@models/User.ts";
+import {CreateCleandayApiModel} from "@api/cleanday/models.ts";
+import {useCreateCleanday} from "@hooks/cleanday/useCreateCleanday.tsx";
 
 import {useAuth} from "@hooks/authorization/useAuth.tsx";
 
@@ -16,20 +17,6 @@ import CreateCleandayDialog from "../dialog/CreateCleandayDialog.tsx";
 import LogoutConfirmationDialog from "../dialog/LogoutConfirmationDialog";
 
 
-const locationsMock: Location[] = [
-    {
-        address: 'Скверик',
-        instructions: 'У фонтана',
-        key: 1,
-        city: 'Санкт-Петербург'
-    },
-    {
-        address: 'Парк Победы',
-        instructions: 'У главного входа',
-        key: 2,
-        city: 'Санкт-Петербург'
-    }
-];
 
 interface AppbarProps {
     open: boolean;
@@ -46,10 +33,19 @@ const Appbar = ({open}: AppbarProps): React.JSX.Element => {
     // Состояние для диалога подтверждения выхода
     const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
 
-    // TODO: Реализуйте обработку создания субботника
-    const handleCleandaySubmit = (data: CreateCleanday) => {
-        // Например, сделать POST-запрос, добавить в список, обновить состояние и т.д.
-        console.log('Создан субботник:', data);
+    const { mutateAsync: createCleanday} = useCreateCleanday();
+
+    // Updated function to use the API model and call the actual API
+    const handleCleandaySubmit = (data: CreateCleandayApiModel) => {
+        createCleanday(data)
+            .then(() => {
+                setCleandayDialogOpen(false);
+                // You might want to show a success notification here
+            })
+            .catch((error) => {
+                console.error('Error creating cleanday:', error);
+                // You might want to show an error notification here
+            });
     };
 
     return (
@@ -121,7 +117,7 @@ const Appbar = ({open}: AppbarProps): React.JSX.Element => {
                     sx={{ml: "20px", height: '50px', color: 'black', borderColor: 'black'}}
                     onClick={() => setCleandayDialogOpen(true)}
                 >
-                    <h2>организация субботников</h2>
+                    <h2>Создание субботника</h2>
                 </Button>
                 <Avatar style={{marginRight: '10px', marginLeft: '10px'}}
                         component={Link} to="/profile"
@@ -140,7 +136,6 @@ const Appbar = ({open}: AppbarProps): React.JSX.Element => {
                 open={cleandayDialogOpen}
                 onClose={() => setCleandayDialogOpen(false)}
                 onSubmit={handleCleandaySubmit}
-                locations={locationsMock}
             />
             {/* Диалог подтверждения выхода */}
             <LogoutConfirmationDialog

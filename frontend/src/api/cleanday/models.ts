@@ -1,0 +1,88 @@
+import {BaseApiModel, BaseGetParamsModel, BaseGetResponseModel} from "@api/BaseApiModel";
+import {LocationApiModel} from "@api/location/models";
+
+export interface RequirementApiModel extends BaseApiModel {
+    name: string;
+    users_amount: number;
+}
+
+export interface CreateRequirementApiModel {
+    name: string;
+}
+
+export interface CleandayApiModel extends BaseApiModel {
+    name: string;
+    description: string;
+    participant_count: number;
+    recommended_count: number;
+    city: string;
+    location: LocationApiModel;
+    begin_date: string;
+    end_date: string;
+    created_at: string;
+    updated_at: string;
+    organization: string;
+    organizer: string;
+    organizer_key: string;
+    area: number;
+    status: string;
+    tags: Array<string>;
+    requirements: Array<RequirementApiModel> | null;
+    results: Array<string> | null;
+}
+
+export interface GetCleandayResponse extends BaseGetResponseModel {
+    cleandays: CleandayApiModel[];
+}
+
+export interface GetCleandayParams extends BaseGetParamsModel {
+    name?: string;
+    organization?: string;
+    organizer?: string;
+    status?: string[];
+    begin_date_from?: string;
+    begin_date_to?: string;
+    end_date_from?: string;
+    end_date_to?: string;
+    created_at_from?: string;
+    created_at_to?: string;
+    updated_at_from?: string;
+    updated_at_to?: string;
+    area_from?: number;
+    area_to?: number;
+    recommended_count_from?: number;
+    recommended_count_to?: number;
+    participant_count_from?: number;
+    participant_count_to?: number;
+    tags?: string[];
+}
+
+export interface CreateCleandayApiModel {
+    name: string;
+    location_id: string;
+    begin_date: string;
+    end_date: string;
+    organization: string;
+    area: number;
+    description: string;
+    recommended_count: number;
+    tags: Array<string>;
+    requirements: Array<CreateRequirementApiModel>;
+}
+
+export interface UpdateCleandayApiModel {
+    name?: string;
+    location_id?: string;
+    begin_date?: string;
+    end_date?: string;
+    organization?: string;
+    area?: number;
+    description?: string;
+    recommended_count?: number;
+    tags?: Array<string>;
+    status?: string;
+}
+
+export interface UpdateCleandayApiModelWithKey extends UpdateCleandayApiModel, BaseApiModel {
+
+}

@@ -1,56 +1,16 @@
 import './UsersPage.css'
 import React from 'react';
-import {
-    Box,
-    TextField,
-    InputAdornment,
-    Button,
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import {MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef} from 'material-react-table';
+import {Box, Button,} from '@mui/material';
+import {MRT_ColumnDef, MRT_ColumnFiltersState, MRT_PaginationState, MRT_SortingState} from 'material-react-table';
 import Notification from '@components/Notification.tsx';
-import {User} from "@models/User.ts";
-import Typography from "@mui/material/Typography";
 import {useNavigate} from 'react-router-dom';
-
-// TODO: Реализуйте запрос
-/**
- * Моковые данные пользователей для демонстрации.
- * В реальном приложении этот массив будет загружаться с сервера через API-запрос.
- * Каждый объект представляет пользователя с базовой информацией и статистикой участия в субботниках.
- */
-const userData: User[] = [
-    {
-        key: "1",
-        first_name: "Alice",
-        last_name: "Smith",
-        login: "alice.s",
-        city: "Milan",
-        cleanday_count: 12,       // Количество субботников, в которых участвовал пользователь
-        organized_count: 8,        // Количество организованных пользователем субботников
-        level: 2,                  // Уровень пользователя
-    },
-    {
-        key: "2",
-        first_name: "Bob",
-        last_name: "Johnson",
-        login: "bob.j",
-        city: "Rome",
-        cleanday_count: 5,
-        organized_count: 15,
-        level: 1,
-    },
-    {
-        key: "3",
-        first_name: "Charlie",
-        last_name: "Brown",
-        login: "charlie.b",
-        city: "Florence",
-        cleanday_count: 20,
-        organized_count: 10,
-        level: 3,
-    },
-];
+import {getStatusByLevel} from "@/utils/user/getStatusByLevel.ts";
+import {useGetUsers} from "@hooks/user/useGetUsers.tsx";
+import {GetUsersParams} from '@api/user/models';
+import {User} from "@models/User.ts";
+import {PaginatedTableWithTemplate} from '@components/PaginatedTable/PaginatedTable';
+import {transformRangeFilters, transformStringFilters} from '@utils/filterUtils';
+import {SortOrder} from "@api/BaseApiModel.ts";
 
 /**
  * UsersPage: Компонент страницы для отображения списка пользователей.
@@ -60,57 +20,25 @@ const userData: User[] = [
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий страницу пользователей.
  */
 const UsersPage: React.FC = (): React.JSX.Element => {
-    // Состояние для хранения текста поискового запроса
-    const [searchText, setSearchText] = React.useState('');
-
     // Состояния для отображения уведомлений
     const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
     const [notificationSeverity, setNotificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
 
     // Хук для программной навигации между страницами
     const navigate = useNavigate();
-
-    /**
-     * Функция для преобразования числового уровня пользователя в текстовое описание с эмодзи.
-     * Используется для отображения статуса пользователя в таблице.
-     *
-     * @param {number} level - Числовой уровень пользователя.
-     * @returns {string} - Текстовое представление уровня пользователя с эмодзи.
-     */
-    const getLevelStatus = React.useCallback((level: number) => {
-        if (level == 1) {
-            return 'Новичок👍';
-        } else if (level == 2) {
-            return 'Труженик💪';
-        } else if (level == 3) {
-            return 'Лидер района🤝';
-        } else if (level == 4) {
-            return 'Экоактивист🌱';
-        } else if (level == 5) {
-            return 'Экозвезда🌟';
-        } else {
-            return 'Эко-гуру🏆';
-        }
+    
+    // Функция для создания хука запроса пользователей с указанными параметрами
+    const getUsersQueryHook = React.useCallback((params: Record<string, unknown>) => {
+        return useGetUsers(params as GetUsersParams);
     }, []);
 
     /**
      * Обработчик нажатия на кнопку построения графика.
      * Отображает уведомление об успешном построении графика.
-     * В реальном приложении здесь был бы функционал для генерации и отображения графиков.
      */
     const handlePlotButtonClick = () => {
-        setNotificationMessage('Graph generated successfully!');
+        setNotificationMessage('График построен успешно!');
         setNotificationSeverity('success');
-    };
-
-    /**
-     * Обработчик изменения текста в поле поиска.
-     * Обновляет состояние searchText, что приводит к фильтрации данных в таблице.
-     *
-     * @param {React.ChangeEvent<HTMLInputElement>} event - Событие изменения значения поля ввода.
-     */
-    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchText(event.target.value);
     };
 
     /**
@@ -120,154 +48,158 @@ const UsersPage: React.FC = (): React.JSX.Element => {
      * @param {User} user - Объект пользователя, по строке которого был совершен клик.
      */
     const handleRowClick = React.useCallback((user: User) => {
-        navigate(`/users/${user.key}`);
-    }, [navigate]);
+        navigate(`/users/${user.id}`);
+    }, [navigate]);    /**
+     * Функция для трансформации фильтров столбцов в параметры API
+     */
+    const transformFilters = React.useCallback((columnFilters: MRT_ColumnFiltersState): Record<string, any> => {
+        // Карты соответствия между id столбцов и параметрами API
+        const stringFilterMap = {
+            'firstName': 'first_name',
+            'lastName': 'last_name',
+            'login': 'login',
+            'city': 'city',
+        };
 
-    /**
+        const fromFilterMap = {
+            'participantsCount': 'cleandays_from',
+            'cleaned': 'stat_from',
+            'organizedCount': 'organized_from',
+            'level': 'level_from',
+        };
+
+        const toFilterMap = {
+            'participantsCount': 'cleandays_to',
+            'cleaned': 'stat_to',
+            'organizedCount': 'organized_to',
+            'level': 'level_to',
+        };
+
+        // Трансформируем фильтры
+        const stringParams = transformStringFilters(columnFilters, stringFilterMap);
+        const rangeParams = transformRangeFilters(columnFilters, fromFilterMap, toFilterMap);
+
+        return {
+            ...stringParams,
+            ...rangeParams,
+        };
+    }, []);/**
      * Определение столбцов таблицы пользователей.
-     * Описывает структуру и отображение данных в таблице MaterialReactTable.
      */
-    const columns = React.useMemo<MRT_ColumnDef<User>[]>(
-        () => [
-            {
-                accessorKey: 'key',
-                header: 'ID',
-            },
-            {
-                id: 'user',
-                header: 'User',
-                // Кастомная ячейка для отображения имени и фамилии пользователя
-                Cell: ({row}) => (
-                    <span>{row.original.first_name} {row.original.last_name}</span>
-                ),
-                filterVariant: 'text',
-            },
-            {
-                accessorKey: 'login',
-                header: 'Login',
-            },
-            {
-                accessorKey: 'city',
-                header: 'City',
-            },
-            {
-                accessorKey: 'cleanday_count',
-                header: 'Area Cleaned, m²',
-            },
-            {
-                accessorKey: 'organized_count',
-                header: 'Organized Clean-ups',
-            },
-            {
-                id: 'level',
-                header: 'Level',
-                // Кастомная ячейка для отображения уровня пользователя в текстовом виде
-                Cell: ({row}) => (
-                    <span>{getLevelStatus(row.original.level)}</span>
-                ),
-                filterVariant: 'text',
-                enableColumnFilter: true,
-            },
-        ],
-        [getLevelStatus],
-    );
-
-    /**
-     * Фильтрация данных пользователей на основе текста поиска.
-     * Возвращает массив пользователей, соответствующих поисковому запросу.
-     */
-    const filteredUserData = React.useMemo(() => {
-        if (!searchText) {
-            return userData;
-        }
-        const lowerCaseSearchText = searchText.toLowerCase();
-        return userData.filter((user) =>
-            Object.values(user).some((value) =>
-                String(value).toLowerCase().includes(lowerCaseSearchText),
+    const columns = React.useMemo<MRT_ColumnDef<User>[]>(() => [
+        {
+            accessorKey: 'firstName',
+            header: 'Имя',
+        },
+        {
+            accessorKey: 'lastName',
+            header: 'Фамилия',
+        },
+        {
+            accessorKey: 'login',
+            header: 'Логин',
+        },
+        {
+            accessorKey: 'city',
+            header: 'Город',
+        },
+        {
+            accessorKey: 'participantsCount',
+            header: 'Посещённые субботники',
+            filterVariant: 'range'
+        },
+        {
+            accessorKey: 'cleaned',
+            header: 'Убрано, м²',
+            filterVariant: 'range'
+        },
+        {
+            accessorKey: 'organizedCount',
+            header: 'Организованные субботники',
+            filterVariant: 'range'
+        },
+        {
+            accessorKey: 'level',
+            header: 'Уровень',
+            Cell: ({row}: {row: any}) => (
+                <span>{getStatusByLevel(row.original.level)}</span>
             ),
-        );
-    }, [searchText]);
+            filterVariant: 'range',
+            //enableColumnFilter: true,
+        },
+    ], []);
 
-    /**
-     * Конфигурация таблицы MaterialReactTable.
-     * Настраивает поведение, внешний вид и функциональность таблицы.
-     */
-    const table = useMaterialReactTable({
-        columns,
-        data: filteredUserData,
-        enableCellActions: true,
-        enableColumnOrdering: false,
-        enableRowSelection: false,
-        enableSorting: true,
-        enableColumnFilters: true,
-        enableGlobalFilter: false,
-        initialState: {
-            pagination: {pageIndex: 0, pageSize: 10},
-        },
-        muiTablePaperProps: {
-            elevation: 0,
-            sx: {
-                border: 'none',
-                borderRadius: '0',
-            },
-        },
-        muiTableProps: {
-            sx: {
-                tableLayout: 'fixed',
-                cursor: 'pointer', // Указывает, что строки можно кликать
-            },
-        },
-        // Настройка обработчика клика по строке для перехода к детальному просмотру
-        muiTableBodyRowProps: ({row}) => ({
-            onClick: () => handleRowClick(row.original),
-        }),
-        muiPaginationProps: {
-            rowsPerPageOptions: [5, 10],
-        },
-    });
 
     /**
      * Обработчик закрытия уведомления.
-     * Очищает сообщение уведомления, что приводит к его скрытию.
      */
     const handleNotificationClose = React.useCallback(() => {
         setNotificationMessage(null);
     }, [setNotificationMessage]);
 
-    return (
-        <Box className={"user-box"}>
-            {/* Заголовок и панель управления */}
-            <Box>
-                <Typography className={"user-typo"} variant="h4" color={'Black'} sx={{margin: '10px 0px 0px 20px'}}>
-                    Пользователи
-                </Typography>
-                <Box sx={{display: 'flex', alignItems: 'center', margin: '10px 20px 0px 20px'}}>
-                    {/* Поле поиска пользователей */}
-                    <TextField
-                        label="Поиск"
-                        value={searchText}
-                        onChange={handleSearchChange}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon/>
-                                </InputAdornment>
-                            ),
-                        }}
-                        size="small"
-                        sx={{mr: 2}}
-                    />
-                    {/* Кнопка построения графика */}
-                    <Button variant="outlined" onClick={handlePlotButtonClick}
-                            sx={{ml: "20px", color: 'black', borderColor: 'black'}}>
-                        Построить график
-                    </Button>
-                </Box>
+    /**
+     * Рендер кастомных действий в верхней панели инструментов
+     */
+    const renderTopToolbarCustomActions = React.useCallback(() => {
+        return (
+            <Box sx={{display: 'flex', width: '100%', justifyContent: 'flex-start'}}>
+                <Button
+                    variant="outlined"
+                    onClick={handlePlotButtonClick}
+                    sx={{color: 'black', borderColor: 'black'}}
+                >
+                    Построить график
+                </Button>
             </Box>
+        );
+    }, []);    // Add this mapping object
+    const columnToApiFieldMap: Record<string, string> = {
+        'firstName': 'first_name',
+        'lastName': 'last_name',
+        'username': 'username',
+        'email': 'email',
+        'role': 'role',
+        'status': 'status',
+        // Add any other column mappings
+    };
 
-            {/* Таблица пользователей */}
-            <MaterialReactTable
-                table={table}
+    // Update the createQueryParams function similar to above
+    const createQueryParams = React.useCallback(
+        (
+            pagination: MRT_PaginationState,
+            sorting: MRT_SortingState,
+            columnFilters: MRT_ColumnFiltersState,
+            globalFilter?: string
+        ) => {
+            const params: Record<string, unknown> = {
+                offset: pagination.pageIndex * pagination.pageSize,
+                limit: pagination.pageSize,
+                search_query: globalFilter && globalFilter.trim() !== "" ? globalFilter.trim() : undefined,
+            };
+
+            if (sorting.length > 0) {
+                // Get the column ID being sorted and map it to API field
+                const sortColumnId = sorting[0].id;
+                params.sort_by = columnToApiFieldMap[sortColumnId] || sortColumnId;
+                params.sort_order = sorting[0].desc ? SortOrder.desc : SortOrder.asc;
+            }
+
+            // Add any other parameter transformations
+            
+            return params;
+        },
+        []
+    );
+
+    return (
+        <Box className="user-box">
+            <PaginatedTableWithTemplate
+                title="Пользователи"
+                columns={columns}
+                getQueryHook={getUsersQueryHook}
+                transformFilters={transformFilters as any}
+                onRowClick={handleRowClick}
+                renderTopToolbarCustomActions={renderTopToolbarCustomActions}
             />
 
             {/* Компонент уведомления */}

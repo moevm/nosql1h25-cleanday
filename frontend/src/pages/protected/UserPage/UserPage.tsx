@@ -10,7 +10,7 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {useParams, useNavigate} from 'react-router-dom';
 import './UserPage.css';
-import {UserProfile, Cleanday, CleanDayTag} from "@models/User.ts";
+import {UserProfile, Cleanday, CleanDayTag} from "@models/deleteMeLater.ts";
 import Notification from '@components/Notification.tsx';
 import OrganizedCleandaysDialog from '@components/dialog/OrganizedCleandaysDialog';
 import ParticipatedCleandaysDialog from '@components/dialog/ParticipatedCleandaysDialog';
