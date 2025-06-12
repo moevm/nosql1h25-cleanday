@@ -15,44 +15,54 @@ class LocationRepo:
 
     def get_page(self, params: GetLocationsParams) -> (int, list[GetLocation]):
         bind_vars = params.model_dump()
+        bind_vars.pop('sort_by')
+        bind_vars.pop('sort_order')
 
         cursor = self.db.aql.execute(
-            """
+            f"""
             LET count = COUNT(
                 FOR loc IN Location
-                    FILTER CONTAINS(LOWER(loc.address), LOWER(@search_query)) OR @search_query == ""
+                    FILTER CONTAINS(LOWER(loc.address), LOWER(@address)) OR @address == ""
                     
                     LET city = FIRST(
                         FOR city IN OUTBOUND loc in_city
                             LIMIT 1
-                            RETURN MERGE(city, {key: city._key})
+                            RETURN MERGE(city, {{key: city._key}})
                     )
                     FILTER CONTAINS(LOWER(city.name), LOWER(@city_name)) OR @city_name == ""
+                    
+                    FILTER (CONTAINS(LOWER(city.name), LOWER(@search_query)) OR 
+                    CONTAINS(LOWER(loc.address), LOWER(@search_query)) OR @search_query == "")
                     
                     RETURN 1                    
             )
             
             LET page = (
                 FOR loc IN Location
-                    FILTER CONTAINS(LOWER(loc.address), LOWER(@search_query)) OR @search_query == ""
+                    FILTER CONTAINS(LOWER(loc.address), LOWER(@address)) OR @address == ""
                     
                     LET city = FIRST(
                         FOR city IN OUTBOUND loc in_city
                             LIMIT 1
-                            RETURN MERGE(city, {key: city._key})
+                            RETURN MERGE(city, {{key: city._key}})
                     )
                     FILTER CONTAINS(LOWER(city.name), LOWER(@city_name)) OR @city_name == ""
                     
-                    LIMIT @offset, @limit
-                    SORT loc.address @sort_order
+                    FILTER (CONTAINS(LOWER(city.name), LOWER(@search_query)) OR 
+                    CONTAINS(LOWER(loc.address), LOWER(@search_query)) OR @search_query == "")
                     
-                    RETURN MERGE(loc, {key: loc._key, city: city})
+                    LET location = MERGE(loc, {{key: loc._key, city: city}})
+                    
+                    LIMIT @offset, @limit
+                    SORT location.{params.sort_by.replace('_', '.')} {params.sort_order}
+                    
+                    RETURN location
             )
             
-            RETURN {
+            RETURN {{
                 count: count,
                 page: page
-            }
+            }}
                 
             """,
             bind_vars=bind_vars

@@ -2,7 +2,7 @@ from arango.database import StandardDatabase
 
 from data.query import GetCleandaysParams, GetCleanday
 
-contains_filters = ['name', 'organization', 'organizer']
+contains_filters = ['name', 'organization', 'organizer', 'city']
 
 from_filters = ['begin_date_from', 'end_date_from', 'area_from', 'recommended_count_from', 'participant_count_from',
                 'created_at_from', 'updated_at_from']
@@ -161,8 +161,6 @@ def get_cleanday_page(db: StandardDatabase, header_query: str, params: GetCleand
 
                 LET participant_count = COUNT(
                     FOR par IN INBOUND cdId participation_in
-                      FOR user IN INBOUND par has_participation
-                        LIMIT 1
                         RETURN 1
                 )
 
