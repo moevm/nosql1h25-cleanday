@@ -1,405 +1,270 @@
 import './CleandaysPage.css'
-
 import React from 'react';
-
-import {useNavigate} from "react-router-dom";
-
-import {MaterialReactTable, type MRT_ColumnDef, useMaterialReactTable} from 'material-react-table';
-
-import {Box, Button, Checkbox, Chip, FormControlLabel, InputAdornment, TextField, Typography,} from '@mui/material';
-
-import SearchIcon from '@mui/icons-material/Search';
-
-
-import {Cleanday, CleanDayTag} from "@models/deleteMeLater.ts";
-
+import {Box, Button, Checkbox, Chip, FormControlLabel,} from '@mui/material';
+import {MRT_ColumnDef, MRT_ColumnFiltersState} from 'material-react-table';
 import Notification from '@components/Notification.tsx';
-
-
-// TODO: Реализуйте запрос
-/**
- * Моковые данные субботников для демонстрации.
- * Представляют собой массив объектов типа Cleanday с полной информацией о каждом субботнике.
- * В реальном приложении эти данные будут загружаться с сервера.
- */
-const cleandayData: Cleanday[] = [
-    {
-        key: "CD-001",
-        name: "Весенняя уборка парка",
-        description: "Приглашаем всех на уборку центрального парка!",
-        participant_count: 25,
-        recommended_count: 30,
-        city: "Москва",
-        location: {address: "Парк Горького", instructions: "У центрального входа", key: 101, city: "Москва"},
-        begin_date: "2025-04-15",
-        end_date: "2025-04-15",
-        organizer: "Иванов И.И.",
-        organization: "Зеленый Город",
-        area: 1500,
-        tags: [CleanDayTag.TRASH_COLLECTING, CleanDayTag.LAWN_SETUP],
-        status: "Завершен",
-        requirements: ["Перчатки", "Удобная обувь"],
-        created_at: "2025-04-01T10:00:00Z",
-        updated_at: "2025-04-16T12:30:00Z",
-    },
-    {
-        key: "CD-002",
-        name: "Чистый берег реки",
-        description: "Очистим берег реки от мусора вместе!",
-        participant_count: 18,
-        recommended_count: 20,
-        city: "Санкт-Петербург",
-        location: {
-            address: "Набережная реки Фонтанки",
-            instructions: "У моста Белинского",
-            key: 205,
-            city: "Санкт-Петербург"
-        },
-        begin_date: "2025-05-20",
-        end_date: "2025-05-20",
-        organizer: "Петрова А.С.",
-        organization: "Эко-Патруль СПб",
-        area: 800,
-        tags: [CleanDayTag.TRASH_COLLECTING, CleanDayTag.WATERBODY_CLEANING],
-        status: "Завершен",
-        requirements: ["Резиновые сапоги", "Перчатки"],
-        created_at: "2025-05-05T09:15:00Z",
-        updated_at: "2025-05-21T14:00:00Z",
-    },
-    {
-        key: "CD-003",
-        name: "Посадка деревьев в сквере",
-        description: "Присоединяйтесь к посадке молодых саженцев!",
-        participant_count: 12,
-        recommended_count: 15,
-        city: "Новосибирск",
-        location: {
-            address: "Сквер у Оперного театра",
-            instructions: "За главным зданием",
-            key: 310,
-            city: "Новосибирск"
-        },
-        begin_date: "2025-06-10",
-        end_date: "2025-06-10",
-        organizer: "Сидоров В.К.",
-        organization: "Зеленый Новосибирск",
-        area: 500,
-        tags: [CleanDayTag.PLANTING],
-        status: "Запланировано",
-        requirements: ["Лопаты (если есть)"],
-        created_at: "2025-05-25T11:30:00Z",
-        updated_at: "2025-05-28T16:45:00Z",
-    },
-];
-
+import {useNavigate} from 'react-router-dom';
+import {useGetCleandays} from "@hooks/cleanday/useGetCleandays.tsx";
+import {GetCleandayParams} from '@api/cleanday/models';
+import {Cleanday, CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
+import {PaginatedTableWithTemplate} from '@components/PaginatedTable/PaginatedTable';
+import {
+    transformStringFilters,
+    transformRangeFilters,
+    transformArrayFilters,
+    transformDateRangeFilters
+} from '@utils/filterUtils';
 
 /**
  * CleandaysPage: Компонент страницы со списком субботников.
- * Отображает таблицу субботников с возможностью поиска, фильтрации
+ * Отображает таблицу субботников с возможностью поиска, сортировки, фильтрации
  * и перехода на страницу детального просмотра субботника.
  *
  * @returns {React.JSX.Element} - Возвращает JSX-элемент, представляющий страницу со списком субботников.
  */
-export const CleandaysPage = (): React.JSX.Element => {
-    // Состояние для хранения текста поискового запроса
-    const [searchText, setSearchText] = React.useState('');
-
-    // Состояние для фильтрации отображения предыдущих субботников
-    const [showPrevious, setShowPrevious] = React.useState(false);
-
-    // Состояние для фильтрации субботников с участием текущего пользователя
-    const [showMyParticipation, setShowMyParticipation] = React.useState(false);
-
-    // Состояния для отображения уведомлений
-    const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
-    const [notificationSeverity, setNotificationSeverity] =
-        React.useState<'success' | 'info' | 'warning' | 'error'>('success');
-
-    // Хук для навигации между страницами приложения
+const CleandaysPage: React.FC = (): React.JSX.Element => {
     const navigate = useNavigate();
+    const [notify, setNotify] = React.useState<boolean>(false);
 
-    /**
-     * Обработчик нажатия на кнопку построения графика.
-     * Отображает уведомление об успешном построении графика.
-     */
-    const handlePlotButtonClick = () => {
-        setNotificationMessage('График построен успешно!');
-        setNotificationSeverity('success');
-    };
+    // Transform column filters to API parameters
+    const transformFilters = React.useCallback((columnFilters: MRT_ColumnFiltersState): Record<string, any> => {
+        // Mapping between column IDs and API parameters for string filters
+        const stringFilterMap = {
+            'name': 'name',
+            'organization': 'organization',
+            'organizer': 'organizer',
+        };
 
-    /**
-     * Обработчик изменения текста в поле поиска.
-     * Обновляет состояние searchText, что приводит к фильтрации данных в таблице.
-     *
-     * @param {React.ChangeEvent<HTMLInputElement>} event - Событие изменения значения поля ввода.
-     */
-    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchText(event.target.value);
-    };
+        // Mapping between column IDs and API parameters for array filters
+        const arrayFilterMap = {
+            'status': 'status',
+            'tags': 'tags',
+        };
 
-    /**
-     * Обработчик изменения состояния чекбокса "Предстоящие субботники".
-     * Обновляет состояние showPrevious и отображает уведомление о смене режима отображения.
-     *
-     * @param {React.ChangeEvent<HTMLInputElement>} event - Событие изменения состояния чекбокса.
-     */
-    const handleShowPreviousChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setShowPrevious(event.target.checked);
-        setNotificationMessage(
-            `Отображение ${event.target.checked ? 'предыдущих' : 'актуальных'} субботников`,
-        );
-        setNotificationSeverity('info');
-    };
+        // Mapping between column IDs and API parameters for date range filters
+        const dateFromFilterMap = {
+            'beginDate': 'begin_date_from',
+            'endDate': 'end_date_from',
+            'createdAt': 'created_at_from',
+            'updatedAt': 'updated_at_from',
+        };
 
-    /**
-     * Обработчик клика по строке таблицы.
-     * Осуществляет переход на страницу детального просмотра выбранного субботника.
-     *
-     * @param {Cleanday} сleanday - Объект субботника, по которому был совершен клик.
-     */
-    const handleRowClick = React.useCallback((сleanday: Cleanday) => {
-        navigate(`/cleandays/${сleanday.key}`);
-    }, [navigate]);
+        const dateToFilterMap = {
+            'beginDate': 'begin_date_to',
+            'endDate': 'end_date_to',
+            'createdAt': 'created_at_to',
+            'updatedAt': 'updated_at_to',
+        };
 
-    /**
-     * Обработчик изменения состояния чекбокса "С моим участием".
-     * Обновляет состояние showMyParticipation и отображает уведомление о смене режима отображения.
-     *
-     * @param {React.ChangeEvent<HTMLInputElement>} event - Событие изменения состояния чекбокса.
-     */
-    const handleMyParticipationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setShowMyParticipation(event.target.checked);
-        setNotificationMessage(
-            `Отображение субботников ${event.target.checked ? 'с моим участием' : 'всех'}`,
-        );
-        setNotificationSeverity('info');
-    };
+        // Mapping between column IDs and API parameters for numeric range filters
+        const numericFromFilterMap = {
+            'area': 'area_from',
+            'recommendedParticipantsCount': 'recommended_count_from',
+            'participantsCount': 'participant_count_from',
+        };
 
-    /**
-     * Определение столбцов таблицы субботников.
-     * Описывает структуру и отображение данных в таблице MaterialReactTable.
-     */
-    const columns = React.useMemo<MRT_ColumnDef<Cleanday>[]>(
-        () => [
-            {
-                accessorKey: 'key',
-                header: 'ID',
-                size: 70,
-            },
+        const numericToFilterMap = {
+            'area': 'area_to',
+            'recommendedParticipantsCount': 'recommended_count_to',
+            'participantsCount': 'participant_count_to',
+        };
+
+        // Transform the filters using utility functions
+        const stringParams = transformStringFilters(columnFilters, stringFilterMap);
+        const arrayParams = transformArrayFilters(columnFilters, arrayFilterMap);
+        const dateRangeParams = transformDateRangeFilters(columnFilters, dateFromFilterMap, dateToFilterMap);
+        const numericRangeParams = transformRangeFilters(columnFilters, numericFromFilterMap, numericToFilterMap);
+
+        // Combine all parameters
+        return {
+            ...stringParams,
+            ...arrayParams,
+            ...dateRangeParams,
+            ...numericRangeParams,
+        };
+    }, []);
+
+    // Fetch cleandays data with pagination and filters
+    const cleandaysQuery = useGetCleandays({
+        offset: 0,
+        limit: 10,
+    });
+
+    // Column definitions for the cleandays table
+    const columns = React.useMemo<MRT_ColumnDef<Cleanday>[]>
+        (() => [
             {
                 accessorKey: 'name',
                 header: 'Название',
+                filterVariant: 'text',
             },
             {
-                accessorFn: (row) => row.city,
+                accessorKey: 'city',
                 header: 'Город',
-                id: 'city',
+                filterVariant: 'text',
+                enableSorting: false, // Disable sorting for city column
             },
             {
-                accessorFn: (row) => row.location.address,
+                accessorKey: 'location.address',
                 header: 'Адрес',
                 id: 'address',
+                enableColumnFilter: false, // No direct API filter for address
+                enableSorting: false,
             },
             {
-                accessorKey: 'begin_date',
-                header: 'Дата и время начала',
+                accessorKey: 'beginDate',
+                header: 'Дата начала',
+                filterVariant: 'date-range',
+                Cell: ({ cell }) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
             },
             {
-                accessorKey: 'end_date',
-                header: 'Дата и время завершения',
+                accessorKey: 'endDate',
+                header: 'Дата окончания',
+                filterVariant: 'date-range',
+                Cell: ({ cell }) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
+            },
+            {
+                accessorKey: 'area',
+                header: 'Площадь (м²)',
+                filterVariant: 'range',
             },
             {
                 accessorKey: 'organization',
                 header: 'Организация',
+                filterVariant: 'text',
             },
             {
                 accessorKey: 'organizer',
                 header: 'Организатор',
+                filterVariant: 'text',
             },
             {
-                header: 'Тип',
-                id: 'type',
-                // Кастомное отображение тегов как компонентов Chip
-                Cell: ({row}) => (
-                    <Box sx={{display: 'flex', gap: 1}}>
-                        {row.original.tags.map((tag) => (
-                            <Chip key={tag} label={tag} size="small"/>
+                accessorKey: 'tags',
+                header: 'Теги',
+                filterVariant: 'multi-select',
+                filterSelectOptions: Object.entries(CleandayTag).map(([key, value]) => ({
+                    text: value,
+                    value: value,
+                })),
+                Cell: ({ cell }) => (
+                    <Box sx={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        {(cell.getValue<CleandayTag[]>() || []).map((tag) => (
+                            <Chip key={tag} label={tag} size="small" />
                         ))}
                     </Box>
                 ),
             },
             {
-                header: 'Статус',
                 accessorKey: 'status',
-                // Кастомное отображение статуса с цветовым выделением
-                Cell: ({row}) => {
-                    let color: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | undefined;
-                    switch (row.original.status) {
-                        case 'Запланировано':
-                            color = 'primary';
-                            break;
-                        case 'Завершен':
-                            color = 'success';
-                            break;
-                        case 'Отменен':
-                            color = 'error';
-                            break;
-                        case 'Проходит':
-                            color = 'info';
-                            break;
-                        case 'Перенесён':
-                            color = 'warning';
-                            break;
-                        default:
-                            break;
-                    }
-                    return <Chip label={row.original.status} size="small" color={color}/>;
-                },
+                header: 'Статус',
+                filterVariant: 'multi-select',
+                filterSelectOptions: Object.entries(CleandayStatus).map(([key, value]) => ({
+                    text: value,
+                    value: value,
+                })),
+                Cell: ({ cell }) => (
+                    <Chip
+                        label={cell.getValue<string>()}
+                        color={getStatusColor(cell.getValue<CleandayStatus>())}
+                        size="small"
+                    />
+                ),
             },
         ],
-        [],
+        []
     );
 
-    /**
-     * Фильтрация данных субботников на основе текущих критериев фильтрации.
-     * Применяет поиск по тексту, фильтрацию по дате и участию пользователя.
-     */
-    const filteredCleandayData = React.useMemo(() => {
-        let data = cleandayData;
-
-        // Фильтрация по тексту поиска
-        if (searchText) {
-            const lowerCaseSearchText = searchText.toLowerCase();
-            data = cleandayData.filter((cleanday) =>
-                Object.values(cleanday).some((value) => {
-                    // Проверка вложенных объектов
-                    if (typeof value === 'object' && value !== null) {
-                        return Object.values(value).some((nestedValue) =>
-                            String(nestedValue).toLowerCase().includes(lowerCaseSearchText),
-                        );
-                    }
-                    // Проверка массивов
-                    if (Array.isArray(value)) {
-                        return value.some((item) => String(item).toLowerCase().includes(lowerCaseSearchText));
-                    }
-                    // Проверка простых значений
-                    return String(value).toLowerCase().includes(lowerCaseSearchText);
-                }),
-            );
+    // Helper function to get color for status chip
+    const getStatusColor = (status: CleandayStatus) => {
+        switch (status) {
+            case CleandayStatus.planned:
+                return 'primary';
+            case CleandayStatus.onGoing:
+                return 'info';
+            case CleandayStatus.completed:
+                return 'success';
+            case CleandayStatus.cancelled:
+                return 'error';
+            case CleandayStatus.rescheduled:
+                return 'warning';
+            default:
+                return 'default';
         }
+    };
 
-        if (!showPrevious) {
-            // В реальном приложении здесь была бы фильтрация по дате
-            // Для этого примера мы просто показываем все для наглядности UI
-        }
+    // Handle click on a row to navigate to cleanday details page
+    const handleRowClick = (row: Cleanday) => {
+        navigate(`/cleandays/${row.id}`);
+    };
 
-        if (showMyParticipation) {
-            // В реальном приложении здесь была бы фильтрация по участию пользователя
-        }
+    // Add this mapping object at component level, outside of any function
+    const columnToApiFieldMap: Record<string, string> = {
+        'name': 'name',
+        'beginDate': 'begin_date',
+        'endDate': 'end_date',
+        'organization': 'organization',
+        'area': 'area',
+        'participantsCount': 'participant_count',
+        'recommendedParticipantsCount': 'recommended_count',
+        'status': 'status',
+    };
 
-        return data;
-    }, [searchText, showPrevious, showMyParticipation]);
+    // Function to create query parameters for the API call
+    const createQueryParams = React.useCallback(
+        (
+            pagination: any,
+            sorting: any,
+            columnFilters: MRT_ColumnFiltersState,
+            globalFilter?: string
+        ): Record<string, any> => {
+            const params: Record<string, unknown> = {
+                offset: pagination.pageIndex * pagination.pageSize,
+                limit: pagination.pageSize,
+                search_query: globalFilter && globalFilter.trim() !== "" ? globalFilter.trim() : undefined,
+            };
 
-    /**
-     * Конфигурация таблицы MaterialReactTable.
-     * Настраивает поведение, внешний вид и функциональность таблицы.
-     */
-    const table = useMaterialReactTable({
-        columns,
-        data: filteredCleandayData,
-        enableColumnOrdering: false,
-        enableRowSelection: false,
-        enableSorting: true,
-        enableColumnFilters: true,
-        enableGlobalFilter: false,
-        initialState: {
-            density: "compact",
-            pagination: {pageIndex: 0, pageSize: 10},
+            if (sorting.length > 0) {
+                // Get the column ID that is being sorted
+                const sortColumnId = sorting[0].id;
+                // Map it to the correct API field name or use the original if no mapping exists
+                params.sort_by = columnToApiFieldMap[sortColumnId] || sortColumnId;
+                params.sort_order = sorting[0].desc ? 'desc' : 'asc';
+            }
+
+            return {
+                ...params,
+                ...transformFilters(columnFilters),
+            };
         },
-        muiTablePaperProps: {
-            elevation: 0,
-            sx: {
-                border: 'none',
-                borderRadius: '0',
-            },
-        },
-        muiTableProps: {
-            sx: {
-                tableLayout: 'fixed',
-                cursor: 'pointer',
-            },
-        },
-        // Настройка обработчика клика по строке для перехода к детальному просмотру
-        muiTableBodyRowProps: ({row}) => ({
-            onClick: () => handleRowClick(row.original),
-        }),
-        muiPaginationProps: {
-            rowsPerPageOptions: [5, 10],
-        },
-    });
+        [transformFilters]
+    );
 
-    /**
-     * Обработчик закрытия уведомления.
-     * Очищает сообщение уведомления, что приводит к его скрытию.
-     */
-    const handleNotificationClose = React.useCallback(() => {
-        setNotificationMessage(null);
-    }, [setNotificationMessage]);
+    // Function to get query result based on parameters
+    const getQueryHook = React.useCallback((params: Record<string, unknown>) => {
+        return useGetCleandays(params);
+    }, []);
+
+    // Render toolbar actions (e.g., create cleanday button)
+    const renderToolbarActions = () => (
+        <></>
+    );
 
     return (
-        <Box className={"cleandays-box"}>
-            {/* Заголовок и панель управления */}
-            <Box>
-                <Typography variant="h4" sx={{margin: '10px 0px 0px 20px'}}>
-                    Субботники
-                </Typography>
-                <Box sx={{display: 'flex', alignItems: 'center', margin: '10px 20px 0px 20px'}}>
-                    {/* Поле поиска */}
-                    <TextField
-                        label="Поиск"
-                        value={searchText}
-                        onChange={handleSearchChange}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon/>
-                                </InputAdornment>
-                            ),
-                        }}
-                        size="small"
-                        sx={{mr: 2}}
-                    />
-                    {/* Кнопка построения графика */}
-                    <Button variant="outlined" onClick={handlePlotButtonClick}
-                            sx={{ml: "20px", color: 'black', borderColor: 'black'}}>
-                        Построить график
-                    </Button>
-                    <Box sx={{flexGrow: 1}}/>
-                    {/* Чекбоксы для фильтрации */}
-                    <FormControlLabel
-                        control={<Checkbox checked={showPrevious} onChange={handleShowPreviousChange}/>}
-                        label="Предстоящие субботники"
-                    />
-                    <FormControlLabel
-                        control={<Checkbox checked={showMyParticipation} onChange={handleMyParticipationChange}/>}
-                        label="С моим участием"
-                    />
-                </Box>
-            </Box>
-
-            {/* Таблица субботников */}
-            <MaterialReactTable
-                table={table}
+        <Box className='cleandays-box'>
+            <Notification
+                message="Действие выполнено успешно"
+                type="success"
+                onClose={() => setNotify(false)}
             />
 
-            {/* Компонент уведомлений */}
-            {notificationMessage && (
-                <Notification
-                    message={notificationMessage}
-                    severity={notificationSeverity}
-                    onClose={handleNotificationClose}
-                />
-            )}
+            <PaginatedTableWithTemplate
+                columns={columns}
+                getQueryHook={getQueryHook}
+                createQueryParams={createQueryParams}
+                title="Субботники"
+                onRowClick={handleRowClick}
+                renderTopToolbarCustomActions={renderToolbarActions}
+            />
         </Box>
     );
 };
