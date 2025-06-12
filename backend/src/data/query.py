@@ -46,10 +46,10 @@ class GetUsersParams(BaseModel):
     city: Optional[str] = None
     level_from: Optional[int] = Field(None, ge=1)
     level_to: Optional[int] = None
-    cleandays_from: Optional[int] = Field(None, ge=0)
-    cleandays_to: Optional[int] = None
-    organized_from: Optional[int] = Field(None, ge=0)
-    organized_to: Optional[int] = None
+    cleanday_count_from: Optional[int] = Field(None, ge=0)
+    cleanday_count_to: Optional[int] = None
+    organized_count_from: Optional[int] = Field(None, ge=0)
+    organized_count_to: Optional[int] = None
     stat_from: Optional[int] = Field(None, ge=0)
     stat_to: Optional[int] = None
 
@@ -130,6 +130,7 @@ class GetCleandaysParams(BaseModel):
     name: Optional[str] = None
     organization: Optional[str] = None
     organizer: Optional[str] = None
+    city: Optional[str] = None
     status: Optional[list[str]] = None
     begin_date_from: Optional[datetime] = None
     begin_date_to: Optional[datetime] = None
@@ -233,9 +234,16 @@ class CreateLocation(BaseModel):
     city_key: str
 
 
+class LocationSortField(StrEnum):
+    ADDRESS = auto()
+    CITY_NAME = "city_name"
+
+
 class GetLocationsParams(PaginationParams):
     search_query: str = ""
+    address: str = ""
     city_name: str = ""
+    sort_by: LocationSortField = LocationSortField.ADDRESS
     sort_order: SortOrder = SortOrder.ASC
 
 
