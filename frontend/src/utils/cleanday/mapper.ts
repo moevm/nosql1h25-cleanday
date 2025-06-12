@@ -1,6 +1,8 @@
-import {CleandayApiModel, RequirementApiModel} from "@api/cleanday/models.ts";
-import {Cleanday, CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
+import {CleandayApiModel, CleandayLogApiModel, CommentApiModel, RequirementApiModel} from "@api/cleanday/models.ts";
+import {Cleanday, CleandayLog, CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
 import {locationMapper} from "@utils/location/mapper.ts";
+import {userMapper} from "@utils/user/mapper.ts";
+import {Comment} from "@models/Comment";
 
 export const cleandayMapper = (apiModel: CleandayApiModel): Cleanday => {
     return {
@@ -27,5 +29,26 @@ export const cleandayMapper = (apiModel: CleandayApiModel): Cleanday => {
             usersAmount: req.users_amount
         })) : [],
         results: apiModel.results || []
+    };
+};
+
+export const commentMapper = (apiModel: CommentApiModel): Comment => {
+    return {
+        id: apiModel.key,
+        text: apiModel.text,
+        date: new Date(apiModel.date),
+        author: apiModel.author ? userMapper(apiModel.author) : undefined
+    };
+};
+
+export const cleandayLogMapper = (apiModel: CleandayLogApiModel): CleandayLog => {
+    return {
+        id: apiModel.key,
+        date: new Date(apiModel.date),
+        type: apiModel.type,
+        description: apiModel.description,
+        user: apiModel.user ? userMapper(apiModel.user) : undefined,
+        comment: apiModel.comment ? commentMapper(apiModel.comment) : undefined,
+        location: apiModel.location ? locationMapper(apiModel.location) : undefined
     };
 };
