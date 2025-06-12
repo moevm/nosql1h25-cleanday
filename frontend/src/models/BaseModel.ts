@@ -3,6 +3,6 @@ export interface BaseModel {
 }
 
 export interface BasePaginatedModel<T = BaseModel> {
-    data: T[];
-    total: number;
+    contents: T[];
+    totalCount: number;
 }
