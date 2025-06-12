@@ -1,5 +1,7 @@
 import {BaseModel} from "./BaseModel";
 import {Location} from "@models/Location";
+import {User} from "@models/User";
+import {Comment} from "@models/Comment";
 
 export enum CleandayTag {
     trashCollecting = "Сбор мусора",
@@ -51,4 +53,13 @@ export interface Cleanday extends BaseModel {
     tags: Array<CleandayTag>;
     requirements: Array<Requirement>;
     results: Array<string>;
+}
+
+export interface CleandayLog extends BaseModel {
+    date: Date;
+    type: string;
+    description: string;
+    user?: User;
+    comment?: Comment;
+    location?: Location;
 }
