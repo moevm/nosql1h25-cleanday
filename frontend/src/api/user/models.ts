@@ -1,4 +1,4 @@
-import {BaseApiModel, BaseGetParamsModel} from "@api/BaseApiModel";
+import {BaseApiModel, BaseGetParamsModel, BaseGetResponseModel} from "@api/BaseApiModel";
 
 export enum Sex {
     male = "male",
@@ -23,8 +23,11 @@ export interface UserApiModel extends BaseApiModel {
     updated_at?: string;
 }
 
+export interface GetUsersResponse extends BaseGetResponseModel {
+    users: UserApiModel[];
+}
+
 export interface GetUsersParams extends BaseGetParamsModel {
-    sort_by?: string;
     first_name?: string;
     last_name?: string;
     login?: string;
