@@ -13,9 +13,13 @@ export enum SortOrder {
     desc = 'desc',
 }
 
+
 export interface BaseGetParamsModel {
     offset?: number;
     limit?: number;
     search_query?: string;
+    sort_by?: string;
     sort_order?: SortOrder;
+
+    [key: string]: unknown;
 }
