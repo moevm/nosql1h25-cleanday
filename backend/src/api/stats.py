@@ -8,6 +8,9 @@ from fastapi.responses import StreamingResponse
 
 from auth.service import get_current_user
 from config.environment import ARANGO_ROOT_PASSWORD, DATABASE_NAME
+from repo.client import database
+from repo.model import RepoStats
+from repo.stat_repo import StatRepo
 
 
 def dump_and_zip_arango_db(db_name: str,
@@ -48,15 +51,12 @@ router = APIRouter(prefix="/stats", tags=["stats"],
                    dependencies=[Depends(get_current_user)])
 
 
+static_stats_repo = StatRepo(database)
+
+
 @router.get("/")
-async def get_stats() -> dict:
-    return {
-        "users_count": 0,
-        "users_with_cleandays_count": 0,
-        "cleandays_total_count": 0,
-        "cleandays_completed_count": 0,
-        "total_area": 0
-    }
+async def get_stats() -> RepoStats:
+    return static_stats_repo.get_stats()
 
 
 @router.post("/import")

@@ -13,17 +13,17 @@ from repo.client import database
 from repo.model import CreateUser, UpdateUser
 
 contains_filters = ['first_name', 'last_name', 'login', 'city']
-from_filters = ['level_from', 'cleandays_from', 'organized_from', 'stat_from']
-to_filters = ['level_to', 'cleandays_to', 'organized_to', 'stat_to']
+from_filters = ['level_from', 'cleanday_count_from', 'organized_count_from', 'stat_from']
+to_filters = ['level_to', 'cleanday_count_to', 'organized_count_to', 'stat_to']
 
 filter_fields = {
     'level_from': 'level',
-    'cleandays_from': 'cleanday_count',
-    'organized_from': 'organized_count',
+    'cleanday_count_from': 'cleanday_count',
+    'organized_count_from': 'organized_count',
     'stat_from': 'stat',
     'level_to': 'level',
-    'cleandays_to': 'cleanday_count',
-    'organized_to': 'organized_count',
+    'cleanday_count_to': 'cleanday_count',
+    'organized_count_to': 'organized_count',
     'stat_to': 'stat'
 }
 

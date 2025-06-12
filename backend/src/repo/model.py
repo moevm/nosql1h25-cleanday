@@ -80,3 +80,11 @@ class CreateComment(BaseModel):
 class CreateImage(BaseModel):
     photo: str
     description: str
+
+
+class RepoStats(BaseModel):
+    user_count: int
+    participated_user_count: int
+    cleanday_count: int
+    past_cleanday_count: int
+    cleanday_metric: int
