@@ -65,6 +65,12 @@ def get_cleanday_page(db: StandardDatabase, header_query: str, params: GetCleand
         )
         bind_vars['search_query'] = params_dict['search_query']
 
+    if 'address' in params_dict and params_dict['address'] != "":
+        filters.append(
+            f"    FILTER CONTAINS(LOWER(cleanday.location.address), LOWER(@address))"
+        )
+        bind_vars['address'] = params_dict['address']
+
     query = f"""
         LET count = COUNT(
             {header_query}

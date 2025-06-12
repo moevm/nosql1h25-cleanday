@@ -131,6 +131,7 @@ class GetCleandaysParams(BaseModel):
     organization: Optional[str] = None
     organizer: Optional[str] = None
     city: Optional[str] = None
+    address: Optional[str] = None
     status: Optional[list[str]] = None
     begin_date_from: Optional[datetime] = None
     begin_date_to: Optional[datetime] = None
