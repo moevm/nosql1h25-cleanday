@@ -142,11 +142,11 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
 
             {/* Блок отображения статистических данных */}
             <Box sx={{ mb: 2}}>
-                <Typography mb={3}>Всего пользователей: {statisticData?.userCount}</Typography>
-                <Typography mb={3}>Пользователи, принявшие участие хотя бы в одном субботнике: {statisticData?.participatedUserCount}</Typography>
-                <Typography mb={3}>Всего субботников: {statisticData?.cleandayCount}</Typography>
-                <Typography mb={3}>Прошедших субботников: {statisticData?.pastCleandayCount}</Typography>
-                <Typography mb={3}>Убрано, м³: {statisticData?.cleandayMetric}</Typography>
+                <Typography mb={3}>Всего пользователей: {statisticData.userCount}</Typography>
+                <Typography mb={3}>Пользователи, принявшие участие хотя бы в одном субботнике: {statisticData.participatedUserCount}</Typography>
+                <Typography mb={3}>Всего субботников: {statisticData.cleandayCount}</Typography>
+                <Typography mb={3}>Прошедших субботников: {statisticData.pastCleandayCount}</Typography>
+                <Typography mb={3}>Убрано, м³: {statisticData.cleandayMetric}</Typography>
             </Box>
 
             {/* Блок для отображения графического представления статистики */}
