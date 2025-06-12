@@ -11,9 +11,21 @@ export const useCreateCleanday = () => {
     return usePostTemplate<CreateCleandayApiModel, CleandayApiModel, Cleanday>(
         CREATE_CLEANDAY,
         {
-            onSuccess: () => {
-                // Invalidate cleandays queries to trigger refetch after successful creation
-                queryClient.invalidateQueries({ queryKey: ['cleandays'] }).then();
+            onSuccess: async () => {
+                try {
+                    // First invalidate the cache to mark it as stale
+                    await queryClient.invalidateQueries({ queryKey: ['cleandays'] });
+                    
+                    // Then force a refetch to update the UI immediately
+                    await queryClient.refetchQueries({ 
+                        queryKey: ['cleandays'],
+                        type: 'active' // Only refetch active queries that are currently rendered
+                    });
+                    
+                    console.log("Cleandays cache successfully invalidated and refetched");
+                } catch (error) {
+                    console.error("Failed to refresh cleandays cache:", error);
+                }
             },
         },
         cleandayMapper
