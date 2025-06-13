@@ -106,7 +106,6 @@ export interface CleandayLogApiModel extends BaseApiModel {
 export interface GetCleandayLogsParams extends BaseGetParamsModel {
     type?: string;
     description?: string;
-    search_query?: string;
     user_login?: string;
     location_address?: string;
     comment_text?: string;
