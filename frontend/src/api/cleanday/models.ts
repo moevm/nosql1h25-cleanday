@@ -1,5 +1,6 @@
 import {BaseApiModel, BaseGetParamsModel, BaseGetResponseModel} from "@api/BaseApiModel";
 import {LocationApiModel} from "@api/location/models";
+import {UserApiModel} from "@api/user/models";
 
 export interface RequirementApiModel extends BaseApiModel {
     name: string;
@@ -85,4 +86,33 @@ export interface UpdateCleandayApiModel {
 
 export interface UpdateCleandayApiModelWithKey extends UpdateCleandayApiModel, BaseApiModel {
 
+}
+
+export interface CommentApiModel extends BaseApiModel {
+    text: string;
+    date: string;
+    author?: UserApiModel;
+}
+
+export interface CleandayLogApiModel extends BaseApiModel {
+    date: string;
+    type: string;
+    description: string;
+    user?: UserApiModel;
+    comment?: CommentApiModel;
+    location?: LocationApiModel;
+}
+
+export interface GetCleandayLogsParams extends BaseGetParamsModel {
+    type?: string;
+    description?: string;
+    user_login?: string;
+    location_address?: string;
+    comment_text?: string;
+    date_from?: string;
+    date_to?: string;
+}
+
+export interface GetCleandayLogsResponse extends BaseGetResponseModel {
+    logs: CleandayLogApiModel[];
 }
