@@ -4,10 +4,12 @@ import {CleandayLogApiModel, GetCleandayLogsParams, GetCleandayLogsResponse} fro
 import {CleandayLog} from "@models/Cleanday.ts";
 import {cleandayLogMapper} from "@utils/cleanday/mapper.ts";
 import {BasePaginatedModel} from "@models/BaseModel.ts";
+import substituteIdToEndpoint from "@utils/api/substituteIdToEndpoint.ts";
+import {GET_CLEANDAY_LOGS} from "@api/cleanday/endpoints.ts";
 
 export function useGetCleandayLogs(
     cleandayId: string,
-    params?: GetCleandayLogsParams,
+    params: GetCleandayLogsParams,
     options?: Omit<UseQueryOptions<BasePaginatedModel<CleandayLog>>, 'queryKey' | 'queryFn'>
 ) {
     return useGetPaginatedManyTemplate<
@@ -16,7 +18,7 @@ export function useGetCleandayLogs(
         GetCleandayLogsResponse
     >(
         ['cleandayLogs', cleandayId],
-        `/api/cleandays/${cleandayId}/logs`,
+        substituteIdToEndpoint(cleandayId, GET_CLEANDAY_LOGS),
         'logs',
         params,
         options,
