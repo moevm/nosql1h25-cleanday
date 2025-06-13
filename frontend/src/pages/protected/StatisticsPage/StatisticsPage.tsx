@@ -1,14 +1,13 @@
 import './StatisticsPage.css';
 
 import React, { useState } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, CircularProgress } from '@mui/material';
 import Notification from '@components/Notification.tsx';
 
-
-import './StatisticsPage.css'; // You can create this file for custom styling
-import { StatisticData } from '@models/deleteMeLater.ts';
+import './StatisticsPage.css';
 import ExportConfirmationDialog from "@components/dialog/ExportConfirmationDialog.tsx";
 import ImportDialog from "@components/dialog/ImportDialog.tsx";
+import { useGetStatistics } from '@hooks/statistics/useGetStatistics.tsx';
 
 /**
  * StatisticsPage: Компонент страницы для отображения статистики приложения.
@@ -18,18 +17,8 @@ import ImportDialog from "@components/dialog/ImportDialog.tsx";
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий страницу статистики.
  */
 const StatisticsPage: React.FC = (): React.JSX.Element => {
-    /**
-     * Состояние для хранения статистических данных.
-     * Инициализируется примерными данными для демонстрации (в реальном приложении
-     * данные были бы загружены с сервера).
-     */
-    const [statisticData, setStatisticData] = React.useState<StatisticData>({
-        totalUsers: 100,                    // Общее количество пользователей
-        usersParticipatedInCleanup: 60,     // Количество пользователей, участвовавших в субботниках
-        totalSubbotniks: 30,                // Общее количество субботников
-        pastSubbotniks: 10,                 // Количество прошедших субботников
-        areaCleaned: '100 m²',              // Площадь, которая была очищена
-    });
+    // Получение статистических данных с сервера
+    const { data: statisticData, isLoading, error } = useGetStatistics();
 
     /**
      * Состояния для отображения уведомлений пользователю.
@@ -106,6 +95,29 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
         setImportDialogOpen(false);
     };
 
+    // Отображение загрузки
+    if (isLoading) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    // Отображение ошибки
+    if (error) {
+        return (
+            <Box sx={{ p: 10 }}>
+                <Typography variant="h4" color="error" gutterBottom>
+                    Ошибка загрузки статистики
+                </Typography>
+                <Typography>
+                    Не удалось загрузить данные статистики. Попробуйте обновить страницу.
+                </Typography>
+            </Box>
+        );
+    }
+
     return (
         <Box className={"statistics-box"} sx={{ p: 10 }}>
             {/* Верхняя панель с заголовком и кнопками импорта/экспорта */}
@@ -130,11 +142,11 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
 
             {/* Блок отображения статистических данных */}
             <Box sx={{ mb: 2}}>
-                <Typography mb={3}>Всего пользователей: {statisticData.totalUsers}</Typography>
-                <Typography mb={3}>Пользователи, принявшие участие хотя бы в одном субботнике: {statisticData.usersParticipatedInCleanup}</Typography>
-                <Typography mb={3}>Всего субботников: {statisticData.totalSubbotniks}</Typography>
-                <Typography mb={3}>Прошедших субботников: {statisticData.pastSubbotniks}</Typography>
-                <Typography mb={3}>Убрано, м³: {statisticData.areaCleaned}</Typography>
+                <Typography mb={3}>Всего пользователей: {statisticData.userCount}</Typography>
+                <Typography mb={3}>Пользователи, принявшие участие хотя бы в одном субботнике: {statisticData.participatedUserCount}</Typography>
+                <Typography mb={3}>Всего субботников: {statisticData.cleandayCount}</Typography>
+                <Typography mb={3}>Прошедших субботников: {statisticData.pastCleandayCount}</Typography>
+                <Typography mb={3}>Убрано, м³: {statisticData.cleandayMetric}</Typography>
             </Box>
 
             {/* Блок для отображения графического представления статистики */}
