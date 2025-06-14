@@ -12,7 +12,7 @@ export const cleandayMapper = (apiModel: CleandayApiModel): Cleanday => {
         participantsCount: apiModel.participant_count,
         recommendedParticipantsCount: apiModel.recommended_count,
         city: apiModel.city,
-        location: locationMapper(apiModel.location),
+        location: apiModel.location ? locationMapper(apiModel.location) : undefined,
         beginDate: new Date(apiModel.begin_date),
         endDate: new Date(apiModel.end_date),
         createdAt: new Date(apiModel.created_at),
@@ -32,7 +32,11 @@ export const cleandayMapper = (apiModel: CleandayApiModel): Cleanday => {
     };
 };
 
-export const commentMapper = (apiModel: CommentApiModel): Comment => {
+export const commentMapper = (apiModel?: CommentApiModel): Comment | undefined => {
+    if (!apiModel) {
+        return undefined;
+    }
+    
     return {
         id: apiModel.key,
         text: apiModel.text,
