@@ -14,11 +14,9 @@ import {useAuth} from '@hooks/authorization/useAuth';
 type getAuthResult = UseMutationResult<AuthResponse, Error, AuthFormData, unknown>;
 
 export const useGetAuth = (): getAuthResult => {
-    const {token, setUsername} = useAuth();
+    const {login} = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-
-    const from = location.state?.from?.pathname || "/";
 
     return useMutation<AuthResponse, Error, AuthFormData>({
         mutationFn: async (credentials) => {
@@ -37,10 +35,13 @@ export const useGetAuth = (): getAuthResult => {
             );
             return response.data;
         },
-        onSuccess: (data, variables) => {
-            token(data.access_token);
-            setUsername(variables.username);
-            navigate(from, {replace: true});
+        onSuccess: (data: AuthResponse, credentials) => {
+            login(data.access_token, credentials.username);
+            
+            // Пытаемся вернуться на предыдущую страницу, если есть сохранённый путь
+            const from = location.state?.from?.pathname || "/";
+            navigate(from);
         },
+        retry: 1,
     });
 };

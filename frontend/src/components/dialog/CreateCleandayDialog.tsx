@@ -99,21 +99,25 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
     // Состояние формы, хранит данные формы и ошибки валидации
     const [formState, setFormState] = React.useState<FormState>(defaultFormState);
 
-    // Fetch all locations using the hook
-    const { data: locations = [], isLoading: isLocationsLoading, error: locationsError } = useGetAllLocation();
+    // Создаём объект для хука с возможностью отложенного вызова
+    const { 
+        data: locations = [], 
+        isLoading: isLocationsLoading, 
+        error: locationsError,
+        refetch: refetchLocations
+    } = useGetAllLocation({ enabled: false });
     
-    // Add the create location hook
+    // Запускаем загрузку только при открытии окна
+    React.useEffect(() => {
+        if (open) {
+            refetchLocations();
+        }
+    }, [open, refetchLocations]);
+    
+    // Хук для создания локации
     const { mutateAsync: createLocation} = useCreateLocation();
 
     const [isLocationDialogOpen, setLocationDialogOpen] = React.useState(false); // State for location dialog
-    const [localLocations, setLocalLocations] = React.useState<Location[]>([]); // Local copy of locations
-
-    // Update localLocations when the locations data is loaded
-    React.useEffect(() => {
-        if (locations && locations.length > 0) {
-            setLocalLocations(locations);
-        }
-    }, [locations]);
 
     // Деструктуризация состояния формы для удобства доступа к полям
     const {
@@ -238,7 +242,7 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                 tags: selectedTags.map(tag => tag.toString()),
                 requirements: conditions as unknown as CreateRequirementApiModel[],
             };
-            
+
             // Вызов функции отправки данных
             onSubmit(cleandayData);
             // Закрытие диалога
@@ -352,11 +356,11 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                                         label="Локация"
                                         onChange={(e) => {
                                             const selectedId = e.target.value as string;
-                                            const location = localLocations.find((loc) => loc.id === selectedId) || null;
+                                            const location = locations.find((loc) => loc.id === selectedId) || null;
                                             setFormState(prev => ({...prev, selectedLocation: location}));
                                         }}
                                     >
-                                        {localLocations.map((location) => (
+                                        {locations.map((location) => (
                                             <MenuItem key={location.id} value={location.id}>
                                                 {location.address}
                                                 {location.city && ` (${location.city.name})`}
@@ -590,23 +594,20 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
             <CreateLocationDialog
                 open={isLocationDialogOpen}
                 onClose={() => setLocationDialogOpen(false)}
-                onSubmit={(locationData: CreateLocationApiModel) => {
-                    // Send request to create location
-                    createLocation(locationData)
-                        .then(newLocation => {
-                            // Update local state with the new location
-                            setLocalLocations(prev => [...prev, newLocation]);
-                            // Automatically select the new location
-                            setFormState(prev => ({
-                                ...prev,
-                                selectedLocation: newLocation,
-                            }));
-                            setLocationDialogOpen(false);
-                        })
-                        .catch(error => {
-                            console.error('Failed to create location:', error);
-                            // Optionally show an error message
-                        });
+                onSubmit={async (locationData: CreateLocationApiModel) => {
+                    try {
+                        const newLocation = await createLocation(locationData);
+                        // После создания локации обновляем список локаций
+                        await refetchLocations();
+                        // Автоматически выбираем созданную локацию
+                        setFormState(prev => ({
+                            ...prev,
+                            selectedLocation: newLocation,
+                        }));
+                        setLocationDialogOpen(false);
+                    } catch (error) {
+                        console.error('Failed to create location:', error);
+                    }
                 }}
             />
         </Dialog>
