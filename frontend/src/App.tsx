@@ -1,4 +1,4 @@
-import './app.css';
+import './App.css';
 
 import {Route, Routes, useLocation} from 'react-router-dom';
 
@@ -19,7 +19,7 @@ const App = () => {
         <Box sx={{
             display: 'flex',
             paddingTop: '64px',
-            height: 'calc(100vh - 64px)',
+            height: 'calc(98vh - 65px)',
             width: '99.99vw',
             backgroundPositionX: 'x-start',
             top: 0,
