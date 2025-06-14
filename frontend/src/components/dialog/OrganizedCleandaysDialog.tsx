@@ -13,6 +13,7 @@ import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'm
 import { useNavigate } from 'react-router-dom';
 import { Cleanday, CleanDayTag } from '@models/deleteMeLater.ts';
 import {CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
+import { getStatusColor } from "@utils/cleanday/utils.ts";
 
 // Interface for the dialog props
 interface OrganizedCleandaysDialogProps {
@@ -30,11 +31,11 @@ interface OrganizedCleandaysDialogProps {
  * @returns React компонент
  */
 const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
-    open,
-    onClose,
-    userName,
-    cleandays
-}: OrganizedCleandaysDialogProps): React.JSX.Element => {
+                                                                               open,
+                                                                               onClose,
+                                                                               userName,
+                                                                               cleandays
+                                                                           }: OrganizedCleandaysDialogProps): React.JSX.Element => {
     // Хук для навигации между страницами приложения
     const navigate = useNavigate();
 
@@ -121,26 +122,9 @@ const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
                 size: 120,
             },
         ],
-        []
+        [getStatusColor]
     );
 
-    // Helper function to get color for status chip
-    const getStatusColor = (status: CleandayStatus) => {
-        switch (status) {
-            case CleandayStatus.planned:
-                return 'primary';
-            case CleandayStatus.onGoing:
-                return 'info';
-            case CleandayStatus.completed:
-                return 'success';
-            case CleandayStatus.cancelled:
-                return 'error';
-            case CleandayStatus.rescheduled:
-                return 'warning';
-            default:
-                return 'default';
-        }
-    };
 
     // Configure the table with built-in search functionality
     const table = useMaterialReactTable({
@@ -172,7 +156,6 @@ const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
             sx: { mb: 2 },
             variant: 'outlined',
         },
-        // Set row click handler
         muiTableBodyRowProps: ({row}) => ({
             onClick: () => handleRowClick(row.original),
             sx: { cursor: 'pointer' },
@@ -227,3 +210,4 @@ const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
 };
 
 export default OrganizedCleandaysDialog;
+
