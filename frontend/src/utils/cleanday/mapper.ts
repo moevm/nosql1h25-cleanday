@@ -12,7 +12,7 @@ export const cleandayMapper = (apiModel: CleandayApiModel): Cleanday => {
         participantsCount: apiModel.participant_count,
         recommendedParticipantsCount: apiModel.recommended_count,
         city: apiModel.city,
-        location: apiModel.location ? locationMapper(apiModel.location) : undefined,
+        location: locationMapper(apiModel.location),
         beginDate: new Date(apiModel.begin_date),
         endDate: new Date(apiModel.end_date),
         createdAt: new Date(apiModel.created_at),
