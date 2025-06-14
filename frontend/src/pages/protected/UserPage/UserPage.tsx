@@ -3,136 +3,13 @@ import {Avatar, Box, Button, CircularProgress, LinearProgress, TextField, Typogr
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {useNavigate, useParams} from 'react-router-dom';
 import './UserPage.css';
-import {Cleanday, CleandayTag} from "@models/Cleanday.ts";
-// import {Sex, User} from "@models/User.ts";
 import Notification from '@components/Notification.tsx';
 import OrganizedCleandaysDialog from '@components/dialog/OrganizedCleandaysDialog';
 import ParticipatedCleandaysDialog from '@components/dialog/ParticipatedCleandaysDialog';
 import {getStatusByLevel} from "@utils/user/getStatusByLevel.ts";
 import {useGetUserById} from "@hooks/user/useGetUserById.tsx";
-
-// TODO: Реализуйте запрос
-/**
- * Моковые данные пользовательского профиля для демонстрации.
- * В реальном приложении эти данные будут загружаться с сервера по идентификатору пользователя.
- */
-// const initialUserProfile: User = {
-//     // key: "user123",
-//     key: "user123",
-//     login: "john.doe",
-//     first_name: "Ритка",
-//     last_name: "Doe",
-//     sex: Sex.male,
-//     city: "Rome",
-//     about_me: "Loves to keep things tidy!",
-//     score: 275,
-//     level: 5,
-//     cleanday_count: 5,
-//     organized_count: 10,
-//     stat: 15,
-//     created_at: "2025-05-20T10:00:00Z",
-//     updated_at: "2025-05-25T14:30:00Z",
-// };
-
-/**
- * Моковые данные субботников, организованных пользователем для демонстрации.
- * В реальном приложении эти данные будут загружаться с сервера.
- */
-const organizedCleandaysData: Cleanday[] = [
-    {
-        key: "CD-001",
-        name: "Весенняя уборка парка",
-        description: "Приглашаем всех на уборку центрального парка!",
-        participant_count: 25,
-        recommended_count: 30,
-        city: "Москва",
-        location: {address: "Парк Горького", instructions: "У центрального входа", key: 101, city: "Москва"},
-        begin_date: "2025-04-15",
-        end_date: "2025-04-15",
-        organizer: "John Doe",
-        organization: "Зеленый Город",
-        area: 1500,
-        tags: [CleandayTag.trashCollecting, CleandayTag.lawnSetup],
-        status: "Завершен",
-        requirements: ["Перчатки", "Удобная обувь"],
-        created_at: "2025-04-01T10:00:00Z",
-        updated_at: "2025-04-16T12:30:00Z",
-    },
-    {
-        key: "CD-004",
-        name: "Очистка городского пляжа",
-        description: "Сбор мусора на пляже после летнего сезона",
-        participant_count: 15,
-        recommended_count: 20,
-        city: "Сочи",
-        location: {address: "Центральный пляж", instructions: "У спасательной вышки", key: 302, city: "Сочи"},
-        begin_date: "2025-09-10",
-        end_date: "2025-09-10",
-        organizer: "John Doe",
-        organization: "Чистые берега",
-        area: 2000,
-        tags: [CleandayTag.trashCollecting, CleandayTag.plantCare],
-        status: "Запланировано",
-        requirements: ["Перчатки", "Солнцезащитные средства"],
-        created_at: "2025-08-15T14:20:00Z",
-        updated_at: "2025-08-18T09:45:00Z",
-    }
-];
-
-/**
- * Моковые данные субботников, в которых пользователь принял участие для демонстрации.
- * В реальном приложении эти данные будут загружаться с сервера.
- */
-const participatedCleandaysData: Cleanday[] = [
-    {
-        key: "CD-002",
-        name: "Чистый берег реки",
-        description: "Очистим берег реки от мусора вместе!",
-        participant_count: 18,
-        recommended_count: 20,
-        city: "Санкт-Петербург",
-        location: {
-            address: "Набережная реки Фонтанки",
-            instructions: "У моста Белинского",
-            key: 205,
-            city: "Санкт-Петербург"
-        },
-        begin_date: "2025-05-20",
-        end_date: "2025-05-20",
-        organizer: "Петрова А.С.",
-        organization: "Эко-Патруль СПб",
-        area: 800,
-        tags: [CleandayTag.trashCollecting, CleandayTag.plantCare],
-        status: "Завершен",
-        requirements: ["Резиновые сапоги", "Перчатки"],
-        created_at: "2025-05-05T09:15:00Z",
-        updated_at: "2025-05-21T14:00:00Z",
-    },
-    {
-        key: "CD-003",
-        name: "Посадка деревьев в сквере",
-        description: "Присоединяйтесь к посадке молодых саженцев!",
-        participant_count: 12,
-        recommended_count: 15,
-        city: "Новосибирск",
-        location: {
-            address: "Сквер у Оперного театра",
-            instructions: "За главным зданием",
-            key: 310,
-            city: "Новосибирск"
-        },
-        begin_date: "2025-06-10",
-        end_date: "2025-06-10",
-        organizer: "Сидоров В.К.",
-        organization: "Зеленый Новосибирск",
-        area: 500,
-        tags: [CleandayTag.painting],
-        status: "Запланировано",
-        requirements: ["Лопаты (если есть)"],
-        created_at: "2025-05-25T11:30:00Z",
-        updated_at: "2025-05-28T16:45:00Z",
-    },
-];
+import {useGetUserCleandays} from "@hooks/user/useGetUserCleandays.tsx";
+import {useGetUserOrganizedCleandays} from "@hooks/user/useGetUserOrganizedCleandays.tsx";
 
 /**
  * Стили для аватара пользователя.
@@ -153,20 +30,23 @@ const avatarStyle = {
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий страницу профиля пользователя.
  */
 const UserPage: React.FC = (): React.JSX.Element => {
-    // Получение параметра 'key' из URL для идентификации пользователя
+    // Получение параметра id из URL для идентификации пользователя
     const {id} = useParams<{ id: string }>();
-    const {data: userData, isLoading, error} = useGetUserById(id || '');
+    const userId = id || '';
+
+    // Fetch user data and cleandays data
+    const {data: userData, isLoading: isLoadingUser, error: userError} = useGetUserById(userId);
+    const {data: participatedCleandays, isLoading: isLoadingParticipated} = useGetUserCleandays(userId);
+    const {data: organizedCleandays, isLoading: isLoadingOrganized} = useGetUserOrganizedCleandays(userId);
+
+    // console.log("participatedCleandays = ", participatedCleandays.contents);
 
     // Хук для программной навигации между страницами
     const navigate = useNavigate();
 
-    // Состояние для хранения данных профиля пользователя
-    // const [profile, setProfile] = React.useState<UserProfile>(initialUserProfile); // Заглушка
-
     // Состояния для отображения уведомлений
     const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
     const [notificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
-
 
     // Состояние для отображения диалога организованных субботников
     const [organizedDialogOpen, setOrganizedDialogOpen] = React.useState<boolean>(false);
@@ -205,6 +85,8 @@ const UserPage: React.FC = (): React.JSX.Element => {
         setParticipatedDialogOpen(true);
     };
 
+    // Check if any data is still loading
+    const isLoading = isLoadingUser || isLoadingParticipated || isLoadingOrganized;
 
     // Show loading state
     if (isLoading) {
@@ -217,11 +99,11 @@ const UserPage: React.FC = (): React.JSX.Element => {
     }
 
     // Show error state
-    if (error) {
+    if (userError) {
         return (
             <Box className="user-profile-box" sx={{padding: 3}}>
                 <Typography color="error" variant="h5">Error loading user data</Typography>
-                <Typography>{error.message}</Typography>
+                <Typography>{userError.message}</Typography>
                 <Button onClick={handleGoBack} variant="contained" startIcon={<ArrowBackIcon/>} sx={{mt: 2}}>
                     Back to users list
                 </Button>
@@ -245,9 +127,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
      * Вычисляемое текстовое представление уровня пользователя.
      * Определяет статус пользователя на основе числового значения уровня.
      */
-    console.log(userData);
     const levelStatus = getStatusByLevel(userData.level);
-
 
     return (
         <Box className={"user-profile-box"}>
@@ -279,7 +159,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
                                        InputProps={{readOnly: true}}/>
                             <TextField
                                 label="О себе"
-                                value={userData.aboutMe}
+                                value={userData.aboutMe || ''}
                                 multiline
                                 rows={5}
                                 size="small"
@@ -301,7 +181,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
                     <Box sx={{display: 'flex', alignItems: 'center', width: '100%', maxWidth: 300, mt: 1}}>
                         <LinearProgress variant="determinate" color={"success"} value={userData.score % 50 * 2}
                                         sx={{flexGrow: 1, mr: 1}}/>
-                        <Typography>{userData.score % 50} / 50</Typography> {/* Assuming level 1-10 maps to 0-100% */}
+                        <Typography>{userData.score % 50} / 50</Typography>
                     </Box>
 
                     {/* Заголовок раздела статистики */}
@@ -348,15 +228,15 @@ const UserPage: React.FC = (): React.JSX.Element => {
                         <Box>
                             {/* Информация о статистике и метаданных пользователя */}
                             <Typography variant="body2" sx={{mb: 0.5}}>
-                                Убрано территории - {userData.cleaned}
+                                Убрано территории - {userData.cleaned} м²
                             </Typography>
                             <Typography variant="body2" sx={{mb: 0.5}}>
                                 Дата создания
-                                - {userData.createdAt ? userData.createdAt.toLocaleString() : "Неизвестно"}
+                                - {userData.createdAt ? new Date(userData.createdAt).toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
                                 Дата последнего изменения -
-                                {userData.updatedAt ? userData.updatedAt.toLocaleString() : "Неизвестно"}
+                                {userData.updatedAt ? new Date(userData.updatedAt).toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
                                 ID: {userData.id}
@@ -396,7 +276,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
                 open={organizedDialogOpen}
                 onClose={() => setOrganizedDialogOpen(false)}
                 userName={`${userData.firstName} ${userData.lastName}`}
-                cleandays={organizedCleandaysData}
+                cleandays={organizedCleandays.contents || []}
             />
 
             {/* Диалог посещённых субботников */}
@@ -404,7 +284,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
                 open={participatedDialogOpen}
                 onClose={() => setParticipatedDialogOpen(false)}
                 userName={`${userData.firstName} ${userData.lastName}`}
-                cleandays={participatedCleandaysData}
+                cleandays={participatedCleandays.contents || []}
             />
         </Box>
     );
