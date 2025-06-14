@@ -1,7 +1,7 @@
 import './CleandaysPage.css'
 import React from 'react';
 import {Box, Button, Checkbox, Chip, FormControlLabel,} from '@mui/material';
-import {MRT_ColumnDef, MRT_ColumnFiltersState} from 'material-react-table';
+import {MRT_ColumnDef, MRT_ColumnFiltersState, MRT_PaginationState, MRT_SortingState} from 'material-react-table';
 import Notification from '@components/Notification.tsx';
 import {useNavigate} from 'react-router-dom';
 import {useGetCleandays} from "@hooks/cleanday/useGetCleandays.tsx";
@@ -24,7 +24,13 @@ import {
  */
 const CleandaysPage: React.FC = (): React.JSX.Element => {
     const navigate = useNavigate();
-    const [notify, setNotify] = React.useState<boolean>(false);
+
+    const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
+    const [notificationSeverity, setNotificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
+
+    const handleNotificationClose = React.useCallback(() => {
+        setNotificationMessage(null);
+    }, [setNotificationMessage]);
 
     // Transform column filters to API parameters
     const transformFilters = React.useCallback((columnFilters: MRT_ColumnFiltersState): Record<string, any> => {
@@ -83,12 +89,6 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
             ...numericRangeParams,
         };
     }, []);
-
-    // Fetch cleandays data with pagination and filters
-    const cleandaysQuery = useGetCleandays({
-        offset: 0,
-        limit: 10,
-    });
 
     // Column definitions for the cleandays table
     const columns = React.useMemo<MRT_ColumnDef<Cleanday>[]>
@@ -212,11 +212,11 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
     // Function to create query parameters for the API call
     const createQueryParams = React.useCallback(
         (
-            pagination: any,
-            sorting: any,
+            pagination: MRT_PaginationState,
+            sorting: MRT_SortingState,
             columnFilters: MRT_ColumnFiltersState,
             globalFilter?: string
-        ): Record<string, any> => {
+        ): Record<string, unknown> => {
             const params: Record<string, unknown> = {
                 offset: pagination.pageIndex * pagination.pageSize,
                 limit: pagination.pageSize,
@@ -251,12 +251,6 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
 
     return (
         <Box className='cleandays-box'>
-            <Notification
-                message="Действие выполнено успешно"
-                type="success"
-                onClose={() => setNotify(false)}
-            />
-
             <PaginatedTableWithTemplate
                 columns={columns}
                 getQueryHook={getQueryHook}
@@ -265,6 +259,15 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                 onRowClick={handleRowClick}
                 renderTopToolbarCustomActions={renderToolbarActions}
             />
+
+            {/* Компонент уведомления */}
+            {notificationMessage && (
+                <Notification
+                    message={notificationMessage}
+                    severity={notificationSeverity}
+                    onClose={handleNotificationClose}
+                />
+            )}
         </Box>
     );
 };
