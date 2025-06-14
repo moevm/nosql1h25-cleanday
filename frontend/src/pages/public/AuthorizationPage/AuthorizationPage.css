@@ -4,7 +4,6 @@ body {
 
 .login-container,
 .login-box {
-    margin-top: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -16,6 +15,7 @@ body {
     width: 50vw;
     border-radius: 20px;
     margin: 0;
+    min-width: 370px;
 }
 
 .login-form {
@@ -33,4 +33,8 @@ body {
 
 .login-actions button {
     flex-grow: 1;
+}
+
+:root {
+    background-color: #a9e3d4;
 }
