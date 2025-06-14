@@ -14,4 +14,6 @@ export const userMapper = (apiModel: UserApiModel): User => ({
     participantsCount: apiModel.cleanday_count,
     organizedCount: apiModel.organized_count,
     cleaned: apiModel.stat,
+    createdAt: apiModel.created_at ? new Date(apiModel.created_at) : undefined,
+    updatedAt: apiModel.updated_at ? new Date(apiModel.updated_at) : undefined,
 });

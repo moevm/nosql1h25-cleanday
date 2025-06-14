@@ -7,9 +7,9 @@ export enum Sex {
 }
 
 export interface User extends BaseModel {
+    login: string;
     firstName: string;
     lastName: string;
-    login: string;
     sex: Sex;
     city: string;
     aboutMe: string;
@@ -18,4 +18,7 @@ export interface User extends BaseModel {
     participantsCount: number;
     organizedCount: number;
     cleaned: number;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
+
