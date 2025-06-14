@@ -27,6 +27,7 @@ import {useGetAllLocation} from "@hooks/location/useGetAllLocation";
 import {CreateCleandayApiModel, CreateRequirementApiModel} from "@api/cleanday/models.ts";
 import {CreateLocationApiModel} from "@api/location/models.ts";
 import {useCreateLocation} from "@hooks/location/useCreateLocation";
+import Notification from '@components/Notification.tsx';
 
 /**
  • Интерфейс для пропсов компонента CreateCleandayDialog.
@@ -98,6 +99,11 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                                                                    }: CreateCleandayDialogProps): React.JSX.Element => {
     // Состояние формы, хранит данные формы и ошибки валидации
     const [formState, setFormState] = React.useState<FormState>(defaultFormState);
+
+    // Состояния для отображения уведомлений
+    const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
+    const [notificationSeverity, setNotificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
+
 
     // Создаём объект для хука с возможностью отложенного вызова
     const { 
@@ -243,6 +249,8 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                 requirements: conditions as unknown as CreateRequirementApiModel[],
             };
 
+            setNotificationMessage('Cубботник создан.');
+            setNotificationSeverity('success');
             // Вызов функции отправки данных
             onSubmit(cleandayData);
             // Закрытие диалога
@@ -314,7 +322,12 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
         }));
     };
 
+    const handleNotificationClose = React.useCallback(() => {
+        setNotificationMessage(null);
+    }, [setNotificationMessage]);
+
     return (
+        <>
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
             {/* Заголовок диалога */}
             <DialogTitle>Создание субботника</DialogTitle>
@@ -611,6 +624,14 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
                 }}
             />
         </Dialog>
+    {notificationMessage && (
+        <Notification
+            message={notificationMessage}
+            severity={notificationSeverity}
+            onClose={handleNotificationClose}
+        />
+    )}
+    </>
     );
 };
 

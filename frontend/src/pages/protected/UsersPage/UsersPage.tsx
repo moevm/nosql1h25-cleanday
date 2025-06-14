@@ -17,7 +17,7 @@ import {SortOrder} from "@api/BaseApiModel.ts";
  * Представляет таблицу пользователей с возможностью поиска, сортировки,
  * фильтрации и навигации на страницы отдельных пользователей.
  *
- * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий страницу пользователей.
+ * @returns {React.JSX.Element} - Возвращает JSX-элемент, представляющий страницу пользователей.
  */
 const UsersPage: React.FC = (): React.JSX.Element => {
     // Состояния для отображения уведомлений
@@ -47,9 +47,9 @@ const UsersPage: React.FC = (): React.JSX.Element => {
      *
      * @param {User} user - Объект пользователя, по строке которого был совершен клик.
      */
-    const handleRowClick = React.useCallback((user: User) => {
+    const handleRowClick = (user: User) => {
         navigate(`/users/${user.id}`);
-    }, [navigate]);    /**
+    };    /**
      * Функция для трансформации фильтров столбцов в параметры API
      */
     const transformFilters = React.useCallback((columnFilters: MRT_ColumnFiltersState): Record<string, any> => {
@@ -90,33 +90,40 @@ const UsersPage: React.FC = (): React.JSX.Element => {
         {
             accessorKey: 'firstName',
             header: 'Имя',
+            size: 100,
         },
         {
             accessorKey: 'lastName',
             header: 'Фамилия',
+            size: 140,
         },
         {
             accessorKey: 'login',
             header: 'Логин',
+            size: 100,
         },
         {
             accessorKey: 'city',
             header: 'Город',
+            size: 140,
         },
         {
             accessorKey: 'participantsCount',
             header: 'Посещённые субботники',
-            filterVariant: 'range'
+            filterVariant: 'range',
+            size: 220,
         },
         {
             accessorKey: 'cleaned',
             header: 'Убрано, м²',
-            filterVariant: 'range'
+            filterVariant: 'range',
+            size: 220,
         },
         {
             accessorKey: 'organizedCount',
             header: 'Организованные субботники',
-            filterVariant: 'range'
+            filterVariant: 'range',
+            size: 220,
         },
         {
             accessorKey: 'level',
@@ -126,6 +133,7 @@ const UsersPage: React.FC = (): React.JSX.Element => {
             ),
             filterVariant: 'range',
             //enableColumnFilter: true,
+            size: 220,
         },
     ], []);
 
@@ -152,7 +160,9 @@ const UsersPage: React.FC = (): React.JSX.Element => {
                 </Button>
             </Box>
         );
-    }, []);    // Add this mapping object
+    }, []);
+
+    // Add this mapping object at component level, outside of any function
     const columnToApiFieldMap: Record<string, string> = {
         'firstName': 'first_name',
         'lastName': 'last_name',
@@ -198,6 +208,7 @@ const UsersPage: React.FC = (): React.JSX.Element => {
                 columns={columns}
                 getQueryHook={getUsersQueryHook}
                 transformFilters={transformFilters as any}
+                createQueryParams={createQueryParams}
                 onRowClick={handleRowClick}
                 renderTopToolbarCustomActions={renderTopToolbarCustomActions}
             />
