@@ -14,6 +14,7 @@ import {
     transformArrayFilters,
     transformDateRangeFilters
 } from '@utils/filterUtils';
+import {getStatusColor} from "@utils/cleanday/utils.ts";
 
 /**
  * CleandaysPage: Компонент страницы со списком субботников.
@@ -92,7 +93,7 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
 
     // Column definitions for the cleandays table
     const columns = React.useMemo<MRT_ColumnDef<Cleanday>[]>
-        (() => [
+    (() => [
             {
                 accessorKey: 'name',
                 header: 'Название',
@@ -118,14 +119,14 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                 accessorKey: 'beginDate',
                 header: 'Дата начала',
                 filterVariant: 'date-range',
-                Cell: ({ cell }) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
+                Cell: ({cell}) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
                 size: 350,
             },
             {
                 accessorKey: 'endDate',
                 header: 'Дата окончания',
                 filterVariant: 'date-range',
-                Cell: ({ cell }) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
+                Cell: ({cell}) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
                 size: 350,
             },
             {
@@ -148,10 +149,10 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                     text: value,
                     value: value,
                 })),
-                Cell: ({ cell }) => (
-                    <Box sx={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                Cell: ({cell}) => (
+                    <Box sx={{display: 'flex', gap: '4px', flexWrap: 'wrap'}}>
                         {(cell.getValue<CleandayTag[]>() || []).map((tag) => (
-                            <Chip key={tag} label={tag} size="small" />
+                            <Chip key={tag} label={tag} size="small"/>
                         ))}
                     </Box>
                 ),
@@ -165,7 +166,7 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                     text: value,
                     value: value,
                 })),
-                Cell: ({ cell }) => (
+                Cell: ({cell}) => (
                     <Chip
                         label={cell.getValue<string>()}
                         color={getStatusColor(cell.getValue<CleandayStatus>())}
@@ -175,26 +176,8 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                 size: 120,
             },
         ],
-        []
+        [getStatusColor]
     );
-
-    // Helper function to get color for status chip
-    const getStatusColor = (status: CleandayStatus) => {
-        switch (status) {
-            case CleandayStatus.planned:
-                return 'primary';
-            case CleandayStatus.onGoing:
-                return 'info';
-            case CleandayStatus.completed:
-                return 'success';
-            case CleandayStatus.cancelled:
-                return 'error';
-            case CleandayStatus.rescheduled:
-                return 'warning';
-            default:
-                return 'default';
-        }
-    };
 
     // Handle click on a row to navigate to cleanday details page
     const handleRowClick = (row: Cleanday) => {
