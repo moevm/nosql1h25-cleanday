@@ -97,46 +97,48 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                 accessorKey: 'name',
                 header: 'Название',
                 filterVariant: 'text',
+                size: 250,
             },
             {
                 accessorKey: 'city',
                 header: 'Город',
                 filterVariant: 'text',
                 enableSorting: false, // Disable sorting for city column
+                size: 140,
             },
             {
                 accessorKey: 'location.address',
                 header: 'Адрес',
                 id: 'address',
-                enableColumnFilter: false, // No direct API filter for address
+                filterVariant: 'text',
                 enableSorting: false,
+                size: 200,
             },
             {
                 accessorKey: 'beginDate',
                 header: 'Дата начала',
                 filterVariant: 'date-range',
                 Cell: ({ cell }) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
+                size: 350,
             },
             {
                 accessorKey: 'endDate',
                 header: 'Дата окончания',
                 filterVariant: 'date-range',
                 Cell: ({ cell }) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
-            },
-            {
-                accessorKey: 'area',
-                header: 'Площадь (м²)',
-                filterVariant: 'range',
+                size: 350,
             },
             {
                 accessorKey: 'organization',
                 header: 'Организация',
                 filterVariant: 'text',
+                size: 140,
             },
             {
                 accessorKey: 'organizer',
                 header: 'Организатор',
                 filterVariant: 'text',
+                size: 140,
             },
             {
                 accessorKey: 'tags',
@@ -153,6 +155,7 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                         ))}
                     </Box>
                 ),
+                size: 200,
             },
             {
                 accessorKey: 'status',
@@ -169,6 +172,7 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                         size="small"
                     />
                 ),
+                size: 120,
             },
         ],
         []
@@ -252,10 +256,10 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
     return (
         <Box className='cleandays-box'>
             <PaginatedTableWithTemplate
+                title="Субботники"
                 columns={columns}
                 getQueryHook={getQueryHook}
                 createQueryParams={createQueryParams}
-                title="Субботники"
                 onRowClick={handleRowClick}
                 renderTopToolbarCustomActions={renderToolbarActions}
             />
