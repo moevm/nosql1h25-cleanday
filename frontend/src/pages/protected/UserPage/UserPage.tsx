@@ -1,41 +1,38 @@
 import React from 'react';
-import {
-    Box,
-    Typography,
-    TextField,
-    Button,
-    Avatar,
-    LinearProgress,
-} from '@mui/material';
+import {Avatar, Box, Button, CircularProgress, LinearProgress, TextField, Typography,} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import {useParams, useNavigate} from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 import './UserPage.css';
-import {UserProfile, Cleanday, CleanDayTag} from "@models/deleteMeLater.ts";
+import {Cleanday, CleandayTag} from "@models/Cleanday.ts";
+// import {Sex, User} from "@models/User.ts";
 import Notification from '@components/Notification.tsx';
 import OrganizedCleandaysDialog from '@components/dialog/OrganizedCleandaysDialog';
 import ParticipatedCleandaysDialog from '@components/dialog/ParticipatedCleandaysDialog';
+import {getStatusByLevel} from "@utils/user/getStatusByLevel.ts";
+import {useGetUserById} from "@hooks/user/useGetUserById.tsx";
 
 // TODO: Реализуйте запрос
 /**
  * Моковые данные пользовательского профиля для демонстрации.
  * В реальном приложении эти данные будут загружаться с сервера по идентификатору пользователя.
  */
-const initialUserProfile: UserProfile = {
-    key: "user123",
-    login: "john.doe",
-    first_name: "John",
-    last_name: "Doe",
-    sex: "male",
-    city: "Rome",
-    about_me: "Loves to keep things tidy!",
-    score: 275,
-    level: 5,
-    cleanday_count: 5,
-    organized_count: 10,
-    stat: 15,
-    created_at: "2025-05-20T10:00:00Z",
-    updated_at: "2025-05-25T14:30:00Z",
-};
+// const initialUserProfile: User = {
+//     // key: "user123",
+//     key: "user123",
+//     login: "john.doe",
+//     first_name: "Ритка",
+//     last_name: "Doe",
+//     sex: Sex.male,
+//     city: "Rome",
+//     about_me: "Loves to keep things tidy!",
+//     score: 275,
+//     level: 5,
+//     cleanday_count: 5,
+//     organized_count: 10,
+//     stat: 15,
+//     created_at: "2025-05-20T10:00:00Z",
+//     updated_at: "2025-05-25T14:30:00Z",
+// };
 
 /**
  * Моковые данные субботников, организованных пользователем для демонстрации.
@@ -55,7 +52,7 @@ const organizedCleandaysData: Cleanday[] = [
         organizer: "John Doe",
         organization: "Зеленый Город",
         area: 1500,
-        tags: [CleanDayTag.TRASH_COLLECTING, CleanDayTag.LAWN_SETUP],
+        tags: [CleandayTag.trashCollecting, CleandayTag.lawnSetup],
         status: "Завершен",
         requirements: ["Перчатки", "Удобная обувь"],
         created_at: "2025-04-01T10:00:00Z",
@@ -74,7 +71,7 @@ const organizedCleandaysData: Cleanday[] = [
         organizer: "John Doe",
         organization: "Чистые берега",
         area: 2000,
-        tags: [CleanDayTag.TRASH_COLLECTING, CleanDayTag.WATERBODY_CLEANING],
+        tags: [CleandayTag.trashCollecting, CleandayTag.plantCare],
         status: "Запланировано",
         requirements: ["Перчатки", "Солнцезащитные средства"],
         created_at: "2025-08-15T14:20:00Z",
@@ -105,7 +102,7 @@ const participatedCleandaysData: Cleanday[] = [
         organizer: "Петрова А.С.",
         organization: "Эко-Патруль СПб",
         area: 800,
-        tags: [CleanDayTag.TRASH_COLLECTING, CleanDayTag.WATERBODY_CLEANING],
+        tags: [CleandayTag.trashCollecting, CleandayTag.plantCare],
         status: "Завершен",
         requirements: ["Резиновые сапоги", "Перчатки"],
         created_at: "2025-05-05T09:15:00Z",
@@ -129,7 +126,7 @@ const participatedCleandaysData: Cleanday[] = [
         organizer: "Сидоров В.К.",
         organization: "Зеленый Новосибирск",
         area: 500,
-        tags: [CleanDayTag.PLANTING],
+        tags: [CleandayTag.painting],
         status: "Запланировано",
         requirements: ["Лопаты (если есть)"],
         created_at: "2025-05-25T11:30:00Z",
@@ -157,55 +154,24 @@ const avatarStyle = {
  */
 const UserPage: React.FC = (): React.JSX.Element => {
     // Получение параметра 'key' из URL для идентификации пользователя
-    const { key } = useParams<{ key: string }>();
+    const {id} = useParams<{ id: string }>();
+    const {data: userData, isLoading, error} = useGetUserById(id || '');
 
     // Хук для программной навигации между страницами
     const navigate = useNavigate();
 
     // Состояние для хранения данных профиля пользователя
-    const [profile, setProfile] = React.useState<UserProfile>(initialUserProfile); // Заглушка
+    // const [profile, setProfile] = React.useState<UserProfile>(initialUserProfile); // Заглушка
 
     // Состояния для отображения уведомлений
     const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
-    const [notificationSeverity, setNotificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
+    const [notificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
+
 
     // Состояние для отображения диалога организованных субботников
     const [organizedDialogOpen, setOrganizedDialogOpen] = React.useState<boolean>(false);
-    
     // Состояние для отображения диалога посещённых субботников
     const [participatedDialogOpen, setParticipatedDialogOpen] = React.useState<boolean>(false);
-
-    /**
-     * Эффект для загрузки данных пользователя при монтировании компонента
-     * или изменении идентификатора пользователя в URL.
-     * В текущей реализации только выводит сообщение в консоль.
-     * В реальном приложении здесь был бы запрос к API.
-     */
-    React.useEffect(() => {
-        if (key) {
-            console.log(`Fetching user data for key: ${key}`);
-        }
-    }, [key]);
-
-    /**
-     * Вычисляемое текстовое представление уровня пользователя.
-     * Определяет статус пользователя на основе числового значения уровня.
-     */
-    const levelStatus = React.useMemo(() => {
-        if (profile.level == 1) {
-            return 'Новичок👍';
-        } else if (profile.level == 2) {
-            return 'Труженик💪';
-        } else if (profile.level == 3) {
-            return 'Лидер района🤝';
-        } else if (profile.level == 4) {
-            return 'Экоактивист🌱';
-        } else if (profile.level == 5) {
-            return 'Экозвезда🌟';
-        } else {
-            return 'Эко-гуру🏆';
-        }
-    }, [profile.level]);
 
     /**
      * Обработчик закрытия уведомления.
@@ -239,6 +205,50 @@ const UserPage: React.FC = (): React.JSX.Element => {
         setParticipatedDialogOpen(true);
     };
 
+
+    // Show loading state
+    if (isLoading) {
+        return (
+            <Box className="user-profile-box"
+                 sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh'}}>
+                <CircularProgress/>
+            </Box>
+        );
+    }
+
+    // Show error state
+    if (error) {
+        return (
+            <Box className="user-profile-box" sx={{padding: 3}}>
+                <Typography color="error" variant="h5">Error loading user data</Typography>
+                <Typography>{error.message}</Typography>
+                <Button onClick={handleGoBack} variant="contained" startIcon={<ArrowBackIcon/>} sx={{mt: 2}}>
+                    Back to users list
+                </Button>
+            </Box>
+        );
+    }
+
+    // Show not found state
+    if (!userData) {
+        return (
+            <Box className="user-profile-box" sx={{padding: 3}}>
+                <Typography variant="h5">User not found</Typography>
+                <Button onClick={handleGoBack} variant="contained" startIcon={<ArrowBackIcon/>} sx={{mt: 2}}>
+                    Back to users list
+                </Button>
+            </Box>
+        );
+    }
+
+    /**
+     * Вычисляемое текстовое представление уровня пользователя.
+     * Определяет статус пользователя на основе числового значения уровня.
+     */
+    console.log(userData);
+    const levelStatus = getStatusByLevel(userData.level);
+
+
     return (
         <Box className={"user-profile-box"}>
             <Box display='flex' flexDirection='column' alignItems='flex-start'>
@@ -251,7 +261,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
                 }}>
                     {/* Имя и фамилия пользователя */}
                     <Typography variant="h3" gutterBottom>
-                        {profile.first_name} {profile.last_name}
+                        {userData.firstName} {userData.lastName}
                     </Typography>
 
                     {/* Блок с аватаром и полями профиля */}
@@ -261,15 +271,15 @@ const UserPage: React.FC = (): React.JSX.Element => {
 
                         {/* Поля с информацией о пользователе */}
                         <Box sx={{display: 'flex', flexDirection: 'column', width: '100%', maxWidth: "100%"}}>
-                            <TextField label="Логин" value={profile.login} size="small" fullWidth={true} margin="dense"
+                            <TextField label="Логин" value={userData.login} size="small" fullWidth={true} margin="dense"
                                        InputProps={{readOnly: true}}/>
-                            <TextField label="Пол" value={profile.sex} size="small" margin="dense"
+                            <TextField label="Пол" value={userData.sex} size="small" margin="dense"
                                        InputProps={{readOnly: true}}/>
-                            <TextField label="Город" value={profile.city} size="small" margin="dense"
+                            <TextField label="Город" value={userData.city} size="small" margin="dense"
                                        InputProps={{readOnly: true}}/>
                             <TextField
                                 label="О себе"
-                                value={profile.about_me}
+                                value={userData.aboutMe}
                                 multiline
                                 rows={5}
                                 size="small"
@@ -289,9 +299,9 @@ const UserPage: React.FC = (): React.JSX.Element => {
 
                     {/* Прогресс-бар, показывающий прогресс до следующего уровня */}
                     <Box sx={{display: 'flex', alignItems: 'center', width: '100%', maxWidth: 300, mt: 1}}>
-                        <LinearProgress variant="determinate" color={"success"} value={profile.score % 50 * 2}
+                        <LinearProgress variant="determinate" color={"success"} value={userData.score % 50 * 2}
                                         sx={{flexGrow: 1, mr: 1}}/>
-                        <Typography>{profile.score % 50} / 50</Typography> {/* Assuming level 1-10 maps to 0-100% */}
+                        <Typography>{userData.score % 50} / 50</Typography> {/* Assuming level 1-10 maps to 0-100% */}
                     </Box>
 
                     {/* Заголовок раздела статистики */}
@@ -301,8 +311,8 @@ const UserPage: React.FC = (): React.JSX.Element => {
 
                     {/* Кнопки с информацией о количестве организованных и посещённых субботников */}
                     <Box sx={{display: 'flex', gap: 1, mb: 2}}>
-                        <Button 
-                            variant="contained" 
+                        <Button
+                            variant="contained"
                             color="success"
                             onClick={handleOrganizedClick}
                             sx={{
@@ -314,10 +324,10 @@ const UserPage: React.FC = (): React.JSX.Element => {
                                 height: '45px',
                                 width: '190px',
                             }}>
-                            ОРГАНИЗОВАНО: {profile.organized_count}
+                            ОРГАНИЗОВАНО: {userData.organizedCount}
                         </Button>
-                        <Button 
-                            variant="contained" 
+                        <Button
+                            variant="contained"
                             color="success"
                             onClick={handleParticipatedClick}
                             sx={{
@@ -329,7 +339,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
                                 height: '45px',
                                 width: '190px',
                             }}>
-                            УЧАСТИЕ: {profile.cleanday_count}
+                            УЧАСТИЕ: {userData.participantsCount}
                         </Button>
                     </Box>
 
@@ -338,16 +348,18 @@ const UserPage: React.FC = (): React.JSX.Element => {
                         <Box>
                             {/* Информация о статистике и метаданных пользователя */}
                             <Typography variant="body2" sx={{mb: 0.5}}>
-                                Убрано территории - {profile.stat}
+                                Убрано территории - {userData.cleaned}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 0.5}}>
-                                Дата создания - {profile.created_at}
+                                Дата создания
+                                - {userData.createdAt ? userData.createdAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
-                                Дата последнего изменения - {profile.updated_at}
+                                Дата последнего изменения -
+                                {userData.updatedAt ? userData.updatedAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
-                                ID: {profile.key}
+                                ID: {userData.id}
                             </Typography>
                         </Box>
                     </Box>
@@ -355,7 +367,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
                 {/* Кнопка возврата к списку пользователей */}
                 <Button onClick={handleGoBack}
                         variant="contained"
-                        startIcon={<ArrowBackIcon />}
+                        startIcon={<ArrowBackIcon/>}
                         sx={{
                             backgroundColor: '#3C6C5F',
                             color: 'white',
@@ -364,7 +376,8 @@ const UserPage: React.FC = (): React.JSX.Element => {
                             },
                             height: '45px',
                             width: '100%',
-                            mb: 2 }}>
+                            mb: 2
+                        }}>
                     Назад к списку пользователей
                 </Button>
             </Box>
@@ -382,7 +395,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
             <OrganizedCleandaysDialog
                 open={organizedDialogOpen}
                 onClose={() => setOrganizedDialogOpen(false)}
-                userName={`${profile.first_name} ${profile.last_name}`}
+                userName={`${userData.firstName} ${userData.lastName}`}
                 cleandays={organizedCleandaysData}
             />
 
@@ -390,7 +403,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
             <ParticipatedCleandaysDialog
                 open={participatedDialogOpen}
                 onClose={() => setParticipatedDialogOpen(false)}
-                userName={`${profile.first_name} ${profile.last_name}`}
+                userName={`${userData.firstName} ${userData.lastName}`}
                 cleandays={participatedCleandaysData}
             />
         </Box>
