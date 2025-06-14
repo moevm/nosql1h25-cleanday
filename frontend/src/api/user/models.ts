@@ -35,10 +35,10 @@ export interface GetUsersParams extends BaseGetParamsModel {
     city?: string;
     level_from?: string;
     level_to?: string;
-    cleandays_from?: string;
-    cleandays_to?: string;
-    organized_from?: string;
-    organized_to?: string;
+    cleanday_count_from?: string;
+    cleanday_count_to?: string;
+    organized_count_from?: string;
+    organized_count_to?: string;
     stat_from?: string;
     stat_to?: string;
 }
