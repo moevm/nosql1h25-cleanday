@@ -15,7 +15,7 @@ const ProtectedRoute: React.FC = (): React.JSX.Element => {
 
     if (!isAuthenticated) {
         // Сохраняем текущий маршрут для редиректа после авторизации
-        return <Navigate to="/authorization" state={{from: location}} replace/>;
+        return <Navigate to="/" state={{from: location}} replace/>;
     }
 
     return <Outlet />;
