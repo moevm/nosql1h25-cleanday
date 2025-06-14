@@ -12,6 +12,7 @@ import {
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
 import { useNavigate } from 'react-router-dom';
 import { Cleanday, CleanDayTag } from '@models/deleteMeLater.ts';
+import {CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
 
 // Interface for the dialog props
 interface OrganizedCleandaysDialogProps {
@@ -24,7 +25,7 @@ interface OrganizedCleandaysDialogProps {
 /**
  * OrganizedCleandaysDialog: Компонент для отображения списка субботников, организованных пользователем.
  * Показывает таблицу со всеми субботниками, организованными данным пользователем, с возможностью поиска и перехода к детальной странице.
- * 
+ *
  * @param props - Пропсы компонента
  * @returns React компонент
  */
@@ -59,6 +60,7 @@ const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
                 accessorFn: (row) => row.city,
                 header: 'Город',
                 id: 'city',
+                size: 90,
             },
             {
                 accessorFn: (row) => row.location.address,
@@ -68,6 +70,7 @@ const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
             {
                 accessorKey: 'begin_date',
                 header: 'Дата и время начала',
+
             },
             {
                 accessorKey: 'end_date',
@@ -76,14 +79,16 @@ const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
             {
                 accessorKey: 'organization',
                 header: 'Организация',
+                size: 150,
             },
             {
                 accessorKey: 'organizer',
                 header: 'Организатор',
+                size: 150,
             },
             {
-                header: 'Тип',
-                id: 'type',
+                accessorKey: 'type',
+                header: 'Теги',
                 // Кастомное отображение тегов как компонентов Chip
                 Cell: ({row}) => (
                     <Box sx={{display: 'flex', gap: 1}}>
@@ -92,38 +97,50 @@ const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
                         ))}
                     </Box>
                 ),
+                filterVariant: 'multi-select',
+                filterSelectOptions: Object.entries(CleandayTag).map(([key, value]) => ({
+                    text: value,
+                    value: value,
+                })),
             },
             {
-                header: 'Статус',
                 accessorKey: 'status',
-                // Кастомное отображение статуса с цветовым выделением
-                Cell: ({row}) => {
-                    let color: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | undefined;
-                    switch (row.original.status) {
-                        case 'Запланировано':
-                            color = 'primary';
-                            break;
-                        case 'Завершен':
-                            color = 'success';
-                            break;
-                        case 'Отменен':
-                            color = 'error';
-                            break;
-                        case 'Проходит':
-                            color = 'info';
-                            break;
-                        case 'Перенесён':
-                            color = 'warning';
-                            break;
-                        default:
-                            break;
-                    }
-                    return <Chip label={row.original.status} size="small" color={color}/>;
-                },
+                header: 'Статус',
+                filterVariant: 'multi-select',
+                filterSelectOptions: Object.entries(CleandayStatus).map(([key, value]) => ({
+                    text: value,
+                    value: value,
+                })),
+                Cell: ({ cell }) => (
+                    <Chip
+                        label={cell.getValue<string>()}
+                        color={getStatusColor(cell.getValue<CleandayStatus>())}
+                        size="small"
+                    />
+                ),
+                size: 120,
             },
         ],
         []
     );
+
+    // Helper function to get color for status chip
+    const getStatusColor = (status: CleandayStatus) => {
+        switch (status) {
+            case CleandayStatus.planned:
+                return 'primary';
+            case CleandayStatus.onGoing:
+                return 'info';
+            case CleandayStatus.completed:
+                return 'success';
+            case CleandayStatus.cancelled:
+                return 'error';
+            case CleandayStatus.rescheduled:
+                return 'warning';
+            default:
+                return 'default';
+        }
+    };
 
     // Configure the table with built-in search functionality
     const table = useMaterialReactTable({
@@ -163,8 +180,8 @@ const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
     });
 
     return (
-        <Dialog 
-            open={open} 
+        <Dialog
+            open={open}
             onClose={onClose}
             maxWidth="lg"
             fullWidth
@@ -176,30 +193,30 @@ const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
                     {userName}
                 </Typography>
             </DialogTitle>
-            
+
             <DialogContent>
                 <MaterialReactTable table={table} />
-                
+
                 {cleandays.length === 0 && (
-                    <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        alignItems: 'center', 
-                        p: 4 
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        p: 4
                     }}>
                         <Typography color="text.secondary">
                             Нет организованных субботников
                         </Typography>
                     </Box>
                 )}
-                
+
                 <Box sx={{ mt: 2 }}>
                     <Typography variant="body2">
                         Всего организовано субботников: <b>{cleandays.length}</b>
                     </Typography>
                 </Box>
             </DialogContent>
-            
+
             <DialogActions>
                 <Button onClick={onClose} color="primary">
                     Закрыть

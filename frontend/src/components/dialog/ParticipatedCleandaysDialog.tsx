@@ -12,6 +12,7 @@ import {
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
 import { useNavigate } from 'react-router-dom';
 import { Cleanday, CleanDayTag } from '@models/deleteMeLater.ts';
+import {CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
 
 // Interface for the dialog props
 interface ParticipatedCleandaysDialogProps {
@@ -59,6 +60,7 @@ const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = 
                 accessorFn: (row) => row.city,
                 header: 'Город',
                 id: 'city',
+                size: 90,
             },
             {
                 accessorFn: (row) => row.location.address,
@@ -76,14 +78,16 @@ const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = 
             {
                 accessorKey: 'organization',
                 header: 'Организация',
+                size: 150,
             },
             {
                 accessorKey: 'organizer',
                 header: 'Организатор',
+                size: 150,
             },
             {
-                header: 'Тип',
-                id: 'type',
+                accessorKey: 'type',
+                header: 'Теги',
                 // Кастомное отображение тегов как компонентов Chip
                 Cell: ({row}) => (
                     <Box sx={{display: 'flex', gap: 1}}>
@@ -92,38 +96,50 @@ const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = 
                         ))}
                     </Box>
                 ),
+                filterVariant: 'multi-select',
+                filterSelectOptions: Object.entries(CleandayTag).map(([key, value]) => ({
+                    text: value,
+                    value: value,
+                })),
             },
             {
-                header: 'Статус',
                 accessorKey: 'status',
-                // Кастомное отображение статуса с цветовым выделением
-                Cell: ({row}) => {
-                    let color: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | undefined;
-                    switch (row.original.status) {
-                        case 'Запланировано':
-                            color = 'primary';
-                            break;
-                        case 'Завершен':
-                            color = 'success';
-                            break;
-                        case 'Отменен':
-                            color = 'error';
-                            break;
-                        case 'Проходит':
-                            color = 'info';
-                            break;
-                        case 'Перенесён':
-                            color = 'warning';
-                            break;
-                        default:
-                            break;
-                    }
-                    return <Chip label={row.original.status} size="small" color={color}/>;
-                },
+                header: 'Статус',
+                filterVariant: 'multi-select',
+                filterSelectOptions: Object.entries(CleandayStatus).map(([key, value]) => ({
+                    text: value,
+                    value: value,
+                })),
+                Cell: ({ cell }) => (
+                    <Chip
+                        label={cell.getValue<string>()}
+                        color={getStatusColor(cell.getValue<CleandayStatus>())}
+                        size="small"
+                    />
+                ),
+                size: 120,
             },
         ],
         []
     );
+
+    // Helper function to get color for status chip
+    const getStatusColor = (status: CleandayStatus) => {
+        switch (status) {
+            case CleandayStatus.planned:
+                return 'primary';
+            case CleandayStatus.onGoing:
+                return 'info';
+            case CleandayStatus.completed:
+                return 'success';
+            case CleandayStatus.cancelled:
+                return 'error';
+            case CleandayStatus.rescheduled:
+                return 'warning';
+            default:
+                return 'default';
+        }
+    };
 
     // Configure the table with built-in search functionality
     const table = useMaterialReactTable({
