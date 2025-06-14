@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
 import { useNavigate } from 'react-router-dom';
-import { Cleanday, CleanDayTag } from '@models/deleteMeLater.ts';
+import { Cleanday } from '@models/Cleanday.ts';
 
 // Interface for the dialog props
 interface OrganizedCleandaysDialogProps {
@@ -45,7 +45,7 @@ const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
      */
     const handleRowClick = React.useCallback((cleanday: Cleanday) => {
         onClose();
-        navigate(`/cleandays/${cleanday.key}`);
+        navigate(`/cleandays/${cleanday.id}`);
     }, [navigate, onClose]);
 
     // Define table columns
