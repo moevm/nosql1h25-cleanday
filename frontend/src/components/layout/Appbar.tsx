@@ -58,6 +58,7 @@ const Appbar = ({open}: AppbarProps): React.JSX.Element => {
                 backgroundColor: '#a9e3d4',
                 color: 'black',
                 display: open ? 'flex' : 'none',
+                minWidth: 1000,
             }}
         >
             <Toolbar>
