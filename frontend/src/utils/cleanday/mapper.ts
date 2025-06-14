@@ -32,7 +32,11 @@ export const cleandayMapper = (apiModel: CleandayApiModel): Cleanday => {
     };
 };
 
-export const commentMapper = (apiModel: CommentApiModel): Comment => {
+export const commentMapper = (apiModel?: CommentApiModel): Comment | undefined => {
+    if (!apiModel) {
+        return undefined;
+    }
+    
     return {
         id: apiModel.key,
         text: apiModel.text,
