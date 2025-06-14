@@ -8,7 +8,7 @@ import {getStatusByLevel} from "@/utils/user/getStatusByLevel.ts";
 import {useGetUsers} from "@hooks/user/useGetUsers.tsx";
 import {GetUsersParams} from '@api/user/models';
 import {User} from "@models/User.ts";
-import {PaginatedTableWithTemplate} from '@components/PaginatedTable/PaginatedTable';
+import {PaginatedTable} from '@components/PaginatedTable/PaginatedTable';
 import {transformRangeFilters, transformStringFilters} from '@utils/filterUtils';
 import {SortOrder} from "@api/BaseApiModel.ts";
 
@@ -203,7 +203,7 @@ const UsersPage: React.FC = (): React.JSX.Element => {
 
     return (
         <Box className="user-box">
-            <PaginatedTableWithTemplate
+            <PaginatedTable
                 title="Пользователи"
                 columns={columns}
                 getQueryHook={getUsersQueryHook}

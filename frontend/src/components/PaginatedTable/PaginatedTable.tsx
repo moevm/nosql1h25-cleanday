@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
     MaterialReactTable,
     MRT_ColumnDef,
@@ -11,51 +11,14 @@ import {
 import {Box, Typography} from '@mui/material';
 import {MRT_Localization_RU} from 'material-react-table/locales/ru';
 import {BaseModel, BasePaginatedModel} from '@models/BaseModel';
-import {BaseApiModel, BaseGetParamsModel, SortOrder} from '@api/BaseApiModel';
+import {BaseApiModel, SortOrder} from '@api/BaseApiModel';
 import {UseQueryResult} from '@tanstack/react-query';
 
 
 /**
- * Props for the PaginatedTable component
- */
-export interface PaginatedTableProps<T extends BaseModel> {
-    /** Columns definition for the table */
-    columns: MRT_ColumnDef<T>[];
-
-    /** Function to fetch data with pagination parameters */
-    fetchData: (params: BaseGetParamsModel) => Promise<BasePaginatedModel<T>>;
-
-    /** Function to transform column filter to API parameters */
-    transformFilters?: (filters: MRT_ColumnFiltersState) => Record<string, never>;
-
-    /** Initial state for the table */
-    initialState?: {
-        pagination?: MRT_PaginationState;
-        sorting?: MRT_SortingState;
-        columnFilters?: MRT_ColumnFiltersState;
-        globalFilter?: string;
-    };
-
-    /** Table title */
-    title?: string;
-
-    /** Handler for row click */
-    onRowClick?: (row: T) => void;
-
-    /** Custom render function for toolbar actions */
-    renderTopToolbarCustomActions?: () => React.ReactNode;
-
-    /** Loading state override */
-    isLoading?: boolean;
-
-    /** Error state override */
-    error?: Error | null;
-}
-
-/**
  * Props for PaginatedTable with useGetPaginatedManyTemplate integration
  */
-export interface PaginatedTableWithTemplateProps<
+export interface PaginatedTableProps<
     ApiModel extends BaseApiModel = BaseApiModel,
     Model extends BaseModel = BaseModel
 > {
@@ -94,194 +57,10 @@ export interface PaginatedTableWithTemplateProps<
     renderTopToolbarCustomActions?: () => React.ReactNode;
 }
 
-// /**
-//  * PaginatedTable: A reusable component for displaying paginated data with sorting, filtering, and searching capabilities.
-//  */
-// export function PaginatedTable<T extends BaseModel>({
-//                                                         columns,
-//                                                         fetchData,
-//                                                         transformFilters,
-//                                                         initialState = {},
-//                                                         title,
-//                                                         onRowClick,
-//                                                         renderTopToolbarCustomActions,
-//                                                         isLoading: externalIsLoading,
-//                                                         error: externalError,
-//                                                     }: PaginatedTableProps<T>): React.JSX.Element {
-//     // Table state
-//     const [pagination, setPagination] = useState<MRT_PaginationState>(
-//         initialState.pagination || {pageIndex: 0, pageSize: 10}
-//     );
-//     const [sorting, setSorting] = useState<MRT_SortingState>(
-//         initialState.sorting || []
-//     );
-//     const [columnFilters, setColumnFilters] = useState<MRT_ColumnFiltersState>(
-//         initialState.columnFilters || []
-//     );
-//     const [globalFilter, setGlobalFilter] = useState<string | undefined>(
-//         initialState.globalFilter
-//     );
-//
-//     // Data state
-//     const [data, setData] = useState<T[]>([]);
-//     const [totalCount, setTotalCount] = useState<number>(0);
-//     const [isLoading, setIsLoading] = useState<boolean>(false);
-//     const [error, setError] = useState<Error | null>(null);
-//
-//     // Effect to fetch data when any filtering/sorting/pagination parameter changes
-//     useEffect(() => {
-//         const fetchTableData = async () => {
-//             if (externalIsLoading !== undefined) return; // Skip if loading is externally controlled
-//
-//             setIsLoading(true);
-//             setError(null);
-//
-//             try {
-//                 // Create base parameters
-//                 const params: Record<string, unknown> = {
-//                     offset: pagination.pageIndex * pagination.pageSize,
-//                     limit: pagination.pageSize,
-//                     search_query: globalFilter && globalFilter.trim() !== "" ? globalFilter.trim() : undefined,
-//                 };
-//
-//                 // Add sorting parameters
-//                 if (sorting.length > 0) {
-//                     params.sort_by = sorting[0].id.toString();
-//                     params.sort_order = sorting[0].desc ? SortOrder.desc : SortOrder.asc;
-//                 }
-//
-//                 // Add filters from columns
-//                 if (transformFilters) {
-//                     const filterParams = transformFilters(columnFilters);
-//                     Object.assign(params, filterParams);
-//                 }
-//
-//                 // Fetch data
-//                 const result = await fetchData(params as BaseGetParamsModel);
-//                 setData(result.contents);
-//                 setTotalCount(result.totalCount);
-//             } catch (err) {
-//                 setError(err instanceof Error ? err : new Error('An unknown error occurred'));
-//             } finally {
-//                 setIsLoading(false);
-//             }
-//         };
-//
-//         fetchTableData().then();
-//     }, [
-//         pagination.pageIndex,
-//         pagination.pageSize,
-//         sorting,
-//         columnFilters,
-//         globalFilter,
-//         fetchData,
-//         transformFilters,
-//         externalIsLoading,
-//     ]);
-//
-//     // Handlers for table state changes
-//     const handleSortingChange = (updaterOrValue: MRT_Updater<MRT_SortingState>): void => {
-//         setSorting(updaterOrValue);
-//         setPagination(prev => ({...prev, pageIndex: 0}));
-//     };
-//
-//     const handleColumnFiltersChange = (updaterOrValue: MRT_Updater<MRT_ColumnFiltersState>): void => {
-//         setColumnFilters(updaterOrValue);
-//         setPagination(prev => ({...prev, pageIndex: 0}));
-//     };
-//
-//     const handleGlobalFilterChange = (value: string | undefined): void => {
-//         setGlobalFilter(value);
-//         setPagination(prev => ({...prev, pageIndex: 0}));
-//     };
-//
-//     // Table configuration
-//     const table = useMaterialReactTable({
-//         columns: columns as unknown as MRT_ColumnDef<any>[],
-//         data: data,
-//         manualPagination: true,
-//         manualSorting: true,
-//         manualFiltering: true,
-//         onPaginationChange: setPagination,
-//         onSortingChange: handleSortingChange,
-//         onColumnFiltersChange: handleColumnFiltersChange,
-//         onGlobalFilterChange: handleGlobalFilterChange,
-//         rowCount: totalCount,
-//         localization: MRT_Localization_RU,
-//         enableCellActions: true,
-//         enableColumnOrdering: false,
-//         enableRowSelection: false,
-//         enableSorting: true,
-//         enableColumnFilters: true,
-//         enableGlobalFilter: true,
-//         positionGlobalFilter: 'left',
-//         state: {
-//             isLoading: externalIsLoading !== undefined ? externalIsLoading : isLoading,
-//             showProgressBars: externalIsLoading !== undefined ? externalIsLoading : isLoading,
-//             showAlertBanner: externalError !== undefined ? !!externalError : !!error,
-//             pagination,
-//             sorting,
-//             columnFilters,
-//             globalFilter,
-//         },
-//         initialState: {
-//             showGlobalFilter: true,
-//             density: 'compact',
-//         },
-//         muiTablePaperProps: {
-//             elevation: 0,
-//             sx: {
-//                 border: 'none',
-//                 borderRadius: '0',
-//             },
-//         },
-//         muiTableProps: {
-//             sx: {
-//                 tableLayout: 'fixed',
-//                 ...(onRowClick ? {cursor: 'pointer'} : {}),
-//             },
-//         },
-//         ...(onRowClick
-//             ? {
-//                 muiTableBodyRowProps: ({row}) => ({
-//                     onClick: () => onRowClick(row.original as unknown as T),
-//                 }),
-//             }
-//             : {}),
-//         muiPaginationProps: {
-//             rowsPerPageOptions: [5, 10, 25, 50],
-//             showFirstButton: true,
-//             showLastButton: true,
-//         },
-//         renderTopToolbarCustomActions: renderTopToolbarCustomActions,
-//         muiToolbarAlertBannerProps:
-//             externalError || error
-//                 ? {
-//                     color: 'error',
-//                     children: `Ошибка загрузки данных: ${
-//                         (externalError || error)?.message || 'Неизвестная ошибка'
-//                     }`,
-//                 }
-//                 : undefined,
-//     });
-//     return (
-//         <Box>
-//             {title && (
-//                 <Typography variant="h4" sx={{margin: '10px 0px 0px 20px', color: 'black'}}>
-//                     {title}
-//                 </Typography>
-//             )}
-//             <MaterialReactTable table={table}/>
-//         </Box>
-//     );
-// }
-//
-// export default PaginatedTable;
-
 /**
  * PaginatedTableWithTemplate: A component that uses useGetPaginatedManyTemplate hook for displaying paginated data.
  */
-export function PaginatedTableWithTemplate<
+export function PaginatedTable<
     ApiModel extends BaseApiModel = BaseApiModel,
     Model extends BaseModel = BaseModel,
 >({
@@ -293,7 +72,7 @@ export function PaginatedTableWithTemplate<
       title,
       onRowClick,
       renderTopToolbarCustomActions,
-  }: PaginatedTableWithTemplateProps<ApiModel, Model>): React.JSX.Element {
+  }: PaginatedTableProps<ApiModel, Model>): React.JSX.Element {
     // Table state
     const [pagination, setPagination] = useState<MRT_PaginationState>(
         initialState.pagination || {pageIndex: 0, pageSize: 10}

@@ -7,7 +7,7 @@ import {useNavigate} from 'react-router-dom';
 import {useGetCleandays} from "@hooks/cleanday/useGetCleandays.tsx";
 import {GetCleandayParams} from '@api/cleanday/models';
 import {Cleanday, CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
-import {PaginatedTableWithTemplate} from '@components/PaginatedTable/PaginatedTable';
+import {PaginatedTable} from '@components/PaginatedTable/PaginatedTable';
 import {
     transformStringFilters,
     transformRangeFilters,
@@ -238,7 +238,7 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
 
     return (
         <Box className='cleandays-box'>
-            <PaginatedTableWithTemplate
+            <PaginatedTable
                 title="Субботники"
                 columns={columns}
                 getQueryHook={getQueryHook}
