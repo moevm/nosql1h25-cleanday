@@ -115,6 +115,7 @@ export const AuthorizationPage = (): React.JSX.Element => {
                             '&:hover': {
                                 backgroundColor: '#ea5624',
                             },
+                            minWidth: '110px',
                         }}
                         type="submit"
                         fullWidth
@@ -131,6 +132,7 @@ export const AuthorizationPage = (): React.JSX.Element => {
                                 '&:hover': {
                                     backgroundColor: '#345e51',
                                 },
+                                minWidth: '110px',
                             }}
                             fullWidth
                             component={Link}
@@ -147,6 +149,7 @@ export const AuthorizationPage = (): React.JSX.Element => {
                                 '&:hover': {
                                     backgroundColor: '#345e51',
                                 },
+                                minWidth: '110px',
                             }}
                             fullWidth
                             component={Link}
@@ -160,7 +163,7 @@ export const AuthorizationPage = (): React.JSX.Element => {
                 </Box>
                 <Box mt={4} display="flex" justifyContent="center">
                     <img src={"/basementMenuImage.png"} alt="Statistics Page"
-                         style={{maxWidth: '100%', height: 'auto'}}/>
+                         style={{maxWidth: '80%', height: 'auto'}}/>
                 </Box>
             </Box>
         </Container>
