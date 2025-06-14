@@ -19,7 +19,8 @@ import {
     Typography
 } from '@mui/material';
 
-import {City, CreateUser} from "@models/deleteMeLater.ts";
+import {CreateUser} from "@models/deleteMeLater.ts";
+import {City} from "@models/City.ts";
 
 /**
  * RegistrationPage: Функциональный компонент, представляющий форму регистрации пользователя.
@@ -49,11 +50,11 @@ const RegistrationPage = (): React.JSX.Element => {
     });
 
     const cities: City[] = [
-        {key: '1', name: 'Москва'},
-        {key: '2', name: 'Санкт-Петербург'},
-        {key: '3', name: 'Новосибирск'},
-        {key: '4', name: 'Екатеринбург'},
-        {key: '5', name: 'Казань'},
+        {id: '1', name: 'Москва'},
+        {id: '2', name: 'Санкт-Петербург'},
+        {id: '3', name: 'Новосибирск'},
+        {id: '4', name: 'Екатеринбург'},
+        {id: '5', name: 'Казань'},
     ];
 
     const handleInputChange = (
@@ -273,6 +274,7 @@ const RegistrationPage = (): React.JSX.Element => {
                             '&:hover': {
                                 backgroundColor: '#ea5624',
                             },
+                            minWidth: '200px',
                         }}
                         type="submit"
                         fullWidth
@@ -289,6 +291,7 @@ const RegistrationPage = (): React.JSX.Element => {
                                 '&:hover': {
                                     backgroundColor: '#345e51',
                                 },
+                                minWidth: '110px',
                             }}
                             fullWidth
                             component={Link}
@@ -304,6 +307,7 @@ const RegistrationPage = (): React.JSX.Element => {
                                 '&:hover': {
                                     backgroundColor: '#345e51',
                                 },
+                                minWidth: '110px',
                             }}
                             fullWidth
                             component={Link}
@@ -317,7 +321,7 @@ const RegistrationPage = (): React.JSX.Element => {
                 </form>
             </Box>
             <Box mt={4} display="flex" justifyContent="center">
-                <img src="/basementMenuImage.png" alt="Statistics Page" style={{maxWidth: '100%', height: 'auto'}}/>
+                <img src="/basementMenuImage.png" alt="Statistics Page" style={{maxWidth: '70%', height: 'auto'}}/>
             </Box>
         </Container>
     );
