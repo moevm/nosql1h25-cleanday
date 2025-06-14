@@ -29,7 +29,7 @@ export const MenuPage = (): React.JSX.Element => {
 
     return (
         <div className="menuContainer">
-            <Typography color={'#345e51'} variant="h4" fontWeight="bold">Вместе — к чистой планете! </Typography>
+            <Typography color={'#345e51'} variant="h4" fontWeight="bold" minWidth={'400px'}>Вместе — к чистой планете! </Typography>
             <AppBar
                 position="fixed"
                 elevation={0}
