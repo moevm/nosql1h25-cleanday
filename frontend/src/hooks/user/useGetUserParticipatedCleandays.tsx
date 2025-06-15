@@ -5,7 +5,7 @@ import substituteIdToEndpoint from '@/utils/api/substituteIdToEndpoint.ts';
 import {Cleanday} from "@models/Cleanday.ts";
 import {cleandayMapper} from "@/utils/cleanday/mapper.ts";
 
-export function useGetUserCleandays(userId: string) {
+export function useGetUserParticipatedCleandays(userId: string) {
     return useGetPaginatedManyTemplate<CleandayApiModel, Cleanday, GetCleandayResponse>(
         ['user', userId, 'cleandays'],
         substituteIdToEndpoint(userId, GET_USER_CLEANDAYS),

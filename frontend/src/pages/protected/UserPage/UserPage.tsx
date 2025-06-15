@@ -8,7 +8,7 @@ import OrganizedCleandaysDialog from '@components/dialog/OrganizedCleandaysDialo
 import ParticipatedCleandaysDialog from '@components/dialog/ParticipatedCleandaysDialog';
 import {getStatusByLevel} from "@utils/user/getStatusByLevel.ts";
 import {useGetUserById} from "@hooks/user/useGetUserById.tsx";
-import {useGetUserCleandays} from "@hooks/user/useGetUserCleandays.tsx";
+import {useGetUserParticipatedCleandays} from "@hooks/user/useGetUserParticipatedCleandays.tsx";
 import {useGetUserOrganizedCleandays} from "@hooks/user/useGetUserOrganizedCleandays.tsx";
 
 /**
@@ -36,7 +36,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
 
     // Fetch user data and cleandays data
     const {data: userData, isLoading: isLoadingUser, error: userError} = useGetUserById(userId);
-    const {data: participatedCleandays, isLoading: isLoadingParticipated} = useGetUserCleandays(userId);
+    const {data: participatedCleandays, isLoading: isLoadingParticipated} = useGetUserParticipatedCleandays(userId);
     const {data: organizedCleandays, isLoading: isLoadingOrganized} = useGetUserOrganizedCleandays(userId);
 
     // console.log("participatedCleandays = ", participatedCleandays.contents);
