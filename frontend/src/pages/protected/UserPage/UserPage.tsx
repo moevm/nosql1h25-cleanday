@@ -46,7 +46,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
 
     // Состояния для отображения уведомлений
     const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
-    const [notificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
+    const notificationSeverity: 'success' | 'info' | 'warning' | 'error' = 'success';
 
     // Состояние для отображения диалога организованных субботников
     const [organizedDialogOpen, setOrganizedDialogOpen] = React.useState<boolean>(false);
@@ -105,7 +105,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
                 <Typography color="error" variant="h5">Error loading user data</Typography>
                 <Typography>{userError.message}</Typography>
                 <Button onClick={handleGoBack} variant="contained" startIcon={<ArrowBackIcon/>} sx={{mt: 2}}>
-                    Back to users list
+                    Обратно к списку пользователей
                 </Button>
             </Box>
         );
@@ -115,9 +115,9 @@ const UserPage: React.FC = (): React.JSX.Element => {
     if (!userData) {
         return (
             <Box className="user-profile-box" sx={{padding: 3}}>
-                <Typography variant="h5">User not found</Typography>
+                <Typography variant="h5">Пользователь не найден</Typography>
                 <Button onClick={handleGoBack} variant="contained" startIcon={<ArrowBackIcon/>} sx={{mt: 2}}>
-                    Back to users list
+                    Обратно к списку пользователей
                 </Button>
             </Box>
         );
@@ -232,11 +232,11 @@ const UserPage: React.FC = (): React.JSX.Element => {
                             </Typography>
                             <Typography variant="body2" sx={{mb: 0.5}}>
                                 Дата создания
-                                - {userData.createdAt ? new Date(userData.createdAt).toLocaleString() : "Неизвестно"}
+                                - {userData.createdAt ? userData.createdAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
                                 Дата последнего изменения -
-                                {userData.updatedAt ? new Date(userData.updatedAt).toLocaleString() : "Неизвестно"}
+                                {userData.updatedAt ? userData.updatedAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
                                 ID: {userData.id}
