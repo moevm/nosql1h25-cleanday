@@ -9,11 +9,13 @@ import {
     Typography,
     Chip
 } from '@mui/material';
-import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
-import { useNavigate } from 'react-router-dom';
-import { Cleanday, CleanDayTag } from '@models/deleteMeLater.ts';
-import {CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
-import { getStatusColor } from "@utils/cleanday/utils.ts";
+
+
+import {MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef} from 'material-react-table';
+import {useNavigate} from 'react-router-dom';
+import {Cleanday, CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
+import {getStatusColor} from "@utils/cleanday/utils.ts";
+
 
 // Interface for the dialog props
 interface ParticipatedCleandaysDialogProps {
@@ -26,16 +28,16 @@ interface ParticipatedCleandaysDialogProps {
 /**
  * ParticipatedCleandaysDialog: Компонент для отображения списка субботников, в которых пользователь принял участие.
  * Показывает таблицу со всеми субботниками с участием данного пользователя, с возможностью поиска и перехода к детальной странице.
- * 
+ *
  * @param props - Пропсы компонента
  * @returns React компонент
  */
 const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = ({
-    open,
-    onClose,
-    userName,
-    cleandays
-}: ParticipatedCleandaysDialogProps): React.JSX.Element => {
+                                                                                     open,
+                                                                                     onClose,
+                                                                                     userName,
+                                                                                     cleandays
+                                                                                 }: ParticipatedCleandaysDialogProps): React.JSX.Element => {
     // Хук для навигации между страницами приложения
     const navigate = useNavigate();
 
@@ -47,7 +49,7 @@ const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = 
      */
     const handleRowClick = React.useCallback((cleanday: Cleanday) => {
         onClose();
-        navigate(`/cleandays/${cleanday.key}`);
+        navigate(`/cleandays/${cleanday.id}`);
     }, [navigate, onClose]);
 
     // Define table columns
@@ -137,7 +139,7 @@ const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = 
         enableColumnFilterModes: true,
         initialState: {
             density: 'compact',
-            pagination: { pageIndex: 0, pageSize: 10 },
+            pagination: {pageIndex: 0, pageSize: 10},
             showGlobalFilter: true, // Show search bar by default
         },
         muiTablePaperProps: {
@@ -151,19 +153,19 @@ const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = 
         muiSearchTextFieldProps: {
             placeholder: 'Поиск субботников',
             size: 'small',
-            sx: { mb: 2 },
+            sx: {mb: 2},
             variant: 'outlined',
         },
         // Set row click handler
         muiTableBodyRowProps: ({row}) => ({
             onClick: () => handleRowClick(row.original),
-            sx: { cursor: 'pointer' },
+            sx: {cursor: 'pointer'},
         }),
     });
 
     return (
-        <Dialog 
-            open={open} 
+        <Dialog
+            open={open}
             onClose={onClose}
             maxWidth="lg"
             fullWidth
@@ -175,30 +177,30 @@ const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = 
                     {userName}
                 </Typography>
             </DialogTitle>
-            
+
             <DialogContent>
-                <MaterialReactTable table={table} />
-                
+                <MaterialReactTable table={table}/>
+
                 {cleandays.length === 0 && (
-                    <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        alignItems: 'center', 
-                        p: 4 
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        p: 4
                     }}>
                         <Typography color="text.secondary">
                             Нет посещённых субботников
                         </Typography>
                     </Box>
                 )}
-                
-                <Box sx={{ mt: 2 }}>
+
+                <Box sx={{mt: 2}}>
                     <Typography variant="body2">
                         Всего посещено субботников: <b>{cleandays.length}</b>
                     </Typography>
                 </Box>
             </DialogContent>
-            
+
             <DialogActions>
                 <Button onClick={onClose} color="primary">
                     Закрыть

@@ -9,11 +9,11 @@ import {
     Typography,
     Chip
 } from '@mui/material';
-import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
-import { useNavigate } from 'react-router-dom';
-import { Cleanday, CleanDayTag } from '@models/deleteMeLater.ts';
-import {CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
-import { getStatusColor } from "@utils/cleanday/utils.ts";
+import {MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef} from 'material-react-table';
+import {useNavigate} from 'react-router-dom';
+import {Cleanday, CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
+import {getStatusColor} from "@utils/cleanday/utils.ts";
+
 
 // Interface for the dialog props
 interface OrganizedCleandaysDialogProps {
@@ -47,7 +47,7 @@ const OrganizedCleandaysDialog: React.FC<OrganizedCleandaysDialogProps> = ({
      */
     const handleRowClick = React.useCallback((cleanday: Cleanday) => {
         onClose();
-        navigate(`/cleandays/${cleanday.key}`);
+        navigate(`/cleandays/${cleanday.id}`);
     }, [navigate, onClose]);
 
     // Define table columns
