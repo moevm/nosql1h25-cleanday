@@ -1,7 +1,7 @@
 import './CleandaysPage.css'
 import React from 'react';
 import {Box, Button, Checkbox, Chip, FormControlLabel,} from '@mui/material';
-import {MRT_ColumnDef, MRT_ColumnFiltersState} from 'material-react-table';
+import {MRT_ColumnDef, MRT_ColumnFiltersState, MRT_PaginationState, MRT_SortingState} from 'material-react-table';
 import Notification from '@components/Notification.tsx';
 import {useNavigate} from 'react-router-dom';
 import {useGetCleandays} from "@hooks/cleanday/useGetCleandays.tsx";
@@ -14,6 +14,7 @@ import {
     transformArrayFilters,
     transformDateRangeFilters
 } from '@utils/filterUtils';
+import {getStatusColor} from "@utils/cleanday/utils.ts";
 
 /**
  * CleandaysPage: Компонент страницы со списком субботников.
@@ -24,7 +25,13 @@ import {
  */
 const CleandaysPage: React.FC = (): React.JSX.Element => {
     const navigate = useNavigate();
-    const [notify, setNotify] = React.useState<boolean>(false);
+
+    const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
+    const [notificationSeverity, setNotificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
+
+    const handleNotificationClose = React.useCallback(() => {
+        setNotificationMessage(null);
+    }, [setNotificationMessage]);
 
     // Transform column filters to API parameters
     const transformFilters = React.useCallback((columnFilters: MRT_ColumnFiltersState): Record<string, any> => {
@@ -84,59 +91,55 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
         };
     }, []);
 
-    // Fetch cleandays data with pagination and filters
-    const cleandaysQuery = useGetCleandays({
-        offset: 0,
-        limit: 10,
-    });
-
     // Column definitions for the cleandays table
     const columns = React.useMemo<MRT_ColumnDef<Cleanday>[]>
-        (() => [
+    (() => [
             {
                 accessorKey: 'name',
                 header: 'Название',
                 filterVariant: 'text',
+                size: 250,
             },
             {
                 accessorKey: 'city',
                 header: 'Город',
                 filterVariant: 'text',
                 enableSorting: false, // Disable sorting for city column
+                size: 140,
             },
             {
                 accessorKey: 'location.address',
                 header: 'Адрес',
                 id: 'address',
-                enableColumnFilter: false, // No direct API filter for address
+                filterVariant: 'text',
                 enableSorting: false,
+                size: 200,
             },
             {
                 accessorKey: 'beginDate',
                 header: 'Дата начала',
                 filterVariant: 'date-range',
-                Cell: ({ cell }) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
+                Cell: ({cell}) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
+                size: 350,
             },
             {
                 accessorKey: 'endDate',
                 header: 'Дата окончания',
                 filterVariant: 'date-range',
-                Cell: ({ cell }) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
-            },
-            {
-                accessorKey: 'area',
-                header: 'Площадь (м²)',
-                filterVariant: 'range',
+                Cell: ({cell}) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
+                size: 350,
             },
             {
                 accessorKey: 'organization',
                 header: 'Организация',
                 filterVariant: 'text',
+                size: 140,
             },
             {
                 accessorKey: 'organizer',
                 header: 'Организатор',
                 filterVariant: 'text',
+                size: 140,
             },
             {
                 accessorKey: 'tags',
@@ -146,13 +149,14 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                     text: value,
                     value: value,
                 })),
-                Cell: ({ cell }) => (
-                    <Box sx={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                Cell: ({cell}) => (
+                    <Box sx={{display: 'flex', gap: '4px', flexWrap: 'wrap'}}>
                         {(cell.getValue<CleandayTag[]>() || []).map((tag) => (
-                            <Chip key={tag} label={tag} size="small" />
+                            <Chip key={tag} label={tag} size="small"/>
                         ))}
                     </Box>
                 ),
+                size: 200,
             },
             {
                 accessorKey: 'status',
@@ -162,35 +166,18 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                     text: value,
                     value: value,
                 })),
-                Cell: ({ cell }) => (
+                Cell: ({cell}) => (
                     <Chip
                         label={cell.getValue<string>()}
                         color={getStatusColor(cell.getValue<CleandayStatus>())}
                         size="small"
                     />
                 ),
+                size: 120,
             },
         ],
-        []
+        [getStatusColor]
     );
-
-    // Helper function to get color for status chip
-    const getStatusColor = (status: CleandayStatus) => {
-        switch (status) {
-            case CleandayStatus.planned:
-                return 'primary';
-            case CleandayStatus.onGoing:
-                return 'info';
-            case CleandayStatus.completed:
-                return 'success';
-            case CleandayStatus.cancelled:
-                return 'error';
-            case CleandayStatus.rescheduled:
-                return 'warning';
-            default:
-                return 'default';
-        }
-    };
 
     // Handle click on a row to navigate to cleanday details page
     const handleRowClick = (row: Cleanday) => {
@@ -212,11 +199,11 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
     // Function to create query parameters for the API call
     const createQueryParams = React.useCallback(
         (
-            pagination: any,
-            sorting: any,
+            pagination: MRT_PaginationState,
+            sorting: MRT_SortingState,
             columnFilters: MRT_ColumnFiltersState,
             globalFilter?: string
-        ): Record<string, any> => {
+        ): Record<string, unknown> => {
             const params: Record<string, unknown> = {
                 offset: pagination.pageIndex * pagination.pageSize,
                 limit: pagination.pageSize,
@@ -251,20 +238,23 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
 
     return (
         <Box className='cleandays-box'>
-            <Notification
-                message="Действие выполнено успешно"
-                type="success"
-                onClose={() => setNotify(false)}
-            />
-
             <PaginatedTableWithTemplate
+                title="Субботники"
                 columns={columns}
                 getQueryHook={getQueryHook}
                 createQueryParams={createQueryParams}
-                title="Субботники"
                 onRowClick={handleRowClick}
                 renderTopToolbarCustomActions={renderToolbarActions}
             />
+
+            {/* Компонент уведомления */}
+            {notificationMessage && (
+                <Notification
+                    message={notificationMessage}
+                    severity={notificationSeverity}
+                    onClose={handleNotificationClose}
+                />
+            )}
         </Box>
     );
 };
