@@ -38,6 +38,8 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
         // Mapping between column IDs and API parameters for string filters
         const stringFilterMap = {
             'name': 'name',
+            'city': 'city', // Добавлено
+            'address': 'address', // Добавлено
             'organization': 'organization',
             'organizer': 'organizer',
         };
@@ -139,6 +141,7 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                 accessorKey: 'organizer',
                 header: 'Организатор',
                 filterVariant: 'text',
+                enableSorting: false,
                 size: 140,
             },
             {
@@ -149,6 +152,7 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                     text: value,
                     value: value,
                 })),
+                enableSorting: false,
                 Cell: ({cell}) => (
                     <Box sx={{display: 'flex', gap: '4px', flexWrap: 'wrap'}}>
                         {(cell.getValue<CleandayTag[]>() || []).map((tag) => (
@@ -194,6 +198,8 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
         'participantsCount': 'participant_count',
         'recommendedParticipantsCount': 'recommended_count',
         'status': 'status',
+        'city': 'city', // Добавлено
+        'address': 'address' // Добавлено
     };
 
     // Function to create query parameters for the API call
