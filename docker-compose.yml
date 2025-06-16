@@ -23,7 +23,7 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - DATABASE_NAME=cleanday
     depends_on:
-      - arangodb
+      - db
 
   # Frontend сервис
   frontend:
