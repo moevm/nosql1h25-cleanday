@@ -1,6 +1,5 @@
 services:
-  arangodb:
-    container_name: db
+  db:
     image: arangodb:3.12
     environment:
       - ARANGO_ROOT_PASSWORD=${ARANGO_ROOT_PASSWORD}
