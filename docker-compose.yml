@@ -1,15 +1,46 @@
-version: '3.8'
-
 services:
   arangodb:
-    image: arangodb:latest
+    container_name: db
+    image: arangodb:3.12
     environment:
-      - ARANGO_ROOT_PASSWORD=${ARANGO_PASS}
-    ports:
-      - "${ARANGO_PORT}:8529"
+      - ARANGO_ROOT_PASSWORD=${ARANGO_ROOT_PASSWORD}
     volumes:
       - arango_data:/var/lib/arangodb3
       - arango_apps:/var/lib/arangodb3-apps
+
+ # Backend сервис
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cleanday_backend
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - PYTHONPATH=/app
+      - ARANGO_ROOT_PASSWORD=${ARANGO_ROOT_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_NAME=cleanday
+    depends_on:
+      - arangodb
+
+  # Frontend сервис
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cleanday_frontend
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
 
 volumes:
   arango_data:

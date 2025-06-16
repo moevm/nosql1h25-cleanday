@@ -1,0 +1,7 @@
+import os
+
+ARANGO_ROOT_PASSWORD = os.getenv("ARANGO_ROOT_PASSWORD")
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+DATABASE_NAME = os.getenv("DATABASE_NAME")
