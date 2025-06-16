@@ -102,13 +102,25 @@ export const transformDateRangeFilters = (
             const range = filterValue as {min?: Date, max?: Date};
 
             // Add from filter if it exists in the map and has a min value
-            if (fromFilterMap[filterId] && range.min) {
-                params[fromFilterMap[filterId]] = range.min.toISOString();
+            if (fromFilterMap[filterId] && range.min !== undefined && range.min !== null) {
+                // Проверка и преобразование даты в ISO строку
+                try {
+                    const minDate = range.min instanceof Date ? range.min : new Date(range.min);
+                    params[fromFilterMap[filterId]] = minDate.toISOString();
+                } catch (e) {
+                    console.error(`Error processing min date for filter ${filterId}:`, e);
+                }
             }
 
             // Add to filter if it exists in the map and has a max value
-            if (toFilterMap[filterId] && range.max) {
-                params[toFilterMap[filterId]] = range.max.toISOString();
+            if (toFilterMap[filterId] && range.max !== undefined && range.max !== null) {
+                // Проверка и преобразование даты в ISO строку
+                try {
+                    const maxDate = range.max instanceof Date ? range.max : new Date(range.max);
+                    params[toFilterMap[filterId]] = maxDate.toISOString();
+                } catch (e) {
+                    console.error(`Error processing max date for filter ${filterId}:`, e);
+                }
             }
         }
     });
