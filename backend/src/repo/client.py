@@ -1,7 +1,7 @@
 from arango import ArangoClient
 from config.environment import ARANGO_ROOT_PASSWORD, DATABASE_NAME
 
-client = ArangoClient(hosts="http://arangodb:8529")
+client = ArangoClient(hosts="http://db:8529")
 
 sys = client.db(
     "_system",
