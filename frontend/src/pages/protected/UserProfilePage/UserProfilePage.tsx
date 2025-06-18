@@ -28,6 +28,7 @@ import {useUpdateUserInfo} from "@hooks/user/useUpdateUserInfo";
 import {useUpdateUserAvatar} from "@hooks/user/useUpdateUserAvatar";
 import {useQueryClient} from "@tanstack/react-query";
 import {fileToBase64} from "@utils/files/fileToBase64";
+import {useGetUserAvatar} from "@hooks/user/useGetUserAvatar";
 
 /**
  * Стили для аватара пользователя.
@@ -67,6 +68,7 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     const userId = currentUser?.id || '';
     const {data: participatedCleandays, isLoading: isLoadingParticipated} = useGetUserParticipatedCleandays(userId);
     const {data: organizedCleandays, isLoading: isLoadingOrganized} = useGetUserOrganizedCleandays(userId);
+    const {data: userAvatar, isLoading: isLoadingAvatar} = useGetUserAvatar(userId);
 
     // Состояния для отображения уведомлений
     const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
@@ -199,7 +201,7 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     };
 
     // Проверка загрузки данных
-    const isLoading = isLoadingCurrentUser || isLoadingParticipated || isLoadingOrganized;
+    const isLoading = isLoadingCurrentUser || isLoadingParticipated || isLoadingOrganized || isLoadingAvatar;
 
     // Отображение состояния загрузки
     if (isLoading) {
@@ -239,6 +241,9 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     // Вычисляемый статус уровня пользователя
     const levelStatus = getStatusByLevel(currentUser.level);
 
+    // Check if avatar is available and not a default image
+    const avatarSrc = userAvatar && userAvatar.photo !== "default_image" ? userAvatar.photo : undefined;
+
     // Далее используем currentUser вместо userData
     return (
         <Box className={"user-profile-box"}>
@@ -259,7 +264,7 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                     <Box sx={{display: 'flex', alignItems: 'start', marginBottom: 3, width: '100%', maxWidth: 800,}}>
                         <Avatar 
                             style={avatarStyle} 
-                            src={currentUser.avatar || undefined}
+                            src={avatarSrc}
                             alt={`${currentUser.firstName} ${currentUser.lastName}`}
                         />
 
