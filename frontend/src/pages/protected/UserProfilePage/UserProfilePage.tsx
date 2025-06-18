@@ -29,6 +29,7 @@ import {useUpdateUserAvatar} from "@hooks/user/useUpdateUserAvatar";
 import {useQueryClient} from "@tanstack/react-query";
 import {fileToBase64} from "@utils/files/fileToBase64";
 import {useGetUserAvatar} from "@hooks/user/useGetUserAvatar";
+import {useGetAllCities} from "@hooks/city/useGetAllCities";
 
 /**
  * Стили для аватара пользователя.
@@ -42,12 +43,6 @@ const avatarStyle = {
 };
 
 /**
- * Список доступных городов для выбора в форме редактирования профиля.
- * В реальном приложении этот список должен быть загружен с сервера.
- */
-const cities = ["Rome", "Moscow", "Санкт-Петербург", "Новосибирск"];
-
-/**
  * UserProfilePage: Компонент страницы профиля текущего пользователя.
  * Отображает личную информацию, статистику и предоставляет функциональность
  * для редактирования профиля и участия в субботниках.
@@ -55,9 +50,17 @@ const cities = ["Rome", "Moscow", "Санкт-Петербург", "Новоси
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий страницу профиля пользователя.
  */
 const UserProfilePage: React.FC = (): React.JSX.Element => {
+    // IMPORTANT: All React hooks must be called at the top level before any conditional returns
+    
     // Получаем данные текущего пользователя
-    const {data: currentUser, isLoading: isLoadingCurrentUser, error: currentUserError} = useGetMe();
+    const {data: currentUser, isLoading: isLoadingCurrentUser, error: currentUserError, refetch: refetchUser} = useGetMe();
 
+    // Add local state to immediately update UI after changes - moved this up before any conditionals
+    const [localUserData, setLocalUserData] = React.useState<typeof currentUser | null>(null);
+
+    // Get cities from API
+    const {data: citiesData, isLoading: isLoadingCities} = useGetAllCities();
+    
     // Хук для программной навигации между страницами
     const navigate = useNavigate();
     
@@ -66,9 +69,24 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
 
     // Загрузка данных субботников пользователя только после того, как получены данные пользователя
     const userId = currentUser?.id || '';
-    const {data: participatedCleandays, isLoading: isLoadingParticipated} = useGetUserParticipatedCleandays(userId);
-    const {data: organizedCleandays, isLoading: isLoadingOrganized} = useGetUserOrganizedCleandays(userId);
-    const {data: userAvatar, isLoading: isLoadingAvatar} = useGetUserAvatar(userId);
+    const {
+        data: participatedCleandays, 
+        isLoading: isLoadingParticipated
+    } = useGetUserParticipatedCleandays(userId);
+    
+    const {
+        data: organizedCleandays, 
+        isLoading: isLoadingOrganized
+    } = useGetUserOrganizedCleandays(userId);
+    
+    const {
+        data: userAvatar, 
+        isLoading: isLoadingAvatar, 
+        refetch: refetchAvatar
+    } = useGetUserAvatar(userId);
+
+    // State for avatar preview during editing - this should ONLY be used in the dialog
+    const [avatarPreview, setAvatarPreview] = React.useState<string | undefined>(undefined);
 
     // Состояния для отображения уведомлений
     const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
@@ -90,6 +108,36 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     const updateUserInfo = useUpdateUserInfo(userId);
     const updateUserAvatar = useUpdateUserAvatar(userId);
 
+    // Update local state when currentUser changes
+    React.useEffect(() => {
+        if (currentUser) {
+            setLocalUserData(currentUser);
+        }
+    }, [currentUser]);
+
+    // Reset avatar preview when dialog closes
+    React.useEffect(() => {
+        if (!editDialogOpen) {
+            setAvatarPreview(undefined);
+        }
+    }, [editDialogOpen]);
+
+    // Create city names array and a mapping from name to ID for later use
+    const cityNames = React.useMemo(() => {
+        return citiesData?.map(city => city.name) || [];
+    }, [citiesData]);
+    
+    const cityNameToIdMap = React.useMemo(() => {
+        const map: Record<string, string> = {};
+        citiesData?.forEach(city => {
+            map[city.name] = city.id;
+        });
+        return map;
+    }, [citiesData]);
+
+    // Use local state if available, otherwise fall back to query data
+    const displayUser = localUserData || currentUser;
+
     /**
      * Обработчик нажатия на кнопку редактирования профиля.
      * Открывает диалоговое окно для редактирования данных профиля.
@@ -97,6 +145,7 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     const handleEditProfile = () => {
         setEditDialogOpen(true);
         setAvatarFile(null); // Сбрасываем состояние файла аватара при открытии диалога
+        setAvatarPreview(undefined); // Reset preview when opening dialog
     };
 
     /**
@@ -105,6 +154,8 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
      */
     const handleEditDialogClose = () => {
         setEditDialogOpen(false);
+        setAvatarFile(null); // Clear avatar file on cancel
+        setAvatarPreview(undefined); // Clear preview on cancel
     };
 
     /**
@@ -112,8 +163,19 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
      * 
      * @param {File} file - Файл нового аватара пользователя.
      */
-    const handleUserPicChange = (file: File) => {
+    const handleUserPicChange = async (file: File) => {
         setAvatarFile(file);
+        
+        // Generate preview for immediate feedback IN THE DIALOG ONLY
+        try {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        } catch (error) {
+            console.error('Error generating avatar preview:', error);
+        }
     };
 
     /**
@@ -124,14 +186,54 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
      */
     const handleEditDialogSubmit = async (data: UserProfileEdit) => {
         try {
+            // Create a copy of the data to modify
+            const updatedData = { ...data };
+            
+            // If city is provided, convert it to city_id
+            if (updatedData.city && cityNameToIdMap[updatedData.city]) {
+                updatedData.city_id = cityNameToIdMap[updatedData.city];
+                // Remove the city field as the backend expects city_id
+                delete updatedData.city;
+            }
+            
+            // Immediately update local state for instant feedback
+            if (displayUser) {
+                const cityName = updatedData.city_id 
+                    ? citiesData?.find(c => c.id === updatedData.city_id)?.name || displayUser.city
+                    : displayUser.city;
+                
+                setLocalUserData({
+                    ...displayUser,
+                    firstName: updatedData.first_name || displayUser.firstName,
+                    lastName: updatedData.last_name || displayUser.lastName,
+                    sex: updatedData.sex || displayUser.sex,
+                    city: cityName,
+                    aboutMe: updatedData.about_me !== undefined ? updatedData.about_me : displayUser.aboutMe,
+                    // Keep other fields unchanged
+                });
+            }
+            
             // Обновляем данные пользователя
-            await updateUserInfo.mutateAsync(data, {
-                onSuccess: () => {
-                    // Инвалидируем кэш для обновления данных пользователя
+            await updateUserInfo.mutateAsync(updatedData, {
+                onSuccess: async () => {
+                    // Immediately refetch user data to get the latest from the server
+                    await refetchUser();
+                    
+                    // Also invalidate the cache to ensure other components get updated data
                     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
                     
                     setNotificationMessage('Профиль успешно обновлён!');
                     setNotificationSeverity('success');
+                },
+                onError: (error) => {
+                    console.error('Error updating profile:', error);
+                    setNotificationMessage('Ошибка при обновлении профиля');
+                    setNotificationSeverity('error');
+                    
+                    // Reset local data on error
+                    if (currentUser) {
+                        setLocalUserData(currentUser);
+                    }
                 }
             });
             
@@ -141,8 +243,18 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                     const base64String = await fileToBase64(avatarFile);
                     
                     await updateUserAvatar.mutateAsync({ photo: base64String }, {
-                        onSuccess: () => {
-                            queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+                        onSuccess: async () => {
+                            // Refetch avatar data specifically
+                            await refetchAvatar();
+                            
+                            // Update local avatar preview - this allows us to see the change immediately
+                            if (base64String) {
+                                // Create a temporary avatar object to simulate the API response
+                                const tempAvatar = { photo: base64String };
+                                
+                                // Force the UI to update with the new avatar
+                                queryClient.setQueryData(['userAvatar', userId], tempAvatar);
+                            }
                             
                             setNotificationMessage('Профиль и аватар успешно обновлены!');
                             setNotificationSeverity('success');
@@ -161,10 +273,19 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
             }
             
             setEditDialogOpen(false);
+            // Clear the avatar file and preview after submission
+            setAvatarFile(null);
+            setAvatarPreview(undefined);
+            
         } catch (error) {
-            console.error('Error updating profile:', error);
+            console.error('Error in edit dialog submit:', error);
             setNotificationMessage('Ошибка при обновлении профиля');
             setNotificationSeverity('error');
+            
+            // Reset local data on error
+            if (currentUser) {
+                setLocalUserData(currentUser);
+            }
         }
     };
 
@@ -201,7 +322,7 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     };
 
     // Проверка загрузки данных
-    const isLoading = isLoadingCurrentUser || isLoadingParticipated || isLoadingOrganized || isLoadingAvatar;
+    const isLoading = isLoadingCurrentUser || isLoadingParticipated || isLoadingOrganized || isLoadingAvatar || isLoadingCities;
 
     // Отображение состояния загрузки
     if (isLoading) {
@@ -227,7 +348,7 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     }
 
     // Отображение состояния, когда пользователь не найден
-    if (!currentUser) {
+    if (!displayUser) {
         return (
             <Box className="user-profile-box" sx={{padding: 3}}>
                 <Typography variant="h5">Профиль не найден</Typography>
@@ -239,12 +360,15 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     }
 
     // Вычисляемый статус уровня пользователя
-    const levelStatus = getStatusByLevel(currentUser.level);
+    const levelStatus = getStatusByLevel(displayUser.level);
 
-    // Check if avatar is available and not a default image
-    const avatarSrc = userAvatar && userAvatar.photo !== "default_image" ? userAvatar.photo : undefined;
+    // Determine avatar source - DO NOT use avatarPreview for the main page avatar
+    // Only use the actual data from the API
+    const avatarSrc = (userAvatar && userAvatar.photo !== "default_image") 
+        ? userAvatar.photo 
+        : undefined;
 
-    // Далее используем currentUser вместо userData
+    // Use displayUser instead of currentUser throughout the render function
     return (
         <Box className={"user-profile-box"}>
             <Box display='flex' flexDirection='column' alignItems='flex-start'>
@@ -257,28 +381,28 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                 }}>
                     {/* Имя и фамилия пользователя */}
                     <Typography variant="h3" gutterBottom>
-                        {currentUser.firstName} {currentUser.lastName}
+                        {displayUser.firstName} {displayUser.lastName}
                     </Typography>
 
                     {/* Блок с аватаром и полями профиля */}
                     <Box sx={{display: 'flex', alignItems: 'start', marginBottom: 3, width: '100%', maxWidth: 800,}}>
                         <Avatar 
                             style={avatarStyle} 
-                            src={avatarSrc}
-                            alt={`${currentUser.firstName} ${currentUser.lastName}`}
+                            src={avatarSrc} // Only use the real avatar from API, not the preview
+                            alt={`${displayUser.firstName} ${displayUser.lastName}`}
                         />
 
                         <Box sx={{display: 'flex', flexDirection: 'column', width: '100%', maxWidth: "100%"}}>
-                            <TextField label="Логин" value={currentUser.login} size="small" fullWidth={true}
+                            <TextField label="Логин" value={displayUser.login} size="small" fullWidth={true}
                                        margin="dense"
                                        InputProps={{readOnly: true}}/>
-                            <TextField label="Пол" value={currentUser.sex} size="small" margin="dense"
+                            <TextField label="Пол" value={displayUser.sex} size="small" margin="dense"
                                        InputProps={{readOnly: true}}/>
-                            <TextField label="Город" value={currentUser.city} size="small" margin="dense"
+                            <TextField label="Город" value={displayUser.city} size="small" margin="dense"
                                        InputProps={{readOnly: true}}/>
                             <TextField
                                 label="О себе"
-                                value={currentUser.aboutMe || ''}
+                                value={displayUser.aboutMe || ''}
                                 multiline
                                 rows={5}
                                 size="small"
@@ -289,16 +413,16 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                     </Box>
                 </Box>
 
-                {/* Остальная часть компонента, также заменяющая userData на currentUser */}
+                {/* Остальная часть компонента, также заменяющая userData на displayUser */}
                 <Box className={"user-profile-box-2"}>
                     <Typography variant="h5" sx={{mt: 2}}>
                         Уровень - {levelStatus}
                     </Typography>
 
                     <Box sx={{display: 'flex', alignItems: 'center', width: '100%', maxWidth: 300, mt: 1}}>
-                        <LinearProgress variant="determinate" color={"success"} value={currentUser.score % 50 * 2}
+                        <LinearProgress variant="determinate" color={"success"} value={displayUser.score % 50 * 2}
                                         sx={{flexGrow: 1, mr: 1}}/>
-                        <Typography>{currentUser.score % 50} / 50</Typography>
+                        <Typography>{displayUser.score % 50} / 50</Typography>
                     </Box>
 
                     <Typography variant="h5" sx={{mt: 3, mb: 1}}>
@@ -319,7 +443,7 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                                 height: '45px',
                                 width: '190px',
                             }}>
-                            ОРГАНИЗОВАНО: {currentUser.organizedCount}
+                            ОРГАНИЗОВАНО: {displayUser.organizedCount}
                         </Button>
                         <Button
                             variant="contained"
@@ -334,25 +458,25 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                                 height: '45px',
                                 width: '190px',
                             }}>
-                            УЧАСТИЕ: {currentUser.participantsCount}
+                            УЧАСТИЕ: {displayUser.participantsCount}
                         </Button>
                     </Box>
 
                     <Box sx={{display: 'flex', alignItems: 'center', width: '100%'}}>
                         <Box>
                             <Typography variant="body2" sx={{mb: 0.5}}>
-                                Убрано территории - {currentUser.cleaned} м²
+                                Убрано территории - {displayUser.cleaned} м²
                             </Typography>
                             <Typography variant="body2" sx={{mb: 0.5}}>
                                 Дата создания
-                                - {currentUser.createdAt ? currentUser.createdAt.toLocaleString() : "Неизвестно"}
+                                - {displayUser.createdAt ? displayUser.createdAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
                                 Дата последнего изменения 
-                                - {currentUser.updatedAt ? currentUser.updatedAt.toLocaleString() : "Неизвестно"}
+                                - {displayUser.updatedAt ? displayUser.updatedAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
-                                ID: {currentUser.id}
+                                ID: {displayUser.id}
                             </Typography>
                         </Box>
 
@@ -405,37 +529,38 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                 onClose={handleEditDialogClose}
                 onSubmit={handleEditDialogSubmit}
                 profile={{
-                    key: currentUser.id,
-                    login: currentUser.login,
-                    first_name: currentUser.firstName,
-                    last_name: currentUser.lastName,
-                    sex: currentUser.sex as Sex,
-                    city: currentUser.city,
-                    about_me: currentUser.aboutMe || '',
-                    score: currentUser.score,
-                    level: currentUser.level,
-                    cleanday_count: currentUser.participantsCount,
-                    organized_count: currentUser.organizedCount,
-                    stat: currentUser.cleaned,
-                    created_at: currentUser.createdAt?.toISOString() || '',
-                    updated_at: currentUser.updatedAt?.toISOString() || '',
+                    key: displayUser.id,
+                    login: displayUser.login,
+                    first_name: displayUser.firstName,
+                    last_name: displayUser.lastName,
+                    sex: displayUser.sex as Sex,
+                    city: displayUser.city,
+                    about_me: displayUser.aboutMe || '',
+                    score: displayUser.score,
+                    level: displayUser.level,
+                    cleanday_count: displayUser.participantsCount,
+                    organized_count: displayUser.organizedCount,
+                    stat: displayUser.cleaned,
+                    created_at: displayUser.createdAt?.toISOString() || '',
+                    updated_at: displayUser.updatedAt?.toISOString() || '',
                 }}
-                cities={cities}
-                userPic={currentUser.avatar ? { photo: currentUser.avatar } : null}
+                cities={cityNames}
+                userPic={avatarPreview ? { photo: avatarPreview } : 
+                    (userAvatar ? { photo: userAvatar.photo } : null)}
                 onUserPicChange={handleUserPicChange}
             />
 
             <OrganizedCleandaysDialog
                 open={organizedDialogOpen}
                 onClose={() => setOrganizedDialogOpen(false)}
-                userName={`${currentUser.firstName} ${currentUser.lastName}`}
+                userName={`${displayUser.firstName} ${displayUser.lastName}`}
                 cleandays={organizedCleandays?.contents || []}
             />
 
             <ParticipatedCleandaysDialog
                 open={participatedDialogOpen}
                 onClose={() => setParticipatedDialogOpen(false)}
-                userName={`${currentUser.firstName} ${currentUser.lastName}`}
+                userName={`${displayUser.firstName} ${displayUser.lastName}`}
                 cleandays={participatedCleandays?.contents || []}
             />
         </Box>
