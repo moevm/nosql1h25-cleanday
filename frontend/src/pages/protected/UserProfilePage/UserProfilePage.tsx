@@ -24,6 +24,10 @@ import {UserProfileEdit} from "@models/deleteMeLater.ts";
 import {useGetMe} from "@hooks/authorization/useGetMe.tsx";
 import {useGetUserParticipatedCleandays} from "@hooks/user/useGetUserParticipatedCleandays.tsx";
 import {useGetUserOrganizedCleandays} from "@hooks/user/useGetUserOrganizedCleandays.tsx";
+import {useUpdateUserInfo} from "@hooks/user/useUpdateUserInfo";
+import {useUpdateUserAvatar} from "@hooks/user/useUpdateUserAvatar";
+import {useQueryClient} from "@tanstack/react-query";
+import {fileToBase64} from "@utils/files/fileToBase64";
 
 /**
  * Стили для аватара пользователя.
@@ -55,6 +59,9 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
 
     // Хук для программной навигации между страницами
     const navigate = useNavigate();
+    
+    // Query client для инвалидации кэша
+    const queryClient = useQueryClient();
 
     // Загрузка данных субботников пользователя только после того, как получены данные пользователя
     const userId = currentUser?.id || '';
@@ -73,6 +80,13 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
 
     // Состояние для отображения диалога посещённых субботников
     const [participatedDialogOpen, setParticipatedDialogOpen] = React.useState<boolean>(false);
+    
+    // Состояние для хранения файла аватара
+    const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
+    
+    // Хуки для обновления данных пользователя
+    const updateUserInfo = useUpdateUserInfo(userId);
+    const updateUserAvatar = useUpdateUserAvatar(userId);
 
     /**
      * Обработчик нажатия на кнопку редактирования профиля.
@@ -80,6 +94,7 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
      */
     const handleEditProfile = () => {
         setEditDialogOpen(true);
+        setAvatarFile(null); // Сбрасываем состояние файла аватара при открытии диалога
     };
 
     /**
@@ -91,16 +106,64 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     };
 
     /**
+     * Обработчик обновления аватара пользователя.
+     * 
+     * @param {File} file - Файл нового аватара пользователя.
+     */
+    const handleUserPicChange = (file: File) => {
+        setAvatarFile(file);
+    };
+
+    /**
      * Обработчик отправки формы редактирования профиля.
      * Обновляет профиль пользователя, закрывает диалоговое окно и показывает уведомление об успехе.
      *
      * @param {UserProfileEdit} data - Обновленные данные профиля пользователя.
      */
-    const handleEditDialogSubmit = (data: UserProfileEdit) => {
-        // В реальном приложении здесь должен быть запрос к API для обновления профиля
-        setNotificationMessage('Профиль успешно обновлён!');
-        setNotificationSeverity('success');
-        setEditDialogOpen(false);
+    const handleEditDialogSubmit = async (data: UserProfileEdit) => {
+        try {
+            // Обновляем данные пользователя
+            await updateUserInfo.mutateAsync(data, {
+                onSuccess: () => {
+                    // Инвалидируем кэш для обновления данных пользователя
+                    queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+                    
+                    setNotificationMessage('Профиль успешно обновлён!');
+                    setNotificationSeverity('success');
+                }
+            });
+            
+            // Если есть новый файл аватара, отправляем его
+            if (avatarFile) {
+                try {
+                    const base64String = await fileToBase64(avatarFile);
+                    
+                    await updateUserAvatar.mutateAsync({ photo: base64String }, {
+                        onSuccess: () => {
+                            queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+                            
+                            setNotificationMessage('Профиль и аватар успешно обновлены!');
+                            setNotificationSeverity('success');
+                        },
+                        onError: (error) => {
+                            console.error('Error updating avatar:', error);
+                            setNotificationMessage('Профиль обновлен, но возникла ошибка при обновлении аватара');
+                            setNotificationSeverity('warning');
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error converting image to base64:', error);
+                    setNotificationMessage('Ошибка при обработке изображения');
+                    setNotificationSeverity('error');
+                }
+            }
+            
+            setEditDialogOpen(false);
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            setNotificationMessage('Ошибка при обновлении профиля');
+            setNotificationSeverity('error');
+        }
     };
 
     /**
@@ -194,10 +257,12 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
 
                     {/* Блок с аватаром и полями профиля */}
                     <Box sx={{display: 'flex', alignItems: 'start', marginBottom: 3, width: '100%', maxWidth: 800,}}>
-                        {/* Аватар пользователя */}
-                        <Avatar style={avatarStyle}/>
+                        <Avatar 
+                            style={avatarStyle} 
+                            src={currentUser.avatar || undefined}
+                            alt={`${currentUser.firstName} ${currentUser.lastName}`}
+                        />
 
-                        {/* Поля с информацией о пользователе */}
                         <Box sx={{display: 'flex', flexDirection: 'column', width: '100%', maxWidth: "100%"}}>
                             <TextField label="Логин" value={currentUser.login} size="small" fullWidth={true}
                                        margin="dense"
@@ -351,6 +416,8 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                     updated_at: currentUser.updatedAt?.toISOString() || '',
                 }}
                 cities={cities}
+                userPic={currentUser.avatar ? { photo: currentUser.avatar } : null}
+                onUserPicChange={handleUserPicChange}
             />
 
             <OrganizedCleandaysDialog
