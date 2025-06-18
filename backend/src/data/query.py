@@ -135,8 +135,8 @@ class GetCleandaysParams(BaseModel):
     status: Optional[list[str]] = None
     begin_date_from: Optional[datetime] = None
     begin_date_to: Optional[datetime] = None
-    end_date_from: Optional[int] = None
-    end_date_to: Optional[int] = None
+    end_date_from: Optional[datetime] = None
+    end_date_to: Optional[datetime] = None
     created_at_from: Optional[datetime] = None
     created_at_to: Optional[datetime] = None
     updated_at_from: Optional[datetime] = None
