@@ -7,7 +7,7 @@ import {BaseApiModel} from "@api/BaseApiModel.ts";
 import {BaseModel} from "@models/BaseModel.ts";
 
 /**
- * Универсальный хук для GET-запросов, использующий useQuery, с поддержкой пагинации и трансформации:
+ * Универсальный хук для GET-запросов, использующий useQuery, для получения одного объекта с поддержкой трансформации:
  */
 export function useGetOneTemplate<ApiModel = BaseApiModel, Model = BaseModel>(
     queryKey: QueryKey,
