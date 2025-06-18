@@ -278,8 +278,8 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                                 - {currentUser.createdAt ? currentUser.createdAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
-                                Дата последнего изменения -
-                                {currentUser.updatedAt ? currentUser.updatedAt.toLocaleString() : "Неизвестно"}
+                                Дата последнего изменения 
+                                - {currentUser.updatedAt ? currentUser.updatedAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
                                 ID: {currentUser.id}

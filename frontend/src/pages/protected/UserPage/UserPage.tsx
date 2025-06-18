@@ -235,8 +235,8 @@ const UserPage: React.FC = (): React.JSX.Element => {
                                 - {userData.createdAt ? userData.createdAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
-                                Дата последнего изменения -
-                                {userData.updatedAt ? userData.updatedAt.toLocaleString() : "Неизвестно"}
+                                Дата последнего изменения 
+                                - {userData.updatedAt ? userData.updatedAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
                                 ID: {userData.id}
