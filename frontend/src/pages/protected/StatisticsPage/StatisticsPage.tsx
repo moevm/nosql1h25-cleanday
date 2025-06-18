@@ -8,6 +8,8 @@ import './StatisticsPage.css';
 import ExportConfirmationDialog from "@components/dialog/ExportConfirmationDialog.tsx";
 import ImportDialog from "@components/dialog/ImportDialog.tsx";
 import { useGetStatistics } from '@hooks/statistics/useGetStatistics.tsx';
+import { useExportStatistics } from '@hooks/statistics/useExportStatistics.tsx';
+import { useImportStatistics } from '@hooks/statistics/useImportStatistics.tsx';
 
 /**
  * StatisticsPage: Компонент страницы для отображения статистики приложения.
@@ -19,6 +21,20 @@ import { useGetStatistics } from '@hooks/statistics/useGetStatistics.tsx';
 const StatisticsPage: React.FC = (): React.JSX.Element => {
     // Получение статистических данных с сервера
     const { data: statisticData, isLoading, error } = useGetStatistics();
+
+    // Хуки для экспорта и импорта
+    const { refetch: exportData, isLoading: isExporting } = useExportStatistics();
+    const { mutate: importData, isLoading: isImporting } = useImportStatistics({
+        onSuccess: () => {
+            setNotificationMessage('Данные успешно импортированы');
+            setNotificationSeverity('success');
+        },
+        onError: (error) => {
+            setNotificationMessage('Ошибка при импорте данных');
+            setNotificationSeverity('error');
+            console.error('Import error:', error);
+        }
+    });
 
     /**
      * Состояния для отображения уведомлений пользователю.
@@ -34,7 +50,6 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
     // Состояние для управления диалогом импорта
     const [isImportDialogOpen, setImportDialogOpen] = React.useState<boolean>(false);
 
-    // TODO: Реализуйте обработку
     /**
      * Обработчик нажатия кнопки импорта.
      * Показывает диалог импорта.
@@ -45,16 +60,15 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
 
     /**
      * Обработчик подтверждения импорта.
-     * В данной реализации выводит сообщение в консоль и отображает уведомление об успехе.
+     * Отправляет файл на сервер с помощью хука useImportStatistics.
      * @param {File} file - Импортируемый файл.
      */
     const handleImportConfirm = (file: File) => {
-        console.log('Import confirmed with file:', file);
-        setNotificationMessage('Успешный импорт');
-        setNotificationSeverity('success');
+        const formData = new FormData();
+        formData.append('file', file);
+        importData(formData);
     };
 
-    // TODO: Реализуйте обработку
     /**
      * Обработчик нажатия кнопки экспорта.
      * Показывает диалог подтверждения экспорта.
@@ -65,12 +79,30 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
 
     /**
      * Обработчик подтверждения экспорта.
-     * В данной реализации выводит сообщение в консоль и отображает уведомление об успехе.
+     * Запускает экспорт с помощью хука useExportStatistics.
      */
-    const handleExportConfirm = () => {
-        console.log('Export confirmed');
-        setNotificationMessage('Успешный экспорт');
-        setNotificationSeverity('success');
+    const handleExportConfirm = async () => {
+        try {
+            const { data } = await exportData();
+            if (data) {
+                // Создаем ссылку для скачивания файла
+                const url = URL.createObjectURL(data);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'arangodump.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                setNotificationMessage('Экспорт успешно выполнен');
+                setNotificationSeverity('success');
+            }
+        } catch (error) {
+            console.error('Export error:', error);
+            setNotificationMessage('Ошибка при экспорте данных');
+            setNotificationSeverity('error');
+        }
     };
 
     /**
@@ -129,13 +161,21 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
 
                 {/* Кнопки импорта и экспорта */}
                 <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                    <Button variant="outlined"
-                            sx={{color: 'black', borderColor: 'black'}} onClick={handleImportButtonClick}>
-                        Импорт
+                    <Button 
+                        variant="outlined"
+                        sx={{color: 'black', borderColor: 'black'}} 
+                        onClick={handleImportButtonClick}
+                        disabled={isImporting}
+                    >
+                        {isImporting ? 'Импортирование...' : 'Импорт'}
                     </Button>
-                    <Button variant="outlined"
-                            sx={{color: 'black', borderColor: 'black'}} onClick={handleExportButtonClick}>
-                        Экспорт
+                    <Button 
+                        variant="outlined"
+                        sx={{color: 'black', borderColor: 'black'}} 
+                        onClick={handleExportButtonClick}
+                        disabled={isExporting}
+                    >
+                        {isExporting ? 'Экспортирование...' : 'Экспорт'}
                     </Button>
                 </Box>
             </Box>
@@ -167,20 +207,14 @@ const StatisticsPage: React.FC = (): React.JSX.Element => {
             <ExportConfirmationDialog
                 open={isExportDialogOpen}
                 onClose={handleExportDialogClose}
-                onConfirm={() => {
-                    handleExportConfirm();
-                    handleExportDialogClose();
-                }}
+                onConfirm={handleExportConfirm}
             />
 
             {/* Диалог импорта */}
             <ImportDialog
                 open={isImportDialogOpen}
                 onClose={handleImportDialogClose}
-                onImport={(file) => {
-                    handleImportConfirm(file);
-                    handleImportDialogClose();
-                }}
+                onImport={handleImportConfirm}
             />
         </Box>
     );
