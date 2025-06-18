@@ -1,4 +1,5 @@
 services:
+  # ArangoDB сервис
   db:
     image: arangodb:3.12
     environment:
@@ -7,7 +8,7 @@ services:
       - arango_data:/var/lib/arangodb3
       - arango_apps:/var/lib/arangodb3-apps
 
- # Backend сервис
+  # Backend сервис
   backend:
     build:
       context: ./backend
@@ -15,8 +16,6 @@ services:
     container_name: cleanday_backend
     ports:
       - "127.0.0.1:8000:8000"
-    volumes:
-      - ./backend:/app
     environment:
       - PYTHONPATH=/app
       - ARANGO_ROOT_PASSWORD=${ARANGO_ROOT_PASSWORD}
@@ -33,9 +32,6 @@ services:
     container_name: cleanday_frontend
     ports:
       - "127.0.0.1:8080:8080"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
     depends_on:
