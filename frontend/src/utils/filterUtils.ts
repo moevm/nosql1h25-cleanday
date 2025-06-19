@@ -1,14 +1,6 @@
 import {MRT_ColumnFiltersState} from 'material-react-table';
 
 /**
- * Interface for range filter values
- */
-interface RangeFilter {
-    min?: number;
-    max?: number;
-}
-
-/**
  * Utility function to transform MRT column filters to API parameters for string filters
  */
 export const transformStringFilters = (
@@ -32,7 +24,7 @@ export const transformStringFilters = (
 /**
  * Utility function to transform MRT column filters to API parameters for range filters
  */
-export const transformRangeFilters = (
+export const transformNumericRangeFilters = (
     columnFilters: MRT_ColumnFiltersState,
     fromFilterMap: Record<string, string>,
     toFilterMap: Record<string, string>
@@ -43,17 +35,23 @@ export const transformRangeFilters = (
         const filterId = filter.id;
         const filterValue = filter.value;
 
-        if (filterValue && typeof filterValue === 'object') {
-            const range = filterValue as RangeFilter;
+        if (Array.isArray(filterValue) && filterValue.length === 2) {
+            const [min, max] = filterValue;
 
-            // Add from filter if it exists in the map and has a min value
-            if (fromFilterMap[filterId] && typeof range.min === 'number') {
-                params[fromFilterMap[filterId]] = String(range.min);
+            // Добавляем минимальное значение, если оно существует и есть соответствующее поле в fromFilterMap
+            if (min && fromFilterMap[filterId]) {
+                const minValue = typeof min === 'string' ? parseInt(min) : min;
+                if (!isNaN(minValue)) {
+                    params[fromFilterMap[filterId]] = String(minValue);
+                }
             }
 
-            // Add to filter if it exists in the map and has a max value
-            if (toFilterMap[filterId] && typeof range.max === 'number') {
-                params[toFilterMap[filterId]] = String(range.max);
+            // Добавляем максимальное значение, если оно существует и есть соответствующее поле в toFilterMap
+            if (max && toFilterMap[filterId]) {
+                const maxValue = typeof max === 'string' ? parseInt(max) : max;
+                if (!isNaN(maxValue)) {
+                    params[toFilterMap[filterId]] = String(maxValue);
+                }
             }
         }
     });
@@ -76,8 +74,7 @@ export const transformArrayFilters = (
         // If this filter has a mapping in filterMap and has a value
         if (filterMap[filterId] && filter.value) {
             // Array filters can be single values or arrays
-            const filterValue = Array.isArray(filter.value) ? filter.value : [filter.value as string];
-            params[filterMap[filterId]] = filterValue;
+            params[filterMap[filterId]] = Array.isArray(filter.value) ? filter.value : [filter.value as string];
         }
     });
 
@@ -98,28 +95,47 @@ export const transformDateRangeFilters = (
         const filterId = filter.id;
         const filterValue = filter.value;
 
-        if (filterValue && typeof filterValue === 'object') {
-            const range = filterValue as {min?: Date, max?: Date};
+        // Проверяем, является ли значение массивом (формат MRT date-range)
+        if (Array.isArray(filterValue) && filterValue.length === 2) {
+            const [startDate, endDate] = filterValue;
 
-            // Add from filter if it exists in the map and has a min value
-            if (fromFilterMap[filterId] && range.min !== undefined && range.min !== null) {
-                // Проверка и преобразование даты в ISO строку
+            // Обработка начальной даты
+            if (startDate && fromFilterMap[filterId]) {
                 try {
-                    const minDate = range.min instanceof Date ? range.min : new Date(range.min);
-                    params[fromFilterMap[filterId]] = minDate.toISOString();
+                    // Проверяем, является ли объект dayjs объектом
+                    if (startDate.$d instanceof Date) {
+                        params[fromFilterMap[filterId]] = startDate.$d.toISOString();
+                        console.log(`Added ${fromFilterMap[filterId]}:`, params[fromFilterMap[filterId]]);
+                    } else {
+                        // Попытка прямого преобразования
+                        const date = new Date(startDate);
+                        if (!isNaN(date.getTime())) {
+                            params[fromFilterMap[filterId]] = date.toISOString();
+                            console.log(`Added ${fromFilterMap[filterId]}:`, params[fromFilterMap[filterId]]);
+                        }
+                    }
                 } catch (e) {
-                    console.error(`Error processing min date for filter ${filterId}:`, e);
+                    console.error(`Error processing start date for filter ${filterId}:`, e);
                 }
             }
 
-            // Add to filter if it exists in the map and has a max value
-            if (toFilterMap[filterId] && range.max !== undefined && range.max !== null) {
-                // Проверка и преобразование даты в ISO строку
+            // Обработка конечной даты
+            if (endDate && toFilterMap[filterId]) {
                 try {
-                    const maxDate = range.max instanceof Date ? range.max : new Date(range.max);
-                    params[toFilterMap[filterId]] = maxDate.toISOString();
+                    // Проверяем, является ли объект dayjs объектом
+                    if (endDate.$d instanceof Date) {
+                        params[toFilterMap[filterId]] = endDate.$d.toISOString();
+                        console.log(`Added ${toFilterMap[filterId]}:`, params[toFilterMap[filterId]]);
+                    } else {
+                        // Попытка прямого преобразования
+                        const date = new Date(endDate);
+                        if (!isNaN(date.getTime())) {
+                            params[toFilterMap[filterId]] = date.toISOString();
+                            console.log(`Added ${toFilterMap[filterId]}:`, params[toFilterMap[filterId]]);
+                        }
+                    }
                 } catch (e) {
-                    console.error(`Error processing max date for filter ${filterId}:`, e);
+                    console.error(`Error processing end date for filter ${filterId}:`, e);
                 }
             }
         }
