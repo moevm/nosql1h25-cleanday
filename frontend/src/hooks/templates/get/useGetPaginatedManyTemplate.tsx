@@ -20,11 +20,15 @@ export function useGetPaginatedManyTemplate<
     params?: AxiosRequestConfig['params'],
     options?: Omit<UseQueryOptions<BasePaginatedModel<Model>>, 'queryKey' | 'queryFn'>,
     transform?: (data: ApiModel) => Model,
+    axiosConfig?: Omit<AxiosRequestConfig, 'params'>,
 ) {
     return useQuery<BasePaginatedModel<Model>>({
         queryKey: [...queryKey, params],
         queryFn: async () => {
-            const response = await axiosInstance.get<ApiResponse>(url, {params});
+            const response = await axiosInstance.get<ApiResponse>(url, {
+                params,
+                ...axiosConfig,
+            });
             const data = response.data[extractKey] as ApiModel[];
             const totalCount = response.data.total_count;
 
