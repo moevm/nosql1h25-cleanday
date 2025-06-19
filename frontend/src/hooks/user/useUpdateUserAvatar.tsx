@@ -1,5 +1,6 @@
 import { usePutTemplate } from "@hooks/templates/update/usePutTemplate";
 import { UPDATE_USER_AVATAR } from "@api/user/endpoints";
+import substituteIdToEndpoint from "@utils/api/substituteIdToEndpoint";
 
 interface SetAvatarRequest {
   photo: string;
@@ -11,7 +12,7 @@ interface SetAvatarRequest {
  * @returns A mutation function for updating user avatar
  */
 export const useUpdateUserAvatar = (userId: string) => {
-  const url = UPDATE_USER_AVATAR.replace('{id}', userId);
+  const url = substituteIdToEndpoint(userId, UPDATE_USER_AVATAR);
   
   return usePutTemplate<SetAvatarRequest>(
     url,

@@ -1,6 +1,7 @@
 import { usePatchTemplate } from "@hooks/templates/update/usePatchTemplate";
 import { UPDATE_USER } from "@api/user/endpoints";
 import { UserProfileEdit } from "@models/deleteMeLater";
+import substituteIdToEndpoint from "@utils/api/substituteIdToEndpoint";
 
 /**
  * Hook for updating user information
@@ -8,7 +9,7 @@ import { UserProfileEdit } from "@models/deleteMeLater";
  * @returns A mutation function for updating user info
  */
 export const useUpdateUserInfo = (userId: string) => {
-  const url = UPDATE_USER.replace('{id}', userId);
+  const url = substituteIdToEndpoint(userId, UPDATE_USER);
   
   return usePatchTemplate<UserProfileEdit>(
     url,
