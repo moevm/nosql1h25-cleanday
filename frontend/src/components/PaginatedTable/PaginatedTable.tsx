@@ -3,7 +3,7 @@ import {
     MaterialReactTable,
     MRT_ColumnDef,
     MRT_ColumnFiltersState,
-    MRT_PaginationState,
+    MRT_PaginationState, MRT_RowData,
     MRT_SortingState,
     MRT_Updater,
     useMaterialReactTable,
@@ -37,7 +37,7 @@ export interface PaginatedTableProps<
     ) => Record<string, unknown>;
     
     /** Function to transform column filter to API parameters */
-    transformFilters?: (filters: MRT_ColumnFiltersState) => Record<string, never>;
+    transformFilters?: (filters: MRT_ColumnFiltersState) => Record<string, unknown>;
 
     /** Initial state for the table */
     initialState?: {
@@ -143,8 +143,8 @@ export function PaginatedTable<
 
     // Table configuration
     const table = useMaterialReactTable({
-        columns: columns as unknown as MRT_ColumnDef<any>[],
-        data: data as any[],
+        columns: columns as unknown as MRT_ColumnDef<MRT_RowData, any>[],
+        data: data as Model[],
         manualPagination: true,
         manualSorting: true,
         manualFiltering: true,
