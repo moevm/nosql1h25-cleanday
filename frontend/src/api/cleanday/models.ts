@@ -40,6 +40,8 @@ export interface GetCleandayParams extends BaseGetParamsModel {
     name?: string;
     organization?: string;
     organizer?: string;
+    city?: string;
+    address?: string;
     status?: string[];
     begin_date_from?: string;
     begin_date_to?: string;

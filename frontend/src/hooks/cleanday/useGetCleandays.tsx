@@ -3,6 +3,7 @@ import {CleandayApiModel, GetCleandayParams, GetCleandayResponse} from "@api/cle
 import {Cleanday} from "@models/Cleanday.ts";
 import {GET_CLEANDAYS} from "@api/cleanday/endpoints.ts";
 import {cleandayMapper} from "@utils/cleanday/mapper.ts";
+import qs from "qs";
 
 
 export const useGetCleandays = (params: GetCleandayParams) => {
@@ -11,7 +12,14 @@ export const useGetCleandays = (params: GetCleandayParams) => {
         GET_CLEANDAYS,
         'cleandays',
         params,
-        {staleTime: 5 * 60 * 1000},
-        cleandayMapper
+        {
+            staleTime: 5 * 60 * 1000,
+        },
+        cleandayMapper,
+        {
+            paramsSerializer: {
+                serialize: (params) => qs.stringify(params, {arrayFormat: 'repeat'}),
+            },
+        }
     );
 }
