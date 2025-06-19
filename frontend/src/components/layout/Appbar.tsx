@@ -2,7 +2,7 @@ import './Appbar.css';
 
 import React from 'react';
 
-import {Link} from 'react-router-dom';
+import {Link, useLocation} from 'react-router-dom';
 
 import {AppBar, Avatar, Box, Button, IconButton, Toolbar,} from '@mui/material';
 
@@ -12,6 +12,8 @@ import {CreateCleandayApiModel} from "@api/cleanday/models.ts";
 import {useCreateCleanday} from "@hooks/cleanday/useCreateCleanday.tsx";
 
 import {useAuth} from "@hooks/authorization/useAuth.tsx";
+import {useGetMe} from "@hooks/authorization/useGetMe.tsx";
+import {useGetUserAvatar} from "@hooks/user/useGetUserAvatar.tsx";
 
 import CreateCleandayDialog from "../dialog/CreateCleandayDialog.tsx";
 import LogoutConfirmationDialog from "../dialog/LogoutConfirmationDialog";
@@ -24,8 +26,18 @@ interface AppbarProps {
 
 const Appbar = ({open}: AppbarProps): React.JSX.Element => {
     const {username, logout} = useAuth();
-    // const location = useLocation();
-    // const showAppbar = location.pathname !== "/" && location.pathname !== "/register" && location.pathname !== "/authorization";
+    const location = useLocation();
+    
+    // Get current user data to get the user ID
+    const { data: currentUser } = useGetMe();
+    
+    // Fetch user avatar using the ID
+    const { data: userAvatar } = useGetUserAvatar(currentUser?.id || '');
+    
+    // Determine avatar source - use the user's photo if available, otherwise undefined
+    const avatarSrc = userAvatar && userAvatar.photo !== "default_image" 
+        ? userAvatar.photo 
+        : undefined;
 
     // Состояние открытия диалога для создания субботника
     const [cleandayDialogOpen, setCleandayDialogOpen] = React.useState(false);
@@ -120,14 +132,22 @@ const Appbar = ({open}: AppbarProps): React.JSX.Element => {
                 >
                     <h2>Создание субботника</h2>
                 </Button>
-                <Avatar style={{marginRight: '10px', marginLeft: '10px'}}
-                        component={Link} to="/profile"
-                >{username.charAt(0).toUpperCase()}</Avatar>
+                <Avatar 
+                    style={{
+                        marginRight: '10px', 
+                        marginLeft: '10px',
+                        width: '40px',
+                        height: '40px'
+                    }}
+                    component={Link} 
+                    to="/profile"
+                    src={avatarSrc}
+                />
                 <IconButton
                     size="large"
                     color="inherit"
                     sx={{'&:focus': {outline: 'none'},}}
-                    onClick={() => setLogoutDialogOpen(true)} // Открытие диалога подтверждения
+                    onClick={() => setLogoutDialogOpen(true)}
                 >
                     <ExitToApp/>
                 </IconButton>
@@ -149,3 +169,5 @@ const Appbar = ({open}: AppbarProps): React.JSX.Element => {
 }
 
 export default Appbar;
+
+

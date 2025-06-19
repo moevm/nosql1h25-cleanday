@@ -10,6 +10,7 @@ import {getStatusByLevel} from "@utils/user/getStatusByLevel.ts";
 import {useGetUserById} from "@hooks/user/useGetUserById.tsx";
 import {useGetUserParticipatedCleandays} from "@hooks/user/useGetUserParticipatedCleandays.tsx";
 import {useGetUserOrganizedCleandays} from "@hooks/user/useGetUserOrganizedCleandays.tsx";
+import {useGetUserAvatar} from "@hooks/user/useGetUserAvatar.tsx";
 
 /**
  * Стили для аватара пользователя.
@@ -38,6 +39,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
     const {data: userData, isLoading: isLoadingUser, error: userError} = useGetUserById(userId);
     const {data: participatedCleandays, isLoading: isLoadingParticipated} = useGetUserParticipatedCleandays(userId);
     const {data: organizedCleandays, isLoading: isLoadingOrganized} = useGetUserOrganizedCleandays(userId);
+    const {data: userAvatar, isLoading: isLoadingAvatar} = useGetUserAvatar(userId);
 
     // console.log("participatedCleandays = ", participatedCleandays.contents);
 
@@ -86,7 +88,7 @@ const UserPage: React.FC = (): React.JSX.Element => {
     };
 
     // Check if any data is still loading
-    const isLoading = isLoadingUser || isLoadingParticipated || isLoadingOrganized;
+    const isLoading = isLoadingUser || isLoadingParticipated || isLoadingOrganized || isLoadingAvatar;
 
     // Show loading state
     if (isLoading) {
@@ -129,6 +131,9 @@ const UserPage: React.FC = (): React.JSX.Element => {
      */
     const levelStatus = getStatusByLevel(userData.level);
 
+    // Check if avatar is available and not a default image
+    const avatarSrc = userAvatar && userAvatar.photo !== "default_image" ? userAvatar.photo : undefined;
+
     return (
         <Box className={"user-profile-box"}>
             <Box display='flex' flexDirection='column' alignItems='flex-start'>
@@ -147,7 +152,11 @@ const UserPage: React.FC = (): React.JSX.Element => {
                     {/* Блок с аватаром и полями профиля */}
                     <Box sx={{display: 'flex', alignItems: 'start', marginBottom: 3, width: '100%', maxWidth: 800,}}>
                         {/* Аватар пользователя */}
-                        <Avatar style={avatarStyle}/>
+                        <Avatar 
+                            style={avatarStyle} 
+                            src={avatarSrc} 
+                            alt={`${userData.firstName} ${userData.lastName}`}
+                        />
 
                         {/* Поля с информацией о пользователе */}
                         <Box sx={{display: 'flex', flexDirection: 'column', width: '100%', maxWidth: "100%"}}>
@@ -235,8 +244,8 @@ const UserPage: React.FC = (): React.JSX.Element => {
                                 - {userData.createdAt ? userData.createdAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
-                                Дата последнего изменения -
-                                {userData.updatedAt ? userData.updatedAt.toLocaleString() : "Неизвестно"}
+                                Дата последнего изменения 
+                                - {userData.updatedAt ? userData.updatedAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
                                 ID: {userData.id}
