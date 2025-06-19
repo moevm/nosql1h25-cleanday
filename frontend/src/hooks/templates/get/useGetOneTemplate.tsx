@@ -21,6 +21,7 @@ export function useGetOneTemplate<ApiModel = BaseApiModel, Model = BaseModel>(
         queryFn: async () => {
             const response = await axiosInstance.get<ApiModel>(url, {
                 params,
+                responseType: url.includes('/export') ? 'blob' : 'json', // Для экспорта используем blob
             });
             return transform ? transform(response.data) : (response.data as unknown as Model);
         },

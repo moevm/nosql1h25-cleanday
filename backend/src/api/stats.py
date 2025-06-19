@@ -79,16 +79,17 @@ async def import_db(
 
         # Extract zip to temp directory
         with tempfile.TemporaryDirectory() as extract_dir:
-            with zipfile.ZipFile(tmp_zip_path, 'r') as zip_ref:
-                zip_ref.extractall(extract_dir)
-
-            result = subprocess.run(['ls', '-l', extract_dir])
-            print(result.stdout)
+            # Validate zip file
+            try:
+                with zipfile.ZipFile(tmp_zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(extract_dir)
+            except zipfile.BadZipFile:
+                raise HTTPException(status_code=400, detail="Invalid zip file format")
 
             # Run arangorestore
             result = subprocess.run([
                 "arangorestore",
-                "--server.endpoint", "tcp://db:8529",  # adjust if needed
+                "--server.endpoint", "tcp://db:8529",
                 "--server.username", "root",
                 "--server.password", ARANGO_ROOT_PASSWORD,
                 "--input-directory", extract_dir,
@@ -99,10 +100,13 @@ async def import_db(
             print(result.stdout)
 
             if result.returncode != 0:
-                raise HTTPException(status_code=500, detail=f"arangorestore failed: {result.stderr}")
+                raise HTTPException(status_code=500, detail=f"Database restore failed: {result.stderr}")
 
         return {"message": "Database restored successfully"}
 
+    except Exception as e:
+        # Catch any other exceptions
+        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
     finally:
         if os.path.exists(tmp_zip_path):
             os.remove(tmp_zip_path)
