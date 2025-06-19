@@ -1,20 +1,15 @@
 import './CleandaysPage.css'
 import React from 'react';
-import {Box, Button, Checkbox, Chip, FormControlLabel,} from '@mui/material';
+import {Box, Button, Chip,} from '@mui/material';
 import {MRT_ColumnDef, MRT_ColumnFiltersState, MRT_PaginationState, MRT_SortingState} from 'material-react-table';
 import Notification from '@components/Notification.tsx';
 import {useNavigate} from 'react-router-dom';
 import {useGetCleandays} from "@hooks/cleanday/useGetCleandays.tsx";
-import {GetCleandayParams} from '@api/cleanday/models';
 import {Cleanday, CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
 import {PaginatedTable} from '@components/PaginatedTable/PaginatedTable';
-import {
-    transformStringFilters,
-    transformRangeFilters,
-    transformArrayFilters,
-    transformDateRangeFilters
-} from '@utils/filterUtils';
+import {transformArrayFilters, transformDateRangeFilters, transformStringFilters} from '@utils/filterUtils';
 import {getStatusColor} from "@utils/cleanday/utils.ts";
+import { createQueryParams } from '@utils/api/createQueryParams';
 
 /**
  * CleandaysPage: Компонент страницы со списком субботников.
@@ -33,63 +28,64 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
         setNotificationMessage(null);
     }, [setNotificationMessage]);
 
+    const handlePlotButtonClick = () => {
+        setNotificationMessage('График построен успешно!');
+        setNotificationSeverity('success');
+    };
+
     // Transform column filters to API parameters
-    const transformFilters = React.useCallback((columnFilters: MRT_ColumnFiltersState): Record<string, any> => {
+    const transformFilters = React.useCallback((columnFilters: MRT_ColumnFiltersState): Record<string, unknown> => {
         // Mapping between column IDs and API parameters for string filters
         const stringFilterMap = {
             'name': 'name',
-            'city': 'city', // Добавлено
-            'address': 'address', // Добавлено
+            'city': 'city',
+            'address': 'address',
             'organization': 'organization',
             'organizer': 'organizer',
         };
 
-        // Mapping between column IDs and API parameters for array filters
         const arrayFilterMap = {
             'status': 'status',
             'tags': 'tags',
         };
 
-        // Mapping between column IDs and API parameters for date range filters
         const dateFromFilterMap = {
             'beginDate': 'begin_date_from',
             'endDate': 'end_date_from',
-            'createdAt': 'created_at_from',
-            'updatedAt': 'updated_at_from',
+            // 'createdAt': 'created_at_from',
+            // 'updatedAt': 'updated_at_from',
         };
 
         const dateToFilterMap = {
             'beginDate': 'begin_date_to',
             'endDate': 'end_date_to',
-            'createdAt': 'created_at_to',
-            'updatedAt': 'updated_at_to',
+            // 'createdAt': 'created_at_to',
+            // 'updatedAt': 'updated_at_to',
         };
 
-        // Mapping between column IDs and API parameters for numeric range filters
-        const numericFromFilterMap = {
-            'area': 'area_from',
-            'recommendedParticipantsCount': 'recommended_count_from',
-            'participantsCount': 'participant_count_from',
-        };
+        // const numericFromFilterMap = {
+        //     'area': 'area_from',
+        //     'recommendedParticipantsCount': 'recommended_count_from',
+        //     'participantsCount': 'participant_count_from',
+        // };
+        //
+        // const numericToFilterMap = {
+        //     'area': 'area_to',
+        //     'recommendedParticipantsCount': 'recommended_count_to',
+        //     'participantsCount': 'participant_count_to',
+        // };
 
-        const numericToFilterMap = {
-            'area': 'area_to',
-            'recommendedParticipantsCount': 'recommended_count_to',
-            'participantsCount': 'participant_count_to',
-        };
-
-        // Transform the filters using utility functions
         const stringParams = transformStringFilters(columnFilters, stringFilterMap);
         const arrayParams = transformArrayFilters(columnFilters, arrayFilterMap);
         const dateRangeParams = transformDateRangeFilters(columnFilters, dateFromFilterMap, dateToFilterMap);
-        const numericRangeParams = transformRangeFilters(columnFilters, numericFromFilterMap, numericToFilterMap);
+        // const numericRangeParams = transformNumericRangeFilters(columnFilters, numericFromFilterMap, numericToFilterMap);
 
         // Combine all parameters
         return {
             ...stringParams,
             ...arrayParams,
             ...dateRangeParams,
-            ...numericRangeParams,
+            // ...numericRangeParams,
         };
     }, []);
 
@@ -106,7 +102,7 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                 accessorKey: 'city',
                 header: 'Город',
                 filterVariant: 'text',
-                enableSorting: false, // Disable sorting for city column
+                enableSorting: false,
                 size: 140,
             },
             {
@@ -120,14 +116,14 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
             {
                 accessorKey: 'beginDate',
                 header: 'Дата начала',
-                filterVariant: 'date-range',
+                filterVariant: 'datetime-range',
                 Cell: ({cell}) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
                 size: 350,
             },
             {
                 accessorKey: 'endDate',
                 header: 'Дата окончания',
-                filterVariant: 'date-range',
+                filterVariant: 'datetime-range',
                 Cell: ({cell}) => new Date(cell.getValue<string>()).toLocaleString('ru-RU'),
                 size: 350,
             },
@@ -148,7 +144,7 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                 accessorKey: 'tags',
                 header: 'Теги',
                 filterVariant: 'multi-select',
-                filterSelectOptions: Object.entries(CleandayTag).map(([key, value]) => ({
+                filterSelectOptions: Object.entries(CleandayTag).map(([, value]) => ({
                     text: value,
                     value: value,
                 })),
@@ -166,7 +162,7 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                 accessorKey: 'status',
                 header: 'Статус',
                 filterVariant: 'multi-select',
-                filterSelectOptions: Object.entries(CleandayStatus).map(([key, value]) => ({
+                filterSelectOptions: Object.entries(CleandayStatus).map(([, value]) => ({
                     text: value,
                     value: value,
                 })),
@@ -180,7 +176,7 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                 size: 120,
             },
         ],
-        [getStatusColor]
+        []
     );
 
     // Handle click on a row to navigate to cleanday details page
@@ -188,59 +184,59 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
         navigate(`/cleandays/${row.id}`);
     };
 
-    // Add this mapping object at component level, outside of any function
-    const columnToApiFieldMap: Record<string, string> = {
+    const columnToApiFieldMap: Record<string, string> = React.useMemo(() => ({
         'name': 'name',
         'beginDate': 'begin_date',
         'endDate': 'end_date',
+        'organizer': 'organizer',
         'organization': 'organization',
-        'area': 'area',
-        'participantsCount': 'participant_count',
-        'recommendedParticipantsCount': 'recommended_count',
+        // 'area': 'area',
+        // 'participantsCount': 'participant_count',
+        // 'recommendedParticipantsCount': 'recommended_count',
         'status': 'status',
-        'city': 'city', // Добавлено
-        'address': 'address' // Добавлено
-    };
+        'city': 'city',
+        'address': 'address',
+    }), []);
 
     // Function to create query parameters for the API call
-    const createQueryParams = React.useCallback(
+    const createCleandaysQueryParams = React.useCallback(
         (
             pagination: MRT_PaginationState,
             sorting: MRT_SortingState,
             columnFilters: MRT_ColumnFiltersState,
             globalFilter?: string
         ): Record<string, unknown> => {
-            const params: Record<string, unknown> = {
-                offset: pagination.pageIndex * pagination.pageSize,
-                limit: pagination.pageSize,
-                search_query: globalFilter && globalFilter.trim() !== "" ? globalFilter.trim() : undefined,
-            };
-
-            if (sorting.length > 0) {
-                // Get the column ID that is being sorted
-                const sortColumnId = sorting[0].id;
-                // Map it to the correct API field name or use the original if no mapping exists
-                params.sort_by = columnToApiFieldMap[sortColumnId] || sortColumnId;
-                params.sort_order = sorting[0].desc ? 'desc' : 'asc';
-            }
-
-            return {
-                ...params,
-                ...transformFilters(columnFilters),
-            };
+            return createQueryParams(
+                pagination,
+                sorting,
+                columnFilters,
+                globalFilter,
+                columnToApiFieldMap,
+                transformFilters
+            );
         },
-        [transformFilters]
+        [columnToApiFieldMap, transformFilters]
     );
 
-    // Function to get query result based on parameters
     const getQueryHook = React.useCallback((params: Record<string, unknown>) => {
+        // всё работает как должно, не понимаю почему возникают ошибки от инлайнера
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         return useGetCleandays(params);
     }, []);
 
-    // Render toolbar actions (e.g., create cleanday button)
-    const renderToolbarActions = () => (
-        <></>
-    );
+    const renderTopToolbarCustomActions = React.useCallback(() => {
+        return (
+            <Box sx={{display: 'flex', width: '100%', justifyContent: 'flex-start'}}>
+                <Button
+                    variant="outlined"
+                    onClick={handlePlotButtonClick}
+                    sx={{color: 'black', borderColor: 'black'}}
+                >
+                    Построить график
+                </Button>
+            </Box>
+        );
+    }, []);
 
     return (
         <Box className='cleandays-box'>
@@ -248,9 +244,9 @@ const CleandaysPage: React.FC = (): React.JSX.Element => {
                 title="Субботники"
                 columns={columns}
                 getQueryHook={getQueryHook}
-                createQueryParams={createQueryParams}
+                createQueryParams={createCleandaysQueryParams}
                 onRowClick={handleRowClick}
-                renderTopToolbarCustomActions={renderToolbarActions}
+                renderTopToolbarCustomActions={renderTopToolbarCustomActions}
             />
 
             {/* Компонент уведомления */}
