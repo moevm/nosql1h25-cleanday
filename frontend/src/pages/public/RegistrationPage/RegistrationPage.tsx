@@ -319,10 +319,10 @@ const RegistrationPage = (): React.JSX.Element => {
                         </Button>
                     </Box>
                 </form>
-            </Box>
-            <Box mt={4} display="flex" justifyContent="center">
-                <img src="/basementMenuImage.png" alt="Statistics Page" style={{maxWidth: '70%', height: 'auto'}}/>
-            </Box>
+                <Box mt={4} display="flex" justifyContent="center">
+                    <img src="/basementMenuImage.png" alt="Statistics Page" style={{maxWidth: '70%', height: 'auto'}}/>
+                </Box>
+            </Box>ь   мааааа р
         </Container>
     );
 };

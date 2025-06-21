@@ -1,9 +1,19 @@
-.registration-container,
+.registration-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #a9e3d4;
+    height: 151vh;
+    min-width: 100vw;
+}
+
 .login-box {
     display: flex;
     flex-direction: column;
     align-items: center;
+    background-color: #a9e3d4;
 }
+
 
 .regToolbar {
     display: flex;

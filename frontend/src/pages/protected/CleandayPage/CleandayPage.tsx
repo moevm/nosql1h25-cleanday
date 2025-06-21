@@ -850,6 +850,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                 <Grid item xs={6}>
                                     <TextField
                                         fullWidth
+
                                         label="Зарегистрировано участников (нажмите для списка)"
                                         value={cleanup.participant_count}
                                         InputProps={{readOnly: true}}
@@ -876,13 +877,52 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     </Button>
 
                                     {/* Информация о статусе участников */}
-                                    <Typography marginTop={'10px'} variant="body1" gutterBottom onClick={handleClick}>
+                                    <Typography
+                                        marginTop={'10px'}
+                                        variant="body1"
+                                        gutterBottom
+                                        onClick={handleClick}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            color: '#3C6C5FFF',
+                                            textDecoration: 'underline',
+                                            '&:hover': {
+                                                color: 'darkblue',
+                                            },
+                                        }}
+                                    >
                                         Точно пойдут: {15} участников (нажмите для просмотра)
                                     </Typography>
-                                    <Typography marginTop={'10px'} variant="body1" gutterBottom onClick={handleClick}>
+                                    <Typography
+                                        marginTop={'10px'}
+                                        variant="body1"
+                                        gutterBottom
+                                        onClick={handleClick}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            color: '#3C6C5FFF',
+                                            textDecoration: 'underline',
+                                            '&:hover': {
+                                                color: 'darkblue',
+                                            },
+                                        }}
+                                    >
                                         Опоздают: {5} участников (нажмите для просмотра)
                                     </Typography>
-                                    <Typography marginTop={'10px'} variant="body1" gutterBottom onClick={handleClick}>
+                                    <Typography
+                                        marginTop={'10px'}
+                                        variant="body1"
+                                        gutterBottom
+                                        onClick={handleClick}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            color: '#3C6C5FFF',
+                                            textDecoration: 'underline',
+                                            '&:hover': {
+                                                color: 'darkblue',
+                                            },
+                                        }}
+                                    >
                                         Возможно, пойдут: {30} участников (нажмите для просмотра)
                                     </Typography>
 

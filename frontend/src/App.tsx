@@ -19,7 +19,7 @@ const App = () => {
         <Box sx={{
             display: 'flex',
             paddingTop: '64px',
-            height: 'calc(98vh - 65px)',
+            height: 'calc(100vh - 65px)',
             width: '99.99vw',
             backgroundPositionX: 'x-start',
             top: 0,
