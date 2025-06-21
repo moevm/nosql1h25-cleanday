@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-    Box,
-    Typography,
-    TextField,
-    Button,
-    Avatar,
-    LinearProgress,
-    CircularProgress,
-} from '@mui/material';
+import {Avatar, Box, Button, CircularProgress, LinearProgress, TextField, Typography,} from '@mui/material';
 
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -51,37 +43,42 @@ const avatarStyle = {
  */
 const UserProfilePage: React.FC = (): React.JSX.Element => {
     // IMPORTANT: All React hooks must be called at the top level before any conditional returns
-    
+
     // Получаем данные текущего пользователя
-    const {data: currentUser, isLoading: isLoadingCurrentUser, error: currentUserError, refetch: refetchUser} = useGetMe();
+    const {
+        data: currentUser,
+        isLoading: isLoadingCurrentUser,
+        error: currentUserError,
+        refetch: refetchUser
+    } = useGetMe();
 
     // Add local state to immediately update UI after changes - moved this up before any conditionals
     const [localUserData, setLocalUserData] = React.useState<typeof currentUser | null>(null);
 
     // Get cities from API
     const {data: citiesData, isLoading: isLoadingCities} = useGetAllCities();
-    
+
     // Хук для программной навигации между страницами
     const navigate = useNavigate();
-    
+
     // Query client для инвалидации кэша
     const queryClient = useQueryClient();
 
     // Загрузка данных субботников пользователя только после того, как получены данные пользователя
     const userId = currentUser?.id || '';
     const {
-        data: participatedCleandays, 
+        data: participatedCleandays,
         isLoading: isLoadingParticipated
-    } = useGetUserParticipatedCleandays(userId);
-    
+    } = useGetUserParticipatedCleandays(userId, {});
+
     const {
-        data: organizedCleandays, 
+        data: organizedCleandays,
         isLoading: isLoadingOrganized
-    } = useGetUserOrganizedCleandays(userId);
-    
+    } = useGetUserOrganizedCleandays(userId, {});
+
     const {
-        data: userAvatar, 
-        isLoading: isLoadingAvatar, 
+        data: userAvatar,
+        isLoading: isLoadingAvatar,
         refetch: refetchAvatar
     } = useGetUserAvatar(userId);
 
@@ -100,10 +97,10 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
 
     // Состояние для отображения диалога посещённых субботников
     const [participatedDialogOpen, setParticipatedDialogOpen] = React.useState<boolean>(false);
-    
+
     // Состояние для хранения файла аватара
     const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
-    
+
     // Хуки для обновления данных пользователя
     const updateUserInfo = useUpdateUserInfo(userId);
     const updateUserAvatar = useUpdateUserAvatar(userId);
@@ -126,7 +123,7 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     const cityNames = React.useMemo(() => {
         return citiesData?.map(city => city.name) || [];
     }, [citiesData]);
-    
+
     const cityNameToIdMap = React.useMemo(() => {
         const map: Record<string, string> = {};
         citiesData?.forEach(city => {
@@ -160,12 +157,12 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
 
     /**
      * Обработчик обновления аватара пользователя.
-     * 
+     *
      * @param {File} file - Файл нового аватара пользователя.
      */
     const handleUserPicChange = async (file: File) => {
         setAvatarFile(file);
-        
+
         // Generate preview for immediate feedback IN THE DIALOG ONLY
         try {
             const reader = new FileReader();
@@ -187,21 +184,21 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     const handleEditDialogSubmit = async (data: UserProfileEdit) => {
         try {
             // Create a copy of the data to modify
-            const updatedData = { ...data };
-            
+            const updatedData = {...data};
+
             // If city is provided, convert it to city_id
             if (updatedData.city && cityNameToIdMap[updatedData.city]) {
                 updatedData.city_id = cityNameToIdMap[updatedData.city];
                 // Remove the city field as the backend expects city_id
                 delete updatedData.city;
             }
-            
+
             // Immediately update local state for instant feedback
             if (displayUser) {
-                const cityName = updatedData.city_id 
+                const cityName = updatedData.city_id
                     ? citiesData?.find(c => c.id === updatedData.city_id)?.name || displayUser.city
                     : displayUser.city;
-                
+
                 setLocalUserData({
                     ...displayUser,
                     firstName: updatedData.first_name || displayUser.firstName,
@@ -212,16 +209,16 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                     // Keep other fields unchanged
                 });
             }
-            
+
             // Обновляем данные пользователя
             await updateUserInfo.mutateAsync(updatedData, {
                 onSuccess: async () => {
                     // Immediately refetch user data to get the latest from the server
                     await refetchUser();
-                    
+
                     // Also invalidate the cache to ensure other components get updated data
-                    queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-                    
+                    queryClient.invalidateQueries({queryKey: ['currentUser']});
+
                     setNotificationMessage('Профиль успешно обновлён!');
                     setNotificationSeverity('success');
                 },
@@ -229,33 +226,33 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                     console.error('Error updating profile:', error);
                     setNotificationMessage('Ошибка при обновлении профиля');
                     setNotificationSeverity('error');
-                    
+
                     // Reset local data on error
                     if (currentUser) {
                         setLocalUserData(currentUser);
                     }
                 }
             });
-            
+
             // Если есть новый файл аватара, отправляем его
             if (avatarFile) {
                 try {
                     const base64String = await fileToBase64(avatarFile);
-                    
-                    await updateUserAvatar.mutateAsync({ photo: base64String }, {
+
+                    await updateUserAvatar.mutateAsync({photo: base64String}, {
                         onSuccess: async () => {
                             // Refetch avatar data specifically
                             await refetchAvatar();
-                            
+
                             // Update local avatar preview - this allows us to see the change immediately
                             if (base64String) {
                                 // Create a temporary avatar object to simulate the API response
-                                const tempAvatar = { photo: base64String };
-                                
+                                const tempAvatar = {photo: base64String};
+
                                 // Force the UI to update with the new avatar
                                 queryClient.setQueryData(['userAvatar', userId], tempAvatar);
                             }
-                            
+
                             setNotificationMessage('Профиль и аватар успешно обновлены!');
                             setNotificationSeverity('success');
                         },
@@ -271,17 +268,17 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                     setNotificationSeverity('error');
                 }
             }
-            
+
             setEditDialogOpen(false);
             // Clear the avatar file and preview after submission
             setAvatarFile(null);
             setAvatarPreview(undefined);
-            
+
         } catch (error) {
             console.error('Error in edit dialog submit:', error);
             setNotificationMessage('Ошибка при обновлении профиля');
             setNotificationSeverity('error');
-            
+
             // Reset local data on error
             if (currentUser) {
                 setLocalUserData(currentUser);
@@ -364,8 +361,8 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
 
     // Determine avatar source - DO NOT use avatarPreview for the main page avatar
     // Only use the actual data from the API
-    const avatarSrc = (userAvatar && userAvatar.photo !== "default_image") 
-        ? userAvatar.photo 
+    const avatarSrc = (userAvatar && userAvatar.photo !== "default_image")
+        ? userAvatar.photo
         : undefined;
 
     // Use displayUser instead of currentUser throughout the render function
@@ -386,8 +383,8 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
 
                     {/* Блок с аватаром и полями профиля */}
                     <Box sx={{display: 'flex', alignItems: 'start', marginBottom: 3, width: '100%', maxWidth: 800,}}>
-                        <Avatar 
-                            style={avatarStyle} 
+                        <Avatar
+                            style={avatarStyle}
                             src={avatarSrc} // Only use the real avatar from API, not the preview
                             alt={`${displayUser.firstName} ${displayUser.lastName}`}
                         />
@@ -472,7 +469,7 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                                 - {displayUser.createdAt ? displayUser.createdAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
-                                Дата последнего изменения 
+                                Дата последнего изменения
                                 - {displayUser.updatedAt ? displayUser.updatedAt.toLocaleString() : "Неизвестно"}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 2}}>
@@ -545,23 +542,23 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                     updated_at: displayUser.updatedAt?.toISOString() || '',
                 }}
                 cities={cityNames}
-                userPic={avatarPreview ? { photo: avatarPreview } : 
-                    (userAvatar ? { photo: userAvatar.photo } : null)}
+                userPic={avatarPreview ? {photo: avatarPreview} :
+                    (userAvatar ? {photo: userAvatar.photo} : null)}
                 onUserPicChange={handleUserPicChange}
             />
 
             <OrganizedCleandaysDialog
                 open={organizedDialogOpen}
                 onClose={() => setOrganizedDialogOpen(false)}
-                userName={`${displayUser.firstName} ${displayUser.lastName}`}
-                cleandays={organizedCleandays?.contents || []}
+                user={displayUser}
+                cleandaysCount={organizedCleandays?.totalCount || 0}
             />
 
             <ParticipatedCleandaysDialog
                 open={participatedDialogOpen}
                 onClose={() => setParticipatedDialogOpen(false)}
-                userName={`${displayUser.firstName} ${displayUser.lastName}`}
-                cleandays={participatedCleandays?.contents || []}
+                user={displayUser}
+                cleandaysCount={participatedCleandays?.totalCount || 0}
             />
         </Box>
     );

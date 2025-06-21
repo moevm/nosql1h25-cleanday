@@ -37,11 +37,9 @@ const UserPage: React.FC = (): React.JSX.Element => {
 
     // Fetch user data and cleandays data
     const {data: userData, isLoading: isLoadingUser, error: userError} = useGetUserById(userId);
-    const {data: participatedCleandays, isLoading: isLoadingParticipated} = useGetUserParticipatedCleandays(userId);
-    const {data: organizedCleandays, isLoading: isLoadingOrganized} = useGetUserOrganizedCleandays(userId);
+    const {data: participatedCleandays, isLoading: isLoadingParticipated} = useGetUserParticipatedCleandays(userId, {});
+    const {data: organizedCleandays, isLoading: isLoadingOrganized} = useGetUserOrganizedCleandays(userId, {});
     const {data: userAvatar, isLoading: isLoadingAvatar} = useGetUserAvatar(userId);
-
-    // console.log("participatedCleandays = ", participatedCleandays.contents);
 
     // Хук для программной навигации между страницами
     const navigate = useNavigate();
@@ -284,16 +282,16 @@ const UserPage: React.FC = (): React.JSX.Element => {
             <OrganizedCleandaysDialog
                 open={organizedDialogOpen}
                 onClose={() => setOrganizedDialogOpen(false)}
-                userName={`${userData.firstName} ${userData.lastName}`}
-                cleandays={organizedCleandays.contents || []}
+                user={userData}
+                cleandaysCount={organizedCleandays?.totalCount || 0}
             />
 
             {/* Диалог посещённых субботников */}
             <ParticipatedCleandaysDialog
                 open={participatedDialogOpen}
                 onClose={() => setParticipatedDialogOpen(false)}
-                userName={`${userData.firstName} ${userData.lastName}`}
-                cleandays={participatedCleandays.contents || []}
+                user={userData}
+                cleandaysCount={participatedCleandays?.totalCount || 0}
             />
         </Box>
     );
