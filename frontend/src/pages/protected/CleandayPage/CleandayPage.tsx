@@ -601,18 +601,42 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     >
                                         итоги субботника
                                     </Button>
-
+                                 
                                     {/* Participant status information */}
                                     <Typography marginTop={'10px'} variant="body1" gutterBottom
+                                      sx={{
+                                            cursor: 'pointer',
+                                            color: '#3C6C5FFF',
+                                            textDecoration: 'underline',
+                                            '&:hover': {
+                                                color: 'darkblue',
+                                            },
+                                        }}
                                                 onClick={handleParticipantsDialogOpen}>
                                         Точно
                                         пойдут: {cleandayParticipants.filter(p => p.status === ParticipationStatus.GOING).length} участников
                                     </Typography>
                                     <Typography marginTop={'10px'} variant="body1" gutterBottom
+                                      sx={{
+                                            cursor: 'pointer',
+                                            color: '#3C6C5FFF',
+                                            textDecoration: 'underline',
+                                            '&:hover': {
+                                                color: 'darkblue',
+                                            },
+                                        }}
                                                 onClick={handleParticipantsDialogOpen}>
                                         Опоздают: {cleandayParticipants.filter(p => p.status === ParticipationStatus.LATE).length} участников
                                     </Typography>
                                     <Typography marginTop={'10px'} variant="body1" gutterBottom
+                                      sx={{
+                                            cursor: 'pointer',
+                                            color: '#3C6C5FFF',
+                                            textDecoration: 'underline',
+                                            '&:hover': {
+                                                color: 'darkblue',
+                                            },
+                                        }}
                                                 onClick={handleParticipantsDialogOpen}>
                                         Возможно,
                                         пойдут: {cleandayParticipants.filter(p => p.status === ParticipationStatus.MAYBE).length} участников
