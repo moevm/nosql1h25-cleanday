@@ -7,7 +7,7 @@ from arango.database import StandardDatabase
 
 from data.entity import CleanDay, CleanDayTag, CleanDayStatus, ParticipationType, Requirement, Image
 from data.query import GetCleanday, GetCleandaysParams, GetUser, GetMembersParams, PaginationParams, CleandayLog, \
-    GetComment, GetMember, GetCleandayLogsParams, GetCommentsParams
+    GetComment, GetMember, GetCleandayLogsParams, GetCommentsParams, CleandayHeatmapField, HeatmapEntry
 from repo import util
 from repo.client import database
 from repo.location_repo import LocationRepo
@@ -858,6 +858,10 @@ class CleandayRepo:
             img_list.append(Image.model_validate(row))
 
         return img_list
+
+    def get_heatmap(self, x_field: CleandayHeatmapField, y_field: CleandayHeatmapField, params: GetCleandaysParams) \
+            -> list[HeatmapEntry]:
+        return util.get_heatmap(self.db, x_field, y_field, params)
 
 
 if __name__ == "__main__":
