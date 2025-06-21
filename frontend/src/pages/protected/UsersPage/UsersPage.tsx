@@ -12,7 +12,7 @@ import {useNavigate} from 'react-router-dom';
 import {useGetUsers} from "@hooks/user/useGetUsers.tsx";
 import {GetUsersParams} from '@api/user/models';
 import {User} from "@models/User.ts";
-import {PaginatedTable} from '@components/PaginatedTable/PaginatedTable';
+import {PaginatedTable} from '@components/table/PaginatedTable/PaginatedTable';
 import {transformNumericRangeFilters, transformStringFilters} from '@utils/filterUtils';
 import {createQueryParams} from "@utils/api/createQueryParams.ts";
 import {getNonNegativeNumberFilterProps} from "@utils/table/columns.tsx";
