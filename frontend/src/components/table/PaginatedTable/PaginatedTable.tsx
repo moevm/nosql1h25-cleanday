@@ -3,15 +3,16 @@ import {
     MaterialReactTable,
     MRT_ColumnDef,
     MRT_ColumnFiltersState,
-    MRT_PaginationState, MRT_RowData,
+    MRT_PaginationState,
+    MRT_RowData,
     MRT_SortingState,
     MRT_Updater,
     useMaterialReactTable,
 } from 'material-react-table';
 import {Box, Typography} from '@mui/material';
 import {MRT_Localization_RU} from 'material-react-table/locales/ru';
-import {BaseModel, BasePaginatedModel} from '@models/BaseModel';
-import {BaseApiModel, SortOrder} from '@api/BaseApiModel';
+import {BaseModel, BasePaginatedModel} from '@models/BaseModel.ts';
+import {SortOrder} from '@api/BaseApiModel.ts';
 import {UseQueryResult} from '@tanstack/react-query';
 
 
@@ -19,7 +20,6 @@ import {UseQueryResult} from '@tanstack/react-query';
  * Props for PaginatedTable with useGetPaginatedManyTemplate integration
  */
 export interface PaginatedTableProps<
-    ApiModel extends BaseApiModel = BaseApiModel,
     Model extends BaseModel = BaseModel
 > {
     /** Columns definition for the table */
@@ -35,7 +35,7 @@ export interface PaginatedTableProps<
         columnFilters: MRT_ColumnFiltersState,
         globalFilter?: string
     ) => Record<string, unknown>;
-    
+
     /** Function to transform column filter to API parameters */
     transformFilters?: (filters: MRT_ColumnFiltersState) => Record<string, unknown>;
 
@@ -61,7 +61,6 @@ export interface PaginatedTableProps<
  * PaginatedTableWithTemplate: A component that uses useGetPaginatedManyTemplate hook for displaying paginated data.
  */
 export function PaginatedTable<
-    ApiModel extends BaseApiModel = BaseApiModel,
     Model extends BaseModel = BaseModel,
 >({
       columns,
@@ -72,7 +71,7 @@ export function PaginatedTable<
       title,
       onRowClick,
       renderTopToolbarCustomActions,
-  }: PaginatedTableProps<ApiModel, Model>): React.JSX.Element {
+  }: PaginatedTableProps<Model>): React.JSX.Element {
     // Table state
     const [pagination, setPagination] = useState<MRT_PaginationState>(
         initialState.pagination || {pageIndex: 0, pageSize: 10}
@@ -93,7 +92,7 @@ export function PaginatedTable<
             // Use the provided createQueryParams function
             return createQueryParams(pagination, sorting, columnFilters, globalFilter);
         }
-        
+
         // Legacy support: build params manually
         const baseParams: Record<string, unknown> = {
             offset: pagination.pageIndex * pagination.pageSize,
@@ -123,7 +122,7 @@ export function PaginatedTable<
     const data = responseData?.contents || [];
     const totalCount = responseData?.totalCount || 0;
 
-    console.log(data);
+    //console.log(data);
 
     // Handlers for table state changes
     const handleSortingChange = (updaterOrValue: MRT_Updater<MRT_SortingState>): void => {
@@ -143,73 +142,78 @@ export function PaginatedTable<
 
     // Table configuration
     const table = useMaterialReactTable({
-        columns: columns as unknown as MRT_ColumnDef<MRT_RowData, any>[],
-        data: data as Model[],
-        manualPagination: true,
-        manualSorting: true,
-        manualFiltering: true,
-        onPaginationChange: setPagination,
-        onSortingChange: handleSortingChange,
-        onColumnFiltersChange: handleColumnFiltersChange,
-        onGlobalFilterChange: handleGlobalFilterChange,
-        rowCount: totalCount,
-        localization: MRT_Localization_RU,
-        enableCellActions: true,
-        enableColumnOrdering: false,
-        enableRowSelection: false,
-        enableSorting: true,
-        enableColumnFilters: true,
-        enableGlobalFilter: true,
-        positionGlobalFilter: 'left',
-        state: {
-            isLoading,
-            showProgressBars: isLoading,
-            showAlertBanner: !!error,
-            pagination,
-            sorting,
-            columnFilters,
-            globalFilter,
-        },
-        initialState: {
-            showGlobalFilter: true,
-            density: 'compact',
-        },
-        muiTablePaperProps: {
-            elevation: 0,
-            sx: {
-                border: 'none',
-                borderRadius: '0',
+            columns: columns as unknown as MRT_ColumnDef<MRT_RowData, unknown>[],
+            data: data as Model[],
+            manualPagination: true,
+            manualSorting: true,
+            manualFiltering: true,
+            onPaginationChange: setPagination,
+            onSortingChange: handleSortingChange,
+            onColumnFiltersChange: handleColumnFiltersChange,
+            onGlobalFilterChange: handleGlobalFilterChange,
+            rowCount: totalCount,
+            localization: MRT_Localization_RU,
+            enableCellActions: true,
+            enableColumnOrdering: false,
+            enableRowSelection: false,
+            enableSorting: true,
+            enableColumnFilters: true,
+            enableGlobalFilter: true,
+            positionGlobalFilter: 'left',
+            state: {
+                isLoading,
+                showProgressBars: isLoading,
+                showAlertBanner: !!error,
+                pagination,
+                sorting,
+                columnFilters,
+                globalFilter,
             },
-        },
-        muiTableProps: {
-            sx: {
-                tableLayout: 'fixed',
-                ...(onRowClick ? {cursor: 'pointer'} : {}),
+            initialState: {
+                showGlobalFilter: true,
+                density: 'compact',
             },
-        },
-        ...(onRowClick
-            ? {
-                muiTableBodyRowProps: ({row}) => ({
-                    onClick: () => onRowClick(row.original as unknown as Model),
-                }),
-            }
-            : {}),
-        muiPaginationProps: {
-            rowsPerPageOptions: [5, 10, 25, 50],
-            showFirstButton: true,
-            showLastButton: true,
-        },
-        renderTopToolbarCustomActions: renderTopToolbarCustomActions,
-        muiToolbarAlertBannerProps:
-            error
+            muiTablePaperProps: {
+                elevation: 0,
+                sx: {
+                    border: 'none',
+                    borderRadius: '0',
+                },
+            },
+            muiTableProps: {
+                sx: {
+                    tableLayout: 'fixed',
+                    ...(onRowClick ? {cursor: 'pointer'} : {}),
+                },
+            },
+            ...(onRowClick
                 ? {
-                    color: 'error',
-                    children: `Ошибка загрузки данных: ${
-                        error.message || 'Неизвестная ошибка'
-                    }`,
+                    muiTableBodyRowProps: ({row}) => ({
+                        onClick: () => onRowClick(row.original as unknown as Model),
+                    }),
                 }
-                : undefined,
-    });
+                : {}),
+            muiPaginationProps: {
+                rowsPerPageOptions: [5, 10, 25, 50],
+                showFirstButton: true,
+                showLastButton: true,
+            },
+            renderTopToolbarCustomActions: renderTopToolbarCustomActions,
+            muiToolbarAlertBannerProps:
+                error
+                    ? {
+                        color: 'error',
+                        children: `Ошибка загрузки данных: ${
+                            error.message || 'Неизвестная ошибка'
+                        }`,
+                    }
+                    : undefined,
+            muiTableBodyRowProps: ({row}) => ({
+                onClick: () => onRowClick?.(row.original as unknown as Model),
+                sx: {cursor: onRowClick ? 'pointer' : 'default'},
+            }),
+        })
+    ;
     return (
         <Box>
             {title && (

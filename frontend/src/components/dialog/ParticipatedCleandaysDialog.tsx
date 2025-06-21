@@ -1,28 +1,18 @@
 import React from 'react';
-import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
-    Box,
-    Typography,
-    Chip
-} from '@mui/material';
-
-
-import {MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef} from 'material-react-table';
+import {Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography} from '@mui/material';
 import {useNavigate} from 'react-router-dom';
-import {Cleanday, CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
-import {getStatusColor} from "@utils/cleanday/utils.ts";
+import {Cleanday} from "@models/Cleanday.ts";
+import CleandaysTable from "@components/table/CleandaysTable/CleandaysTable.tsx";
+import {useGetUserParticipatedCleandays} from "@hooks/user/useGetUserParticipatedCleandays.tsx";
+import {User} from "@models/User.ts";
 
 
 // Interface for the dialog props
 interface ParticipatedCleandaysDialogProps {
     open: boolean;
     onClose: () => void;
-    userName: string;
-    cleandays: Cleanday[];
+    user: User;
+    cleandaysCount: number;
 }
 
 /**
@@ -35,8 +25,8 @@ interface ParticipatedCleandaysDialogProps {
 const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = ({
                                                                                      open,
                                                                                      onClose,
-                                                                                     userName,
-                                                                                     cleandays
+                                                                                     user,
+                                                                                     cleandaysCount
                                                                                  }: ParticipatedCleandaysDialogProps): React.JSX.Element => {
     // Хук для навигации между страницами приложения
     const navigate = useNavigate();
@@ -52,116 +42,12 @@ const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = 
         navigate(`/cleandays/${cleanday.id}`);
     }, [navigate, onClose]);
 
-    // Define table columns
-    const columns = React.useMemo<MRT_ColumnDef<Cleanday>[]>(
-        () => [
-            {
-                accessorKey: 'name',
-                header: 'Название',
-            },
-            {
-                accessorFn: (row) => row.city,
-                header: 'Город',
-                id: 'city',
-                size: 90,
-            },
-            {
-                accessorFn: (row) => row.location.address,
-                header: 'Адрес',
-                id: 'address',
-            },
-            {
-                accessorKey: 'begin_date',
-                header: 'Дата и время начала',
-            },
-            {
-                accessorKey: 'end_date',
-                header: 'Дата и время завершения',
-            },
-            {
-                accessorKey: 'organization',
-                header: 'Организация',
-                size: 150,
-            },
-            {
-                accessorKey: 'organizer',
-                header: 'Организатор',
-                size: 150,
-            },
-            {
-                accessorKey: 'type',
-                header: 'Теги',
-                // Кастомное отображение тегов как компонентов Chip
-                Cell: ({row}) => (
-                    <Box sx={{display: 'flex', gap: 1}}>
-                        {row.original.tags.map((tag) => (
-                            <Chip key={tag} label={tag} size="small"/>
-                        ))}
-                    </Box>
-                ),
-                filterVariant: 'multi-select',
-                filterSelectOptions: Object.entries(CleandayTag).map(([key, value]) => ({
-                    text: value,
-                    value: value,
-                })),
-            },
-            {
-                accessorKey: 'status',
-                header: 'Статус',
-                filterVariant: 'multi-select',
-                filterSelectOptions: Object.entries(CleandayStatus).map(([key, value]) => ({
-                    text: value,
-                    value: value,
-                })),
-                Cell: ({ cell }) => (
-                    <Chip
-                        label={cell.getValue<string>()}
-                        color={getStatusColor(cell.getValue<CleandayStatus>())}
-                        size="small"
-                    />
-                ),
-                size: 120,
-            },
-        ],
-        [getStatusColor]
-    );
 
-    // Configure the table with built-in search functionality
-    const table = useMaterialReactTable({
-        columns,
-        data: cleandays,
-        enableColumnOrdering: false,
-        enableRowSelection: false,
-        enableSorting: true,
-        enableColumnFilters: true,
-        positionGlobalFilter: 'left',
-        enableGlobalFilter: true, // Enable built-in search
-        enableColumnFilterModes: true,
-        initialState: {
-            density: 'compact',
-            pagination: {pageIndex: 0, pageSize: 10},
-            showGlobalFilter: true, // Show search bar by default
-        },
-        muiTablePaperProps: {
-            elevation: 0,
-            sx: {
-                border: '1px solid rgba(224, 224, 224, 1)',
-                borderRadius: '4px',
-            },
-        },
-        // Configure the search input appearance
-        muiSearchTextFieldProps: {
-            placeholder: 'Поиск субботников',
-            size: 'small',
-            sx: {mb: 2},
-            variant: 'outlined',
-        },
-        // Set row click handler
-        muiTableBodyRowProps: ({row}) => ({
-            onClick: () => handleRowClick(row.original),
-            sx: {cursor: 'pointer'},
-        }),
-    });
+    const getQueryHook = React.useCallback((params: Record<string, unknown>) => {
+        // всё работает как должно, не понимаю почему возникают ошибки от инлайнера
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        return useGetUserParticipatedCleandays(user.id, params);
+    }, [user.id]);
 
     return (
         <Dialog
@@ -174,14 +60,20 @@ const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = 
             <DialogTitle id="participated-cleandays-dialog-title">
                 Посещённые субботники
                 <Typography component="div" variant="subtitle1" color="text.secondary">
-                    {userName}
+                    {`${user.firstName} ${user.lastName}`}
                 </Typography>
             </DialogTitle>
 
             <DialogContent>
-                <MaterialReactTable table={table}/>
-
-                {cleandays.length === 0 && (
+                {cleandaysCount !== 0
+                    ?
+                    <CleandaysTable
+                        isRenderTopToolbarCustomActions={false}
+                        isShowTitle={false}
+                        handleRowClick={handleRowClick}
+                        getQueryHook={getQueryHook}
+                    />
+                    :
                     <Box sx={{
                         display: 'flex',
                         justifyContent: 'center',
@@ -192,11 +84,11 @@ const ParticipatedCleandaysDialog: React.FC<ParticipatedCleandaysDialogProps> = 
                             Нет посещённых субботников
                         </Typography>
                     </Box>
-                )}
+                }
 
                 <Box sx={{mt: 2}}>
                     <Typography variant="body2">
-                        Всего посещено субботников: <b>{cleandays.length}</b>
+                        Всего посещено субботников: <b>{cleandaysCount}</b>
                     </Typography>
                 </Box>
             </DialogContent>
