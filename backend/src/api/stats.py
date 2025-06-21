@@ -146,7 +146,7 @@ async def get_users_graph(query: Annotated[UserHeatmapQuery, Query()]) -> Heatma
 
 
 @router.get("/cleanday-heatmap")
-async def get_users_graph(query: Annotated[CleandayHeatmapQuery, Query()]) -> HeatmapResponse:
+async def get_cleanday_heatmap(query: Annotated[CleandayHeatmapQuery, Query()]) -> HeatmapResponse:
     res = static_cleanday_repo.get_heatmap(query.x_field, query.y_field, query)
 
     return HeatmapResponse(data=res)
