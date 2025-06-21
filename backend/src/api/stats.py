@@ -2,12 +2,16 @@ import os
 import subprocess
 import tempfile
 import zipfile
+from typing import Annotated
 
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
+from api.cleanday import static_cleanday_repo
+from api.user import static_user_repo
 from auth.service import get_current_user
 from config.environment import ARANGO_ROOT_PASSWORD, DATABASE_NAME
+from data.query import UserHeatmapQuery, HeatmapResponse, CleandayHeatmapQuery
 from repo.client import database
 from repo.model import RepoStats
 from repo.stat_repo import StatRepo
@@ -132,3 +136,17 @@ async def export_db() -> StreamingResponse:
 
     except Exception as e:
         raise HTTPException(detail=str(e), status_code=500)
+
+
+@router.get("/user-heatmap")
+async def get_users_graph(query: Annotated[UserHeatmapQuery, Query()]) -> HeatmapResponse:
+    res = static_user_repo.get_heatmap(query.x_field, query.y_field, query)
+
+    return HeatmapResponse(data=res)
+
+
+@router.get("/cleanday-heatmap")
+async def get_cleanday_heatmap(query: Annotated[CleandayHeatmapQuery, Query()]) -> HeatmapResponse:
+    res = static_cleanday_repo.get_heatmap(query.x_field, query.y_field, query)
+
+    return HeatmapResponse(data=res)

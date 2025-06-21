@@ -386,8 +386,3 @@ async def end_cleanday(cleanday_id: str, results: CleandayResults,
     else:
         trans.commit_transaction()
     return
-
-
-@router.get("/graph")
-async def get_cleanday_graph(attribute_1: str, attribute_2: str):
-    return

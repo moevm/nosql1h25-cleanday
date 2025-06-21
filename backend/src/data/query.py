@@ -179,6 +179,7 @@ class CommentListResponse(BaseModel):
     comments: list[GetComment]
     total_count: int
 
+
 class UpdateUser(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -313,3 +314,57 @@ class GetCommentsParams(PaginationParams):
     text: Optional[str] = None
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None
+
+
+class HeatmapEntry(BaseModel):
+    x_label: str
+    y_label: str
+    count: int
+
+
+class HeatmapResponse(BaseModel):
+    data: list[HeatmapEntry]
+
+
+class UserHeatmapField(StrEnum):
+    first_name = "first_name"
+    last_name = "last_name"
+    login = "login"
+    sex = "sex"
+    city = "city"
+    about_me = "about_me"
+    score = "score"
+    level = "level"
+    cleanday_count = "cleanday_count"
+    organized_count = "organized_count"
+    stat = "stat"
+
+
+class UserHeatmapQuery(GetUsersParams):
+    x_field: UserHeatmapField
+    y_field: UserHeatmapField
+
+
+class CleandayHeatmapField(StrEnum):
+    name = "name"
+    description = "description"
+    participant_count = "participant_count"
+    recommended_count = "recommended_count"
+    city = "city"
+    begin_date = "begin_date"
+    end_date = "end_date"
+    created_at = "created_at"
+    updated_at = "updated_at"
+    organization = "organization"
+    organizer = "organizer"
+    organizer_key = "organizer_key"
+    area = "area"
+    status = "status"
+    tag = "tags"
+    requirement = "requirements"
+    location_address = "location.address"
+
+
+class CleandayHeatmapQuery(GetCleandaysParams):
+    x_field: CleandayHeatmapField
+    y_field: CleandayHeatmapField
