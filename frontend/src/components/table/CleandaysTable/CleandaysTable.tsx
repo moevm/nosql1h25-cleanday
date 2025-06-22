@@ -16,6 +16,7 @@ export interface CleandaysTableProps {
     isShowTitle: boolean,
     handleRowClick: (cleanday: Cleanday) => void,
     getQueryHook: (params: Record<string, unknown>) => UseQueryResult<BasePaginatedModel<Cleanday>>;
+    onPlotButtonClick?: () => void; // Add this prop
 }
 
 const CleandaysTable: React.FC<CleandaysTableProps> = ({
@@ -23,6 +24,7 @@ const CleandaysTable: React.FC<CleandaysTableProps> = ({
                                                            isShowTitle,
                                                            handleRowClick,
                                                            getQueryHook,
+                                                           onPlotButtonClick, // Add this prop
                                                        }: CleandaysTableProps): React.JSX.Element => {
     const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
     const [notificationSeverity, setNotificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
@@ -211,18 +213,16 @@ const CleandaysTable: React.FC<CleandaysTableProps> = ({
         [columnToApiFieldMap, transformFilters]
     );
 
-    const handlePlotButtonClick = () => {
-        setNotificationMessage('График построен успешно!');
-        setNotificationSeverity('success');
-    };
-
+    /**
+     * Рендер кастомных действий в верхней панели инструментов
+     */
     const renderTopToolbarCustomActions = React.useCallback(() => {
         return (
             isRenderTopToolbarCustomActions ? (
                 <Box sx={{display: 'flex', width: '100%', justifyContent: 'flex-start'}}>
                     <Button
                         variant="outlined"
-                        onClick={handlePlotButtonClick}
+                        onClick={onPlotButtonClick} // Use the handler from props
                         sx={{color: 'black', borderColor: 'black'}}
                     >
                         Построить график
@@ -230,7 +230,7 @@ const CleandaysTable: React.FC<CleandaysTableProps> = ({
                 </Box>
             ) : <div/>
         )
-    }, [isRenderTopToolbarCustomActions]);
+    }, [isRenderTopToolbarCustomActions, onPlotButtonClick]);
 
     return (
         <Box>
