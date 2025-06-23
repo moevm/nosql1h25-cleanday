@@ -96,6 +96,11 @@ export interface CommentApiModel extends BaseApiModel {
     author?: UserApiModel;
 }
 
+export interface CreateCommentApiModel {
+    text: string;
+    date: string;
+}
+
 export interface CleandayLogApiModel extends BaseApiModel {
     date: string;
     type: string;
