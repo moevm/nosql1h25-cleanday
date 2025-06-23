@@ -243,11 +243,11 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
         if (newComment.trim()) {
             // Вызываем мутацию для отправки комментария на сервер
             createCommentMutation.mutate(newComment.trim(), {
-                onSuccess: () => {
+                onSuccess: async () => {
                     // Очищаем поле ввода
                     setNewComment('');
                     // Обновляем список комментариев после успешного добавления
-                    refetchComments();
+                    await refetchComments();
                     showNotification('Комментарий успешно добавлен', 'success');
                 },
                 onError: (error) => {

@@ -97,8 +97,7 @@ export interface CommentApiModel extends BaseApiModel {
 }
 
 export interface CreateCommentApiModel {
-    text: string;
-    date: string;
+    comment: string;
 }
 
 export interface CleandayLogApiModel extends BaseApiModel {

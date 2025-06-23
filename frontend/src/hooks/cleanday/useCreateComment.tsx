@@ -4,6 +4,7 @@ import {Comment} from '@models/Comment';
 import {CommentApiModel, CreateCommentApiModel} from '@api/cleanday/models';
 import {commentMapper} from '@utils/cleanday/mapper';
 import {CREATE_CLEANDAY_COMMENT} from '@api/cleanday/endpoints';
+import substituteIdToEndpoint from "@utils/api/substituteIdToEndpoint.ts";
 
 /**
  * Хук для создания нового комментария к субботнику.
@@ -13,10 +14,9 @@ import {CREATE_CLEANDAY_COMMENT} from '@api/cleanday/endpoints';
  */
 export const useCreateComment = (cleandayId: string) => {
     const queryClient = useQueryClient();
-    const endpoint = CREATE_CLEANDAY_COMMENT.replace('{id}', cleandayId);
 
     return usePostTemplate<string, CommentApiModel, Comment>(
-        endpoint,
+        substituteIdToEndpoint(cleandayId, CREATE_CLEANDAY_COMMENT),
         {
             onSuccess: () => {
                 // Инвалидируем именно тот ключ, который используется в useGetCleandayComments
