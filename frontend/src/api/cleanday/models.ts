@@ -118,3 +118,7 @@ export interface GetCleandayLogsParams extends BaseGetParamsModel {
 export interface GetCleandayLogsResponse extends BaseGetResponseModel {
     logs: CleandayLogApiModel[];
 }
+
+export interface GetCommentsResponse extends BaseGetResponseModel {
+    comments: CommentApiModel[];
+}
