@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment, ParticipationType, Location, \
-    City, Image
+    City, Image, Participation
 from repo.model import CreateImage
 
 
@@ -368,3 +368,12 @@ class CleandayHeatmapField(StrEnum):
 class CleandayHeatmapQuery(GetCleandaysParams):
     x_field: CleandayHeatmapField
     y_field: CleandayHeatmapField
+
+
+class CreateComment(BaseModel):
+    text: str
+
+
+class GetMembersResponse(BaseModel):
+    users: list[GetMember]
+    total_count: int

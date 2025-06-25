@@ -9,7 +9,7 @@ from data.entity import CleanDayStatus, CleanDay, User, CleanDayTag, Comment
 from data.query import GetCleandaysParams, CleandayListResponse, GetCleanday, UserListResponse, GetMembersParams, \
     PaginationParams, CleandayLogListResponse, CommentListResponse, UpdateCleanday, CreateCleanday, CreateImages, \
     ImageListResponse, UpdateParticipation, CreateParticipation, CleandayResults, GetCleandayLogsParams, \
-    GetCommentsParams
+    GetCommentsParams, CreateComment, GetMembersResponse
 from repo.cleanday_repo import CleandayRepo
 from repo.client import database
 import repo.model as repo_model
@@ -153,12 +153,12 @@ async def get_cleanday_images(cleanday_id: str) -> ImageListResponse:
 
 
 @router.get("/{cleanday_id}/members")
-async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
+async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> GetMembersResponse:
     page_res = static_cleanday_repo.get_members(cleanday_id, query)
     if page_res is None:
         raise HTTPException(status_code=404, detail="Cleanday not found")
     count, page = page_res
-    return UserListResponse(users=page, total_count=count)
+    return GetMembersResponse(users=page, total_count=count)
 
 
 @router.get("/{cleanday_id}/logs")
@@ -180,10 +180,12 @@ async def get_cleanday_comments(cleanday_id: str, query: Annotated[GetCommentsPa
 
 
 @router.post("/{cleanday_id}/comments")
-async def create_cleanday_comment(cleanday_id: str, comment: str,
+async def create_cleanday_comment(cleanday_id: str, create_comment: CreateComment,
                                   current_user: User = Depends(get_current_user)) -> Comment:
     if static_cleanday_repo.get_raw_by_key(cleanday_id) is None:
         raise HTTPException(status_code=404, detail="Cleanday not found")
+
+    comment = create_comment.text
 
     trans = database.begin_transaction(
         read=['Participation', 'participation_in', 'has_participation'],

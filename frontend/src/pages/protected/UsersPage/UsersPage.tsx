@@ -16,6 +16,7 @@ import {PaginatedTable} from '@components/table/PaginatedTable/PaginatedTable';
 import {transformNumericRangeFilters, transformStringFilters} from '@utils/filterUtils';
 import {createQueryParams} from "@utils/api/createQueryParams.ts";
 import {getNonNegativeNumberFilterProps} from "@utils/table/columns.tsx";
+import UserHeatmapDialog from '@components/dialog/UserHeatmapDialog';
 
 /**
  * UsersPage: Компонент страницы для отображения списка пользователей.
@@ -28,6 +29,13 @@ const UsersPage: React.FC = (): React.JSX.Element => {
     // Состояния для отображения уведомлений
     const [notificationMessage, setNotificationMessage] = React.useState<string | null>(null);
     const [notificationSeverity, setNotificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
+    
+    // State for heatmap dialog
+    const [heatmapDialogOpen, setHeatmapDialogOpen] = React.useState(false);
+    const [currentFilters, setCurrentFilters] = React.useState<Record<string, unknown>>({});
+    
+    // Use a ref to safely store filters without causing re-renders
+    const filtersRef = React.useRef<Record<string, unknown>>({});
 
     // Хук для программной навигации между страницами
     const navigate = useNavigate();
@@ -41,11 +49,12 @@ const UsersPage: React.FC = (): React.JSX.Element => {
 
     /**
      * Обработчик нажатия на кнопку построения графика.
-     * Отображает уведомление об успешном построении графика.
+     * Открывает диалог с тепловой картой пользователей и использует текущие фильтры.
      */
     const handlePlotButtonClick = () => {
-        setNotificationMessage('График построен успешно!');
-        setNotificationSeverity('success');
+        // Update state only when button is clicked, not during render
+        setCurrentFilters({...filtersRef.current});
+        setHeatmapDialogOpen(true);
     };
 
     /**
@@ -57,6 +66,7 @@ const UsersPage: React.FC = (): React.JSX.Element => {
     const handleRowClick = (user: User) => {
         navigate(`/users/${user.id}`);
     };
+    
     /**
      * Функция для трансформации фильтров столбцов в параметры API
      */
@@ -87,11 +97,17 @@ const UsersPage: React.FC = (): React.JSX.Element => {
         const stringParams = transformStringFilters(columnFilters, stringFilterMap);
         const rangeParams = transformNumericRangeFilters(columnFilters, fromFilterMap, toFilterMap);
 
-        return {
+        const transformedFilters = {
             ...stringParams,
             ...rangeParams,
         };
+        
+        // Store in ref instead of setting state during render
+        filtersRef.current = transformedFilters;
+        
+        return transformedFilters;
     }, []);
+    
     /**
      * Определение столбцов таблицы пользователей.
      */
@@ -166,13 +182,25 @@ const UsersPage: React.FC = (): React.JSX.Element => {
         'cleaned': 'stat',
     }), []);
 
-
     /**
      * Обработчик закрытия уведомления.
      */
     const handleNotificationClose = React.useCallback(() => {
         setNotificationMessage(null);
     }, [setNotificationMessage]);
+
+    /**
+     * Функция для получения текущих фильтров, используется для диалога с тепловой картой
+     */
+    const getCurrentFilters = React.useCallback((
+        pagination: MRT_PaginationState,
+        sorting: MRT_SortingState,
+        columnFilters: MRT_ColumnFiltersState
+    ) => {
+        const transformedFilters = transformFilters(columnFilters);
+        setCurrentFilters(transformedFilters);
+        return transformedFilters;
+    }, [transformFilters]);
 
     /**
      * Рендер кастомных действий в верхней панели инструментов
@@ -230,6 +258,13 @@ const UsersPage: React.FC = (): React.JSX.Element => {
                     onClose={handleNotificationClose}
                 />
             )}
+
+            {/* Heatmap Dialog */}
+            <UserHeatmapDialog
+                open={heatmapDialogOpen}
+                onClose={() => setHeatmapDialogOpen(false)}
+                currentFilters={currentFilters}
+            />
         </Box>
     );
 };

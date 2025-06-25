@@ -610,15 +610,28 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Зарегистрировано участников"
-                                        value={cleanday.participantsCount}
+                                        value={cleandayParticipants.length}
                                         InputProps={{readOnly: true}}
                                         size="small"
-                                        onClick={handleParticipantsDialogOpen}
                                     />
                                 </Grid>
 
                                 {/* Кнопка просмотра результатов */}
                                 <Grid item xs={12}>
+                                    {/* Participant status information */}
+                                    <Typography  marginBottom={'10px'} variant="body1" gutterBottom
+                                                sx={{
+                                                    cursor: 'pointer',
+                                                    color: '#3C6C5FFF',
+                                                    textDecoration: 'underline',
+                                                    '&:hover': {
+                                                        color: 'darkblue',
+                                                    },
+                                                }}
+                                                onClick={handleParticipantsDialogOpen}>
+                                        Таблица участников
+                                    </Typography>
+
                                     <Button variant="contained" color="success"
                                             sx={{
                                                 backgroundColor: '#3C6C5F',
@@ -633,47 +646,6 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     >
                                         итоги субботника
                                     </Button>
-
-                                    {/* Информация о статусах участников */}
-                                    <Typography marginTop={'10px'} variant="body1" gutterBottom
-                                                sx={{
-                                                    cursor: 'pointer',
-                                                    color: '#3C6C5FFF',
-                                                    textDecoration: 'underline',
-                                                    '&:hover': {
-                                                        color: 'darkblue',
-                                                    },
-                                                }}
-                                                onClick={handleParticipantsDialogOpen}>
-                                        Точно
-                                        пойдут: {cleandayParticipants.filter(p => p.status === ParticipationStatus.GOING).length} участников
-                                    </Typography>
-                                    <Typography marginTop={'10px'} variant="body1" gutterBottom
-                                                sx={{
-                                                    cursor: 'pointer',
-                                                    color: '#3C6C5FFF',
-                                                    textDecoration: 'underline',
-                                                    '&:hover': {
-                                                        color: 'darkblue',
-                                                    },
-                                                }}
-                                                onClick={handleParticipantsDialogOpen}>
-                                        Опоздают: {cleandayParticipants.filter(p => p.status === ParticipationStatus.LATE).length} участников
-                                    </Typography>
-                                    <Typography marginTop={'10px'} variant="body1" gutterBottom
-                                                sx={{
-                                                    cursor: 'pointer',
-                                                    color: '#3C6C5FFF',
-                                                    textDecoration: 'underline',
-                                                    '&:hover': {
-                                                        color: 'darkblue',
-                                                    },
-                                                }}
-                                                onClick={handleParticipantsDialogOpen}>
-                                        Возможно,
-                                        пойдут: {cleandayParticipants.filter(p => p.status === ParticipationStatus.MAYBE).length} участников
-                                    </Typography>
-
                                     {/* Секция требований участия */}
                                     <Typography variant={'h5'} sx={{mb: '10px', mt: '10px'}}>
                                         Соответствие условиям участия:
@@ -682,7 +654,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                         <List sx={{width: '100%'}}>
                                             {cleanday.requirements.map((req, idx) => (
                                                 <ListItem key={req.id} disablePadding sx={{border: 'medium'}}>
-                                                    <ListItemButton onClick={handleParticipantsDialogOpen}>
+                                                    <ListItemButton>
                                                         <TextField
                                                             fullWidth
                                                             label={"Условие " + (idx + 1)}
