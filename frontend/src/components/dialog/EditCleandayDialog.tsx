@@ -24,7 +24,8 @@ import {TimePicker} from '@mui/x-date-pickers/TimePicker';
 // import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
 // import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs, {Dayjs} from 'dayjs';
-import {CleanDayTag, Location, Cleanday} from "@models/deleteMeLater.ts";
+import {CleandayTag, Cleanday} from "@models/Cleanday.ts";
+import {Location} from "@models/Location.ts";
 import CreateLocationDialog from "./CreateLocationDialog.tsx";
 
 /**
@@ -56,7 +57,7 @@ interface EditCleandayDialogProps {
  * @param {string} organization - Организация, проводящая субботник.
  * @param {number | undefined} area - Площадь уборки (в квадратных метрах).
  * @param {string} description - Описание субботника.
- * @param {CleanDayTag[]} selectedTags - Выбранные теги для субботника.
+ * @param {CleandayTag[]} selectedTags - Выбранные теги для субботника.
  * @param {number | undefined} recommendedCount - Рекомендуемое количество участников.
  * @param {Location | null} selectedLocation - Выбранная локация.
  * @param {string} additionalCondition - Поле для ввода нового условия участия.
@@ -72,7 +73,7 @@ interface FormState {
     organization: string;
     area: number | undefined;
     description: string;
-    selectedTags: CleanDayTag[];
+    selectedTags: CleandayTag[];
     recommendedCount: number | undefined;
     selectedLocation: Location | null;
     additionalCondition: string;
@@ -110,11 +111,11 @@ const getInitialFormState = (cleanday: Cleanday | null, locations: Location[]): 
     }
 
     // Преобразование дат из строк в объекты dayjs
-    const begin = dayjs(cleanday.begin_date);
-    const end = dayjs(cleanday.end_date);
+    const begin = dayjs(cleanday.beginDate);
+    const end = dayjs(cleanday.endDate);
 
     // Поиск локации по ключу
-    const location = locations.find(loc => loc.key === cleanday.location.key) || null;
+    const location = locations.find(loc => loc.id === cleanday.location.id) || null;
 
     // Возвращаем состояние, заполненное данными из переданного субботника
     return {
@@ -127,7 +128,7 @@ const getInitialFormState = (cleanday: Cleanday | null, locations: Location[]): 
         area: cleanday.area,
         description: cleanday.description,
         selectedTags: cleanday.tags,
-        recommendedCount: cleanday.recommended_count,
+        recommendedCount: cleanday.recommendedParticipantsCount,
         selectedLocation: location,
         additionalCondition: '',
         conditions: cleanday.requirements || [],
@@ -265,7 +266,7 @@ const EditCleandayDialog: React.FC<EditCleandayDialogProps> = ({
                 tags: selectedTags,
                 recommended_count: recommendedCount!,
                 location: selectedLocation,
-                requirements: conditions,
+                conditions: conditions,
                 updated_at: new Date().toISOString(),
             };
 
@@ -364,18 +365,18 @@ const EditCleandayDialog: React.FC<EditCleandayDialogProps> = ({
                                     fullWidth
                                     labelId="location-label"
                                     id="location"
-                                    value={selectedLocation ? selectedLocation.key : ''}
+                                    value={selectedLocation ? selectedLocation.id : ''}
                                     label="Локация"
                                     onChange={(e) => {
                                         // Преобразование строкового значения в число и поиск соответствующей локации
                                         const selectedId = parseInt(e.target.value as string);
-                                        const location = locations.find((loc) => loc.key === selectedId) || null;
+                                        const location = locations.find((loc) => loc.id === selectedId) || null;
                                         setFormState(prev => ({...prev, selectedLocation: location}));
                                     }}
                                 >
                                     {/* Отображение списка доступных локаций */}
                                     {locations.map((location) => (
-                                        <MenuItem key={location.key} value={location.key}>
+                                        <MenuItem key={location.id} value={location.id}>
                                             {location.address}
                                         </MenuItem>
                                     ))}
@@ -527,13 +528,13 @@ const EditCleandayDialog: React.FC<EditCleandayDialogProps> = ({
                                 multiple
                                 value={selectedTags}
                                 onChange={(e) => {
-                                    setFormState(prev => ({...prev, selectedTags: e.target.value as CleanDayTag[]}));
+                                    setFormState(prev => ({...prev, selectedTags: e.target.value as CleandayTag[]}));
                                 }}
                                 label="Тэги"
-                                renderValue={(selected) => (selected as CleanDayTag[]).join(', ')}
+                                renderValue={(selected) => (selected as CleandayTag[]).join(', ')}
                             >
                                 {/* Отображение списка доступных тегов */}
-                                {Object.values(CleanDayTag).map((tag) => (
+                                {Object.values(CleandayTag).map((tag) => (
                                     <MenuItem key={tag} value={tag}>
                                         {tag}
                                     </MenuItem>
@@ -598,14 +599,14 @@ const EditCleandayDialog: React.FC<EditCleandayDialogProps> = ({
                     {/* Отображение информации о создании и обновлении субботника */}
                     <Grid item xs={12}>
                         <Typography variant="body2" color="text.secondary" sx={{mt: 2}}>
-                            Дата создания - {cleanday && dayjs(cleanday.created_at).format('DD.MM.YYYY HH:mm')}
+                            Дата создания - {cleanday && dayjs(cleanday.createdAt).format('DD.MM.YYYY HH:mm')}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                             Дата последнего изменения
-                            - {cleanday && dayjs(cleanday.updated_at).format('DD.MM.YYYY HH:mm')}
+                            - {cleanday && dayjs(cleanday.updatedAt).format('DD.MM.YYYY HH:mm')}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            ID: {cleanday?.key}
+                            ID: {cleanday?.id}
                         </Typography>
                     </Grid>
                 </Grid>
@@ -623,9 +624,9 @@ const EditCleandayDialog: React.FC<EditCleandayDialogProps> = ({
                 onSubmit={(locationData) => {
                     const newLocation: Location = {
                         address: locationData.address,
-                        instructions: locationData.additionalInfo,
-                        key: Math.max(...localLocations.map(loc => loc.key)) + 1, // Generate new unique key
-                        city: locationData.city,
+                        instructions: locationData.instructions,
+                        id: Math.max(...localLocations.map(loc => loc.id)) + 1, // Generate new unique key
+                        city: locationData.city_key,
                     };
                     handleNewLocation(newLocation);
                     setLocationDialogOpen(false);
