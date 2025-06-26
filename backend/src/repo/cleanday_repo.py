@@ -208,12 +208,18 @@ class CleandayRepo:
         if self.get_raw_by_key(cleanday_key) is None:
             return None
 
+        cleanday_dict = cleanday.model_dump(exclude_none=True)
+        if 'begin_date' in cleanday_dict:
+            cleanday_dict['begin_date'] = cleanday_dict['begin_date'].isoformat()
+        if 'end_date' in cleanday_dict:
+            cleanday_dict['end_date'] = cleanday_dict['end_date'].isoformat()
+
         cursor = self.db.aql.execute(
             """
             UPDATE @cleanday_key WITH @changes IN CleanDay
             RETURN NEW
             """,
-            bind_vars={"cleanday_key": cleanday_key, "changes": cleanday.model_dump(exclude_none=True)},
+            bind_vars={"cleanday_key": cleanday_key, "changes": cleanday_dict},
         )
 
         result_dict = cursor.next()
