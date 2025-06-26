@@ -923,6 +923,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 open={cancelDialogOpen}
                 onClose={handleCancelCleandayClose}
                 onConfirm={handleCancelCleandayConfirm}
+                cleandayId={id}
             />
 
             <CleandayHistoryDialog
