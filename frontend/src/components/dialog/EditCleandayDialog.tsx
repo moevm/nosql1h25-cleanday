@@ -28,7 +28,7 @@ import {useUpdateCleandayInfo} from "@hooks/cleanday/useUpdateCleandayInfo";
 import {useGetAllLocation} from "@hooks/location/useGetAllLocation";
 import {useCreateLocation} from "@hooks/location/useCreateLocation";
 import Notification from '@components/Notification.tsx';
-import {UpdateCleandayApiModel} from "@api/cleanday/models.ts";
+import {CreateRequirementApiModel, RequirementApiModel, UpdateCleandayApiModel} from "@api/cleanday/models.ts";
 
 /**
  * Интерфейс для пропсов компонента EditCleandayDialog.
@@ -88,6 +88,10 @@ const getInitialFormState = (cleanday: Cleanday | null, locations: Location[]): 
 
     const location = locations.find(loc => loc.id === cleanday.location.id) || null;
 
+    const requirementStrings = cleanday.requirements
+        ? cleanday.requirements.map(req => req.name || req.toString())
+        : [];
+
     return {
         name: cleanday.name,
         beginDateDay: begin.startOf('day'),
@@ -101,7 +105,7 @@ const getInitialFormState = (cleanday: Cleanday | null, locations: Location[]): 
         recommendedCount: cleanday.recommendedParticipantsCount,
         selectedLocation: location,
         additionalCondition: '',
-        conditions: cleanday.requirements || [],
+        conditions: requirementStrings,
         errors: {},
     };
 };
@@ -240,7 +244,7 @@ const EditCleandayDialog: React.FC<EditCleandayDialogProps> = ({
                 description,
                 tags: selectedTags,
                 recommended_count: recommendedCount!,
-                requirements: conditions,
+                requirements: conditions as unknown as RequirementApiModel[],
             };
 
             // Вызываем мутацию обновления субботника
