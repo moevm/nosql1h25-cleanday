@@ -29,6 +29,7 @@ class UserSortField(StrEnum):
 class UpdateCleanDayStatus(StrEnum):
     PLANNED = "Запланирован"
     ONGOING = "Проходит"
+    ENDED = "Завершен"
     CANCELLED = "Отменен"
     RESCHEDULED = "Перенесен"
 
