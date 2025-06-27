@@ -1,6 +1,7 @@
 import {BaseApiModel, BaseGetParamsModel, BaseGetResponseModel} from "@api/BaseApiModel";
 import {LocationApiModel} from "@api/location/models";
 import {UserApiModel} from "@api/user/models";
+import {Requirement} from "@models/Cleanday.ts";
 
 export interface RequirementApiModel extends BaseApiModel {
     name: string;
@@ -84,6 +85,7 @@ export interface UpdateCleandayApiModel {
     recommended_count?: number;
     tags?: Array<string>;
     status?: string;
+    requirements: Array<RequirementApiModel>;
 }
 
 export interface UpdateCleandayApiModelWithKey extends UpdateCleandayApiModel, BaseApiModel {
@@ -94,6 +96,10 @@ export interface CommentApiModel extends BaseApiModel {
     text: string;
     date: string;
     author?: UserApiModel;
+}
+
+export interface CreateCommentApiModel extends BaseApiModel {
+    text: string;
 }
 
 export interface CleandayLogApiModel extends BaseApiModel {
@@ -117,4 +123,8 @@ export interface GetCleandayLogsParams extends BaseGetParamsModel {
 
 export interface GetCleandayLogsResponse extends BaseGetResponseModel {
     logs: CleandayLogApiModel[];
+}
+
+export interface GetCommentsResponse extends BaseGetResponseModel {
+    comments: CommentApiModel[];
 }
