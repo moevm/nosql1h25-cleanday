@@ -30,6 +30,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Notification from '@components/Notification.tsx';
 import {useGetCleandayById} from '@hooks/cleanday/useGetCleandayById.tsx';
 import {CleandayStatus} from '@models/Cleanday.ts';
+import {useGetLocationImages} from "@hooks/location/useGetLocationImages";
 
 import EditCleandayDialog from '@components/dialog/EditCleandayDialog.tsx';
 import ParticipationDialog from "@components/dialog/ParticipationDialog.tsx";
@@ -66,9 +67,20 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
     const [notificationMessage, setNotificationMessage] = useState<string>('');
     const [notificationSeverity, setNotificationSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('success');
 
-    // State for image gallery
+    // Use the new hook to get location images
+    const { data: locationImages = [], isLoading: isLoadingImages, error: imagesError } = 
+        useGetLocationImages(cleanday?.location?.id || '');
+    
+    // Log location ID for debugging purposes
+    React.useEffect(() => {
+        if (cleanday?.location) {
+            console.log('Cleanday location:', cleanday.location);
+            console.log('Fetching images for location ID:', cleanday.location.id);
+        }
+    }, [cleanday]);
+
+    // State for image gallery - now using actual images
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-    const [cleanupPics, setCleanupPics] = useState<{ Images: any[] }>({Images: []});
 
     // State for dialogs
     const [editOpen, setEditOpen] = useState(false);
@@ -242,14 +254,14 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
      * Handlers for photo navigation.
      */
     const handleNextPhoto = () => {
-        if (cleanupPics.Images.length > 0) {
-            setCurrentPhotoIndex((prevIndex) => (prevIndex + 1) % cleanupPics.Images.length);
+        if (locationImages.length > 0) {
+            setCurrentPhotoIndex((prevIndex) => (prevIndex + 1) % locationImages.length);
         }
     };
 
     const handlePrevPhoto = () => {
-        if (cleanupPics.Images.length > 0) {
-            setCurrentPhotoIndex((prevIndex) => (prevIndex - 1 + cleanupPics.Images.length) % cleanupPics.Images.length);
+        if (locationImages.length > 0) {
+            setCurrentPhotoIndex((prevIndex) => (prevIndex - 1 + locationImages.length) % locationImages.length);
         }
     };
 
@@ -405,25 +417,47 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
 
                         {/* Image gallery */}
                         <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-                            {cleanupPics.Images.length > 0 && (
-                                <Box sx={{display: 'flex', alignItems: 'center', mb: 2}}>
-                                    <IconButton onClick={handlePrevPhoto}>
-                                        <ArrowLeft/>
-                                    </IconButton>
-                                    <img
-                                        src={cleanupPics.Images[currentPhotoIndex].photo}
-                                        alt={cleanupPics.Images[currentPhotoIndex].description}
-                                        style={{
-                                            maxWidth: '200px',
-                                            height: '200px',
-                                            margin: '0 16px',
-                                            objectFit: 'cover'
-                                        }}
-                                    />
-                                    <IconButton onClick={handleNextPhoto}>
-                                        <ArrowRight/>
-                                    </IconButton>
+                            {isLoadingImages ? (
+                                <CircularProgress size={40} />
+                            ) : imagesError ? (
+                                <Alert severity="error" sx={{ mb: 2 }}>
+                                    Ошибка загрузки изображений: {imagesError.toString()}
+                                </Alert>
+                            ) : locationImages.length > 0 ? (
+                                <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2}}>
+                                    <Box sx={{display: 'flex', alignItems: 'center'}}>
+                                        <IconButton onClick={handlePrevPhoto}>
+                                            <ArrowLeft/>
+                                        </IconButton>
+                                        <img
+                                            src={locationImages[currentPhotoIndex].photo}
+                                            alt={locationImages[currentPhotoIndex].description}
+                                            style={{
+                                                maxWidth: '200px',
+                                                height: '200px',
+                                                margin: '0 16px',
+                                                objectFit: 'cover'
+                                            }}
+                                        />
+                                        <IconButton onClick={handleNextPhoto}>
+                                            <ArrowRight/>
+                                        </IconButton>
+                                    </Box>
+                                    {/* Image counter below the image */}
+                                    <Typography variant="caption" sx={{ mt: 1 }}>
+                                        {currentPhotoIndex + 1} / {locationImages.length}
+                                    </Typography>
+                                    {/* Display image description */}
+                                    {locationImages[currentPhotoIndex].description && (
+                                        <Typography variant="body2" sx={{ mt: 1, textAlign: 'center' }}>
+                                            {locationImages[currentPhotoIndex].description}
+                                        </Typography>
+                                    )}
                                 </Box>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    Нет фотографий локации (ID: {cleanday?.location?.id || 'не указан'})
+                                </Typography>
                             )}
                         </Box>
 
