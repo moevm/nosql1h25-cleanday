@@ -21,9 +21,6 @@ export const useAddLocationImages = () => {
                 throw new Error('Location ID and files are required');
             }
             
-            console.log('Adding images to location:', locationId);
-            console.log('Number of files:', files.length);
-            
             // Process files to base64
             const images = await Promise.all(
                 files.map(async (file, index) => {
@@ -37,25 +34,18 @@ export const useAddLocationImages = () => {
             
             // Set the URL with the locationId
             const url = substituteIdToEndpoint(locationId, CREATE_LOCATION_IMAGES);
-            console.log('POST request to:', url);
             
             try {
                 // Call the API directly with the URL and processed data
                 const response = await axiosInstance.post<number>(url, { images });
-                console.log('Response status:', response.status);
                 return response.data;
             } catch (error: any) {
-                console.error('Error uploading images:', error.response ? error.response.data : error.message);
                 throw error;
             }
         },
         onSuccess: (data, variables) => {
-            console.log('Successfully uploaded images:', data);
             // Invalidate queries to refetch the images
             queryClient.invalidateQueries({ queryKey: ['locationImages', variables.locationId] });
-        },
-        onError: (error) => {
-            console.error('Error in mutation:', error);
         }
     });
 };

@@ -71,14 +71,6 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
     const { data: locationImages = [], isLoading: isLoadingImages, error: imagesError } = 
         useGetLocationImages(cleanday?.location?.id || '');
     
-    // Log location ID for debugging purposes
-    React.useEffect(() => {
-        if (cleanday?.location) {
-            console.log('Cleanday location:', cleanday.location);
-            console.log('Fetching images for location ID:', cleanday.location.id);
-        }
-    }, [cleanday]);
-
     // State for image gallery - now using actual images
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
@@ -222,7 +214,6 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
      * Handler for submitting completion data.
      */
     const handleSubmitCompletionData = (data: CompletionData) => {
-        console.log('Completion Data:', data);
         showNotification('Субботник успешно завершен!', 'success');
         setCompletionDialogOpen(false);
     };
@@ -456,7 +447,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                 </Box>
                             ) : (
                                 <Typography variant="body2" color="text.secondary">
-                                    Нет фотографий локации (ID: {cleanday?.location?.id || 'не указан'})
+                                    Нет фотографий локации
                                 </Typography>
                             )}
                         </Box>

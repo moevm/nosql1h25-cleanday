@@ -132,25 +132,18 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                     city_key: city ? city.id : '',
                 };
                 
-                console.log('Creating location with data:', locationData);
-                
                 // Сначала создаем локацию
                 const createdLocation = await createLocationMutation.mutateAsync(locationData);
                 
-                console.log('Location created successfully:', createdLocation);
-                
                 // Если есть изображения и локация успешно создана, добавляем их
                 if (images.length > 0 && createdLocation?.id) {
-                    console.log('Adding images to location ID:', createdLocation.id);
                     try {
                         await addLocationImagesMutation.mutateAsync({
                             locationId: createdLocation.id,
                             files: images,
                             descriptions: imageDescriptions
                         });
-                        console.log('Images added successfully');
                     } catch (imageError) {
-                        console.error('Failed to upload images:', imageError);
                         setFileError('Локация создана, но произошла ошибка при загрузке изображений.');
                         // Continue anyway since the location was created
                     }
@@ -162,7 +155,6 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                 // Закрываем диалог 
                 handleClose();
             } catch (error) {
-                console.error('Error creating location:', error);
                 setFileError('Произошла ошибка при создании локации. Пожалуйста, попробуйте снова.');
             } finally {
                 setIsSubmitting(false);
