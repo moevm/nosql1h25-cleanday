@@ -653,7 +653,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                         label="Зарегистрировано участников"
                                         value={isMembersLoading ? 'Загрузка...' : 
                                                membersError ? 'Ошибка загрузки' : 
-                                               (membersData?.contents?.length || 0)}
+                                               String(membersData?.contents?.length || 0)}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
