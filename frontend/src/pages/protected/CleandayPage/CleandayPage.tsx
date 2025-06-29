@@ -43,6 +43,7 @@ import ViewCleandayResultsDialog from '@components/dialog/ViewCleandayResultsDia
 import CancelCleandayDialog from '@/components/dialog/CancelCleandayDialog';
 import CleandayHistoryDialog, {CleanDayHistoryEntry} from '@/components/dialog/CleandayHistoryDialog';
 import CleandayParticipantsDialog, {CleandayParticipant} from '@/components/dialog/CleandayParticipantsDialog';
+import {useGetCleandayMembers} from '@hooks/cleanday/useGetCleandayMembers.tsx';
 
 // Temporary mock data until all API endpoints are implemented
 import {
@@ -69,6 +70,20 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
         size: 100,
         sort: 'date,desc' // Сортировка комментариев по дате (новые сверху)
     };
+    
+    // Параметры для получения участников
+    const membersParams = {
+        page: 0,
+        size: 100,
+        sort: 'firstName,asc' // Сортировка участников по имени
+    };
+    
+    // Используем новый хук для получения участников субботника
+    const {
+        data: membersData,
+        isLoading: isMembersLoading,
+        error: membersError
+    } = useGetCleandayMembers(id, membersParams);
 
     // Запрос комментариев с сервера
     const {
@@ -636,7 +651,9 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Зарегистрировано участников"
-                                        value={cleandayParticipants.length}
+                                        value={isMembersLoading ? 'Загрузка...' : 
+                                               membersError ? 'Ошибка загрузки' : 
+                                               (membersData?.contents?.length || 0)}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
@@ -963,7 +980,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 open={participantsDialogOpen}
                 onClose={handleParticipantsDialogClose}
                 cleandayName={cleanday.name}
-                participants={cleandayParticipants}
+                participants={membersData?.contents || []}
             />
 
             {/* Компонент уведомлений */}
