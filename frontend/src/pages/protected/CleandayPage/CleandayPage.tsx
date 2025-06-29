@@ -1,12 +1,10 @@
 import './CleandayPage.css';
 
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState} from 'react';
 import {Link, useParams} from "react-router-dom";
 import {useGetCleandayById} from '@hooks/cleanday/useGetCleandayById.tsx';
 import {useGetCleandayComments} from '@hooks/cleanday/useGetCleandayComments.tsx';
 import {useCreateComment} from '@hooks/cleanday/useCreateComment.tsx';
-import {useUpdateCleandayInfo} from '@hooks/cleanday/useUpdateCleandayInfo';
-
 import {
     Box,
     Button,
@@ -34,7 +32,8 @@ import ArrowRight from '@mui/icons-material/ArrowRight';
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 import Notification from '@components/Notification.tsx';
-import {Cleanday, CleandayStatus} from '@models/Cleanday.ts';
+import {CleandayStatus} from '@models/Cleanday.ts';
+import {useGetLocationImages} from "@hooks/location/useGetLocationImages";
 import {Comment} from '@models/Comment.ts';
 
 import EditCleandayDialog from '@components/dialog/EditCleandayDialog.tsx';
@@ -54,7 +53,6 @@ import {
     CompletionData,
     CleandayResults
 } from "@models/deleteMeLater.ts";
-import {RequirementApiModel} from "@api/cleanday/models.ts";
 
 /**
  * CleandayPage: Компонент для отображения подробной информации о субботнике.
@@ -83,9 +81,6 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
     // Инициализация хука для создания комментариев
     const createCommentMutation = useCreateComment(id);
 
-    // Хук для обновления информации о субботнике
-    const {mutate: updateCleandayStatus} = useUpdateCleandayInfo(id);
-
     // State для комментариев и формы нового комментария
     const [newComment, setNewComment] = useState('');
 
@@ -93,9 +88,12 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
     const [notificationMessage, setNotificationMessage] = useState<string>('');
     const [notificationSeverity, setNotificationSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('success');
 
+    // Use the new hook to get location images
+    const { data: locationImages = [], isLoading: isLoadingImages, error: imagesError } = 
+        useGetLocationImages(cleanday?.location?.id || '');
+
     // State для галереи изображений
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-    const [cleanupPics, setCleanupPics] = useState<{ Images: any[] }>({Images: []});
 
     // State для диалогов
     const [editOpen, setEditOpen] = useState(false);
@@ -172,14 +170,6 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
     ]);
 
     /**
-     * Обработчик закрытия уведомления.
-     */
-    const handleNotificationClose = React.useCallback(() => {
-        setNotificationMessage('');
-    }, [setNotificationMessage]);
-
-
-    /**
      * Функция для отображения уведомления.
      */
     const showNotification = React.useCallback((message: string, severity: 'success' | 'info' | 'warning' | 'error') => {
@@ -188,108 +178,22 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
     }, [setNotificationMessage, setNotificationSeverity]);
 
     /**
-     * Функция для определения текущего статуса субботника на основе дат
+     * Обработчик закрытия уведомления.
      */
-    const determineCurrentStatus = useCallback((cleandayData: Cleanday | undefined): CleandayStatus => {
-        if (!cleandayData) return CleandayStatus.planned;
+    const handleNotificationClose = React.useCallback(() => {
+        setNotificationMessage('');
+    }, [setNotificationMessage]);
 
-        const now = new Date();
-
-        // Если субботник уже отменен или перенесен, сохраняем этот статус
-        if (cleandayData.status === CleandayStatus.cancelled || cleandayData.status === CleandayStatus.rescheduled) {
-            return cleandayData.status;
-        }
-
-        // Проверка времени относительно дат начала и окончания
-        if (now >= cleandayData.endDate) {
-            return CleandayStatus.onGoing;
-        } else if (now >= cleandayData.beginDate) {
-            return CleandayStatus.onGoing; // После даты начала, но до окончания - "проходит"
-        } else {
-            return CleandayStatus.planned; // До даты начала - "запланирован"
-        }
-    }, []);
-
-    // Эффект для проверки и обновления статуса субботника
-    useEffect(() => {
-        if (!cleanday) return;
-
-        const currentStatus = determineCurrentStatus(cleanday);
-
-        // Обновляем статус только если он отличается от текущего
-        if (currentStatus !== cleanday.status) {
-            console.log(`Обновление статуса субботника с ${cleanday.status} на ${currentStatus}`);
-
-            updateCleandayStatus({
-                ...cleanday,
-                status: currentStatus,
-                // Обязательные поля в соответствии с API
-                requirements: cleanday.requirements as unknown as RequirementApiModel[],
-            }, {
-                onSuccess: () => {
-                    showNotification(`Статус субботника обновлен на "${currentStatus}"`, 'success');
-                },
-                onError: (error) => {
-                    console.error('Ошибка при обновлении статуса субботника:', error);
-                }
-            });
-        }
-
-        // Устанавливаем интервал для периодической проверки статуса
-        const intervalId = setInterval(() => {
-            if (cleanday) {
-                const updatedStatus = determineCurrentStatus(cleanday);
-                if (updatedStatus !== cleanday.status) {
-                    updateCleandayStatus({
-                        ...cleanday,
-                        status: updatedStatus,
-                        requirements: cleanday.requirements as unknown as RequirementApiModel[]
-                    });
-                }
-            }
-        }, 60000); // Проверка каждую минуту
-
-        return () => clearInterval(intervalId);
-    }, [cleanday, determineCurrentStatus, updateCleandayStatus, showNotification]);
-
-    // Другие хуки и логика...
-
-    // Затем обработка состояний загрузки и ошибок
-    if (isLoading) {
-        return (
-            <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh'}}>
-                <CircularProgress/>
-            </Box>
-        );
-    }
-
-    // Обработка состояния ошибки
-    if (error || !cleanday) {
-        return (
-            <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh'}}>
-                <Alert severity="error">
-                    Произошла ошибка при загрузке данных о субботнике.
-                    Пожалуйста, попробуйте позже или вернитесь к списку субботников.
-                </Alert>
-                <Button
-                    variant="contained"
-                    component={Link}
-                    to="/cleandays"
-                    sx={{mt: 2, ml: 2}}
-                >
-                    К списку субботников
-                </Button>
-            </Box>
-        );
-    }
-
+    /**
+     * Обработчики для диалога редактирования.
+     */
     const handleEditOpen = () => setEditOpen(true);
     const handleEditClose = () => setEditOpen(false);
 
     /**
      * Обработчик сохранения изменений субботника.
      */
-    const handleEditSave = () => {
+    const handleEditSave = (updatedCleanday: any) => {
         // Будет заменено на реальный API-запрос
         setEditOpen(false);
         showNotification('Изменения сохранены', 'success');
@@ -331,7 +235,6 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
      * Обработчик отправки данных о завершении.
      */
     const handleSubmitCompletionData = (data: CompletionData) => {
-        console.log('Completion Data:', data);
         showNotification('Субботник успешно завершен!', 'success');
         setCompletionDialogOpen(false);
     };
@@ -374,14 +277,14 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
      * Обработчики для навигации по фото.
      */
     const handleNextPhoto = () => {
-        if (cleanupPics.Images.length > 0) {
-            setCurrentPhotoIndex((prevIndex) => (prevIndex + 1) % cleanupPics.Images.length);
+        if (locationImages.length > 0) {
+            setCurrentPhotoIndex((prevIndex) => (prevIndex + 1) % locationImages.length);
         }
     };
 
     const handlePrevPhoto = () => {
-        if (cleanupPics.Images.length > 0) {
-            setCurrentPhotoIndex((prevIndex) => (prevIndex - 1 + cleanupPics.Images.length) % cleanupPics.Images.length);
+        if (locationImages.length > 0) {
+            setCurrentPhotoIndex((prevIndex) => (prevIndex - 1 + locationImages.length) % locationImages.length);
         }
     };
 
@@ -537,25 +440,47 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
 
                         {/* Галерея изображений */}
                         <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-                            {cleanupPics.Images.length > 0 && (
-                                <Box sx={{display: 'flex', alignItems: 'center', mb: 2}}>
-                                    <IconButton onClick={handlePrevPhoto}>
-                                        <ArrowLeft/>
-                                    </IconButton>
-                                    <img
-                                        src={cleanupPics.Images[currentPhotoIndex].photo}
-                                        alt={cleanupPics.Images[currentPhotoIndex].description}
-                                        style={{
-                                            maxWidth: '200px',
-                                            height: '200px',
-                                            margin: '0 16px',
-                                            objectFit: 'cover'
-                                        }}
-                                    />
-                                    <IconButton onClick={handleNextPhoto}>
-                                        <ArrowRight/>
-                                    </IconButton>
+                            {isLoadingImages ? (
+                                <CircularProgress size={40} />
+                            ) : imagesError ? (
+                                <Alert severity="error" sx={{ mb: 2 }}>
+                                    Ошибка загрузки изображений: {imagesError.toString()}
+                                </Alert>
+                            ) : locationImages.length > 0 ? (
+                                <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2}}>
+                                    <Box sx={{display: 'flex', alignItems: 'center'}}>
+                                        <IconButton onClick={handlePrevPhoto}>
+                                            <ArrowLeft/>
+                                        </IconButton>
+                                        <img
+                                            src={locationImages[currentPhotoIndex].photo}
+                                            alt={locationImages[currentPhotoIndex].description}
+                                            style={{
+                                                maxWidth: '200px',
+                                                height: '200px',
+                                                margin: '0 16px',
+                                                objectFit: 'cover'
+                                            }}
+                                        />
+                                        <IconButton onClick={handleNextPhoto}>
+                                            <ArrowRight/>
+                                        </IconButton>
+                                    </Box>
+                                    {/* Image counter below the image */}
+                                    <Typography variant="caption" sx={{ mt: 1 }}>
+                                        {currentPhotoIndex + 1} / {locationImages.length}
+                                    </Typography>
+                                    {/* Display image description */}
+                                    {locationImages[currentPhotoIndex].description && (
+                                        <Typography variant="body2" sx={{ mt: 1, textAlign: 'center' }}>
+                                            {locationImages[currentPhotoIndex].description}
+                                        </Typography>
+                                    )}
                                 </Box>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    Нет фотографий локации
+                                </Typography>
                             )}
                         </Box>
 
@@ -719,7 +644,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                 {/* Кнопка просмотра результатов */}
                                 <Grid item xs={12}>
                                     {/* Participant status information */}
-                                    <Typography marginBottom={'10px'} variant="body1" gutterBottom
+                                    <Typography  marginBottom={'10px'} variant="body1" gutterBottom
                                                 sx={{
                                                     cursor: 'pointer',
                                                     color: '#3C6C5FFF',
@@ -904,7 +829,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                 >
                                     {createCommentMutation.isPending ?
                                         <CircularProgress size={24}/> :
-                                        <SendIcon/>
+                                        <SendIcon />
                                     }
                                 </IconButton>
                             </Box>
@@ -932,12 +857,12 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                         {commentsData?.contents?.map((comment: Comment) => (
                                             <React.Fragment key={comment.id}>
                                                 <ListItem alignItems="flex-start" sx={{py: 1}}>
-                                                    <Box sx={{display: 'flex', width: '100%'}}>
+                                                    <Box sx={{ display: 'flex', width: '100%' }}>
                                                         {comment.author && (
                                                             <Avatar
                                                                 alt={comment.author.login || 'Аноним'}
                                                                 src={comment.author.avatarUrl}
-                                                                sx={{mr: 2, bgcolor: '#3C6C5F'}}
+                                                                sx={{ mr: 2, bgcolor: '#3C6C5F' }}
                                                             >
                                                                 {(comment.author.login || 'A')[0].toUpperCase()}
                                                             </Avatar>
@@ -1023,7 +948,6 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 open={cancelDialogOpen}
                 onClose={handleCancelCleandayClose}
                 onConfirm={handleCancelCleandayConfirm}
-                cleandayId={id}
             />
 
             <CleandayHistoryDialog

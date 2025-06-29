@@ -21,6 +21,8 @@ import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import { City } from "@models/City";
 import { CreateLocationApiModel } from "@api/location/models";
 import { useGetAllCities } from "@hooks/city/useGetAllCities";
+import { useCreateLocation } from "@hooks/location/useCreateLocation";
+import { useAddLocationImages } from "@hooks/location/useAddLocationImages";
 
 // Максимальный размер файла (3 МБ)
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
@@ -29,12 +31,12 @@ const MAX_FILE_SIZE = 3 * 1024 * 1024;
 const ACCEPTED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 
 /**
- * Интерфейс для пропсов компонента CreateLocationDialog
+ • Интерфейс для пропсов компонента CreateLocationDialog
  */
 interface CreateLocationDialogProps {
     open: boolean;
     onClose: () => void;
-    onSubmit: (locationData: CreateLocationApiModel) => void;
+    onSubmit: (createdLocation: Location) => void;  // Changed from CreateLocationApiModel to Location
 }
 
 /**
@@ -49,6 +51,10 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
     onClose,
     onSubmit,
 }: CreateLocationDialogProps): React.JSX.Element => {
+    // Используем хуки для создания локации и добавления изображений
+    const createLocationMutation = useCreateLocation();
+    const addLocationImagesMutation = useAddLocationImages();
+    
     // Используем хук для получения списка городов
     const { data: cities = [], isLoading: isLoadingCities, error: citiesError } = useGetAllCities();
     
@@ -61,9 +67,14 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
     const [fileError, setFileError] = useState<string | null>(null);
+    // Состояние для отслеживания процесса создания
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     // Ref для скрытого input загрузки файлов
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Add state for image descriptions
+    const [imageDescriptions, setImageDescriptions] = useState<string[]>([]);
 
     /**
      * Функция для валидации формы
@@ -109,14 +120,45 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
     /**
      * Обработчик отправки формы
      */
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (validateForm()) {
-            const locationData: CreateLocationApiModel = {
-                address: address.trim(),
-                instructions: additionalInfo.trim(),
-                city_key: city ? city.id : '',
-            };
-            onSubmit(locationData);
+            setIsSubmitting(true);
+            setFileError(null);
+            
+            try {
+                const locationData: CreateLocationApiModel = {
+                    address: address.trim(),
+                    instructions: additionalInfo.trim(),
+                    city_key: city ? city.id : '',
+                };
+                
+                // Сначала создаем локацию
+                const createdLocation = await createLocationMutation.mutateAsync(locationData);
+                
+                // Если есть изображения и локация успешно создана, добавляем их
+                if (images.length > 0 && createdLocation?.id) {
+                    try {
+                        await addLocationImagesMutation.mutateAsync({
+                            locationId: createdLocation.id,
+                            files: images,
+                            descriptions: imageDescriptions
+                        });
+                    } catch (imageError) {
+                        setFileError('Локация создана, но произошла ошибка при загрузке изображений.');
+                        // Continue anyway since the location was created
+                    }
+                }
+                
+                // Вызываем колбэк onSubmit с созданной локацией вместо данных формы
+                onSubmit(createdLocation);
+                
+                // Закрываем диалог 
+                handleClose();
+            } catch (error) {
+                setFileError('Произошла ошибка при создании локации. Пожалуйста, попробуйте снова.');
+            } finally {
+                setIsSubmitting(false);
+            }
         }
     };
 
@@ -130,6 +172,7 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
         setAddress('');
         setAdditionalInfo('');
         setImages([]);
+        setImageDescriptions([]);
         setErrors({});
         setCurrentImageIndex(0);
         onClose();
@@ -166,6 +209,11 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
             // Добавляем только валидные файлы
             if (validFiles.length > 0) {
                 setImages(prevImages => [...prevImages, ...validFiles]);
+                // Add empty descriptions for new images
+                setImageDescriptions(prevDescriptions => [
+                    ...prevDescriptions, 
+                    ...validFiles.map(() => '')
+                ]);
             }
         }
 
@@ -184,13 +232,20 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
             newImages.splice(index, 1);
             return newImages;
         });
+        
+        // Also remove corresponding description
+        setImageDescriptions(prevDescriptions => {
+            const newDescriptions = [...prevDescriptions];
+            newDescriptions.splice(index, 1);
+            return newDescriptions;
+        });
 
         // Корректировка индекса текущего изображения
         if (currentImageIndex >= images.length - 1) {
             setCurrentImageIndex(Math.max(0, images.length - 2));
         }
     };
-
+    
     /**
      * Перейти к следующему изображению в карусели
      */
@@ -207,6 +262,17 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
         if (images.length > 0) {
             setCurrentImageIndex(prev => (prev - 1 + images.length) % images.length);
         }
+    };
+    
+    /**
+     * Обработчик изменения описания изображения
+     */
+    const handleDescriptionChange = (index: number, value: string) => {
+        setImageDescriptions(prevDescriptions => {
+            const newDescriptions = [...prevDescriptions];
+            newDescriptions[index] = value;
+            return newDescriptions;
+        });
     };
 
     return (
@@ -302,6 +368,16 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                                             }}
                                         />
                                     </Box>
+                                    
+                                    {/* Add description field for current image */}
+                                    <TextField
+                                        fullWidth
+                                        label="Описание изображения"
+                                        value={imageDescriptions[currentImageIndex] || ''}
+                                        onChange={(e) => handleDescriptionChange(currentImageIndex, e.target.value)}
+                                        placeholder="Введите описание изображения"
+                                        sx={{ mb: 2 }}
+                                    />
 
                                     {/* Навигация карусели */}
                                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
@@ -385,13 +461,15 @@ const CreateLocationDialog: React.FC<CreateLocationDialogProps> = ({
                     onClick={handleSubmit}
                     color="success"
                     variant="contained"
+                    disabled={isSubmitting}
                 >
-                    Создать
+                    {isSubmitting ? <CircularProgress size={24} /> : 'Создать'}
                 </Button>
                 <Button
                     onClick={handleClose}
                     color="primary"
                     variant="text"
+                    disabled={isSubmitting}
                 >
                     Отмена
                 </Button>

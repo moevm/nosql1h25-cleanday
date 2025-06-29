@@ -607,19 +607,20 @@ const CreateCleandayDialog: React.FC<CreateCleandayDialogProps> = ({
             <CreateLocationDialog
                 open={isLocationDialogOpen}
                 onClose={() => setLocationDialogOpen(false)}
-                onSubmit={async (locationData: CreateLocationApiModel) => {
+                onSubmit={async (newLocation) => {
+                    // No need to create location again, it's already created
                     try {
-                        const newLocation = await createLocation(locationData);
-                        // После создания локации обновляем список локаций
+                        // Just refetch locations to update the list
                         await refetchLocations();
-                        // Автоматически выбираем созданную локацию
+                        
+                        // Automatically select the created location
                         setFormState(prev => ({
                             ...prev,
                             selectedLocation: newLocation,
                         }));
                         setLocationDialogOpen(false);
                     } catch (error) {
-                        console.error('Failed to create location:', error);
+                        console.error('Failed to update locations:', error);
                     }
                 }}
             />
