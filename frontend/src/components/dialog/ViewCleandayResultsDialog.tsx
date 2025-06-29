@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -12,13 +12,14 @@ import {
     Paper,
     Divider,
     Grid,
+    CircularProgress,
+    Alert
 } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import {CleandayResults} from "@models/deleteMeLater.ts";
-
-
+import { CleandayResults } from "@models/deleteMeLater.ts";
+import { useGetCleandayImages } from "@hooks/cleanday/useGetCleandayImages.tsx";
 
 /**
  * Интерфейс для пропсов компонента ViewCleandayResultsDialog
@@ -43,13 +44,16 @@ const ViewCleandayResultsDialog: React.FC<ViewCleandayResultsDialogProps> = ({
 }: ViewCleandayResultsDialogProps): React.JSX.Element => {
     // Состояние для отслеживания текущего индекса фото в карусели
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number>(0);
+    
+    // Fetch cleanday images using the API
+    const { data: imageData, isLoading, error } = useGetCleandayImages(results.id.toString());
 
     /**
      * Перейти к следующему изображению в карусели
      */
     const handleNextPhoto = () => {
-        if (results.photos.length > 0) {
-            setCurrentPhotoIndex(prev => (prev + 1) % results.photos.length);
+        if (imageData?.contents?.length > 0) {
+            setCurrentPhotoIndex(prev => (prev + 1) % imageData.contents.length);
         }
     };
 
@@ -57,9 +61,27 @@ const ViewCleandayResultsDialog: React.FC<ViewCleandayResultsDialogProps> = ({
      * Перейти к предыдущему изображению в карусели
      */
     const handlePrevPhoto = () => {
-        if (results.photos.length > 0) {
-            setCurrentPhotoIndex(prev => (prev - 1 + results.photos.length) % results.photos.length);
+        if (imageData?.contents?.length > 0) {
+            setCurrentPhotoIndex(prev => (prev - 1 + imageData.contents.length) % imageData.contents.length);
         }
+    };
+
+    // Reset the index when images are loaded or dialog opens
+    useEffect(() => {
+        if (open) {
+            setCurrentPhotoIndex(0);
+        }
+    }, [open, imageData]);
+
+    // Helper function to properly format base64 image
+    const getImageSrc = (photoData: string): string => {
+        // Check if the string already includes the data:image prefix
+        if (photoData.startsWith('data:image')) {
+            return photoData;
+        }
+        
+        // Otherwise, add the prefix for proper base64 image display
+        return `data:image/jpeg;base64,${photoData}`;
     };
 
     return (
@@ -126,7 +148,13 @@ const ViewCleandayResultsDialog: React.FC<ViewCleandayResultsDialogProps> = ({
                             Фотографии
                         </Typography>
                         
-                        {results.photos.length > 0 ? (
+                        {isLoading ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                                <CircularProgress />
+                            </Box>
+                        ) : error ? (
+                            <Alert severity="error">Ошибка загрузки изображений</Alert>
+                        ) : imageData?.contents && imageData.contents.length > 0 ? (
                             <Paper variant="outlined" sx={{ p: 2 }}>
                                 {/* Карусель фотографий */}
                                 <Box sx={{ width: '100%', position: 'relative' }}>
@@ -141,7 +169,8 @@ const ViewCleandayResultsDialog: React.FC<ViewCleandayResultsDialogProps> = ({
                                         }}
                                     >
                                         <img
-                                            src={results.photos[currentPhotoIndex]}
+                                            // Use the helper function to ensure proper base64 formatting
+                                            src={getImageSrc(imageData.contents[currentPhotoIndex].photo)}
                                             alt={`Фото ${currentPhotoIndex + 1}`}
                                             style={{ 
                                                 maxHeight: '100%', 
@@ -150,16 +179,23 @@ const ViewCleandayResultsDialog: React.FC<ViewCleandayResultsDialogProps> = ({
                                             }}
                                         />
                                     </Box>
+                                    
+                                    {/* Display image description if available */}
+                                    {imageData.contents[currentPhotoIndex].description && (
+                                        <Typography variant="body2" align="center" sx={{ mb: 2 }}>
+                                            {imageData.contents[currentPhotoIndex].description}
+                                        </Typography>
+                                    )}
 
                                     {/* Навигация карусели */}
                                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
-                                        <IconButton onClick={handlePrevPhoto} disabled={results.photos.length <= 1}>
+                                        <IconButton onClick={handlePrevPhoto} disabled={imageData.contents.length <= 1}>
                                             <NavigateBeforeIcon />
                                         </IconButton>
                                         <Typography>
-                                            {currentPhotoIndex + 1} / {results.photos.length}
+                                            {currentPhotoIndex + 1} / {imageData.contents.length}
                                         </Typography>
-                                        <IconButton onClick={handleNextPhoto} disabled={results.photos.length <= 1}>
+                                        <IconButton onClick={handleNextPhoto} disabled={imageData.contents.length <= 1}>
                                             <NavigateNextIcon />
                                         </IconButton>
                                     </Box>
