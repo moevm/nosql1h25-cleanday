@@ -567,11 +567,11 @@ const EditCleandayDialog: React.FC<EditCleandayDialogProps> = ({
                 <CreateLocationDialog
                     open={isLocationDialogOpen}
                     onClose={() => setLocationDialogOpen(false)}
-                    onSubmit={async (locationData) => {
+                    onSubmit={async (newLocation) => {
                         try {
-                            const newLocation = await createLocation(locationData);
                             // После создания локации обновляем список локаций
                             await refetchLocations();
+                            
                             // Автоматически выбираем созданную локацию
                             setFormState(prev => ({
                                 ...prev,
@@ -579,7 +579,7 @@ const EditCleandayDialog: React.FC<EditCleandayDialogProps> = ({
                             }));
                             setLocationDialogOpen(false);
                         } catch (error) {
-                            console.error('Failed to create location:', error);
+                            console.error('Failed to update locations:', error);
                         }
                     }}
                 />

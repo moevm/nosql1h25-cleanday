@@ -106,13 +106,14 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
 
     // Временные тестовые данные для результатов
     const mockCleandayResults: CleandayResults = {
-        id: 1,
+        id: parseInt(cleanday?.id || '0'), // Convert string ID to number for the mock interface
         name: cleanday?.name || 'Уборка',
         date: cleanday?.beginDate?.toLocaleDateString() || '',
         location: cleanday?.location?.address || '',
         results: cleanday?.results || ['Собрано 10 мешков мусора'],
-        photos: ['/img_1.png', '/img_2.png', '/img_3.png'],
         participantsCount: cleanday?.participantsCount || 0,
+        // Remove the static photo array since we'll fetch from API now
+        photos: [] 
     };
 
     // Данные для требований к участию
@@ -934,6 +935,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 open={completionDialogOpen}
                 onClose={handleCloseCompletionDialog}
                 onSubmit={handleSubmitCompletionData}
+                cleandayId={cleanday?.id} // Add this prop
                 cleandayName={cleanday.name}
                 participants={participants}
             />
