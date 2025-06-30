@@ -122,8 +122,7 @@ const EditUserProfileDialog: React.FC<UserProfileEditDialogProps> = ({
         // Basic required fields validation
         if (!first_name) newErrors.first_name = 'Введите имя';
         if (!last_name) newErrors.last_name = 'Введите фамилию';
-        if (!login) newErrors.login = 'Введите логин';
-        if (login && login.length < 3) newErrors.login = 'Логин должен содержать не менее 3 символов';
+        // Удаляем проверки для логина, так как поле только для чтения
         
         // Password validation - only check if user attempts to change it
         if (password) {
@@ -260,9 +259,9 @@ const EditUserProfileDialog: React.FC<UserProfileEditDialogProps> = ({
      */
     const handleSubmit = () => {
         if (validateForm()) {
-            // Создание объекта с обновленными данными профиля
+            // Создание объекта с обновленными данными профиля (без логина)
             const data: UserProfileEdit = {
-                login,
+                // Удаляем login из отправляемых данных
                 first_name,
                 last_name,
                 city,
@@ -381,10 +380,10 @@ const EditUserProfileDialog: React.FC<UserProfileEditDialogProps> = ({
                             label="Логин"
                             name="login"
                             value={login}
-                            onChange={handleInputChange}
+                            InputProps={{ readOnly: true }}
                             fullWidth
-                            error={!!errors.login}
-                            helperText={errors.login}
+                            // Удаляем обработку ошибок, так как поле только для чтения
+                            helperText="Логин изменить нельзя"
                         />
                     </Grid>
 
