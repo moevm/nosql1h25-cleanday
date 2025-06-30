@@ -950,7 +950,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 onSubmit={handleSubmitCompletionData}
                 cleandayId={cleanday?.id} // Add this prop
                 cleandayName={cleanday.name}
-                participants={participants}
+                organizer={cleanday?.organizer}
             />
 
             <ViewCleandayResultsDialog
