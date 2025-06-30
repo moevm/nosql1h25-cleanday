@@ -9,7 +9,7 @@ from data.entity import CleanDayStatus, CleanDay, User, CleanDayTag, Comment
 from data.query import GetCleandaysParams, CleandayListResponse, GetCleanday, UserListResponse, GetMembersParams, \
     PaginationParams, CleandayLogListResponse, CommentListResponse, UpdateCleanday, CreateCleanday, CreateImages, \
     ImageListResponse, UpdateParticipation, CreateParticipation, CleandayResults, GetCleandayLogsParams, \
-    GetCommentsParams, CreateComment, GetMembersResponse
+    GetCommentsParams, CreateComment, GetMembersResponse, RequirementListResponse
 from repo.cleanday_repo import CleandayRepo
 from repo.client import database
 import repo.model as repo_model
@@ -400,3 +400,15 @@ async def end_cleanday(cleanday_id: str, results: CleandayResults,
     else:
         trans.commit_transaction()
     return
+
+
+@router.get("/{cleanday_id}/requirements")
+async def get_cleanday_requirements(cleanday_id: str) -> RequirementListResponse:
+    """
+    Получение списка требований для конкретного субботника
+    """
+    requirements = static_cleanday_repo.get_raw_requirements(cleanday_id)
+    if requirements is None:
+        raise HTTPException(status_code=404, detail="Cleanday not found")
+    
+    return RequirementListResponse(contents=requirements, total_count=len(requirements))
