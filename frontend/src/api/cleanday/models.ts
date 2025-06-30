@@ -1,7 +1,6 @@
 import {BaseApiModel, BaseGetParamsModel, BaseGetResponseModel} from "@api/BaseApiModel";
 import {LocationApiModel} from "@api/location/models";
 import {UserApiModel} from "@api/user/models";
-import {Requirement} from "@models/Cleanday.ts";
 
 export interface RequirementApiModel extends BaseApiModel {
     name: string;
@@ -127,4 +126,8 @@ export interface GetCleandayLogsResponse extends BaseGetResponseModel {
 
 export interface GetCommentsResponse extends BaseGetResponseModel {
     comments: CommentApiModel[];
+}
+
+export interface CleandayMemberApiModel extends UserApiModel {
+    participation_type: string;
 }
