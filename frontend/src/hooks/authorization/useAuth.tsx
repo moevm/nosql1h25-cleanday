@@ -1,4 +1,4 @@
-import {useContext, useCallback} from 'react';
+import {useContext} from 'react';
 import {AuthContext} from '@contexts/authorization/context'; // Импортируем контекст
 import {AuthContextType} from '@contexts/authorization/types'; // Импортируем тип
 
