@@ -1,10 +1,12 @@
 import './CleandayPage.css';
 
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {Link, useParams} from "react-router-dom";
 import {useGetCleandayById} from '@hooks/cleanday/useGetCleandayById.tsx';
 import {useGetCleandayComments} from '@hooks/cleanday/useGetCleandayComments.tsx';
 import {useCreateComment} from '@hooks/cleanday/useCreateComment.tsx';
+import {useGetMe} from '@hooks/authorization/useGetMe.tsx'; // Добавляем импорт правильного хука
+
 import {
     Box,
     Button,
@@ -50,8 +52,6 @@ import {useGetCleandayLogs} from '@hooks/cleanday/useGetCleandayLogs.tsx';
 import {
     Requirement,
     ParticipationStatus,
-    Participant,
-    ParticipantStatus,
     CompletionData,
     CleandayResults
 } from "@models/deleteMeLater.ts";
@@ -95,6 +95,8 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
         refetch: refetchComments
     } = useGetCleandayComments(id, commentsParams);
 
+    // Используем правильный хук для получения данных текущего пользователя
+    const {data: currentUser} = useGetMe();
     // Инициализация хука для создания комментариев
     const createCommentMutation = useCreateComment(id);
 
@@ -143,11 +145,14 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
     const [participationStatus, setParticipationStatus] = useState<ParticipationStatus>(ParticipationStatus.GOING);
     const [participationSelectedRequirements, setParticipationSelectedRequirements] = useState<number[]>([1]);
 
-    // Участники для диалога завершения
-    const participants: Participant[] = [
-        {id: 1, firstName: 'Иван', lastName: 'Иванов', username: 'ivanov', status: ParticipantStatus.UNKNOWN},
-        {id: 2, firstName: 'Мария', lastName: 'Смирнова', username: 'smirnova', status: ParticipantStatus.UNKNOWN},
-    ];
+    // Проверка, является ли пользователь участником субботника
+    const isUserParticipating = useMemo(() => {
+        if (!membersData?.contents || !currentUser?.id) return false;
+
+        return membersData.contents.some(
+            member => member.id === currentUser.id
+        );
+    }, [membersData?.contents, currentUser?.id]);
 
     // Запрос логов субботника
     const logsParams = {
@@ -942,6 +947,8 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 initialStatus={participationStatus}
                 initialRequirements={participationSelectedRequirements}
                 cleandayName={cleanday.name}
+                cleandayId={cleanday?.id || ''}
+                isAlreadyParticipating={isUserParticipating}
             />
 
             <CleandayCompletionDialog

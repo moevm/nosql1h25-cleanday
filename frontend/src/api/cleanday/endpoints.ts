@@ -18,6 +18,9 @@ export const CREATE_CLEANDAY_COMMENT: string = '/api/cleandays/{id}/comments';
 // Получение субботника по id - GET
 export const GET_CLEANDAY: string = '/api/cleandays/{id}';
 
+// Получение требований к участию в субботнике - GET
+export const GET_CLEANDAY_REQUIREMENTS: string = '/api/cleandays/{id}/requirements';
+
 // Получение массива субботников по id - GET
 //export const GET_CLEANDAYS_BY_ID: string = '';
 

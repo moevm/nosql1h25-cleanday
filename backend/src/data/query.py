@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum, auto
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, Field
 
@@ -377,4 +377,9 @@ class CreateComment(BaseModel):
 
 class GetMembersResponse(BaseModel):
     users: list[GetMember]
+    total_count: int
+
+
+class RequirementListResponse(BaseModel):
+    contents: List[Requirement]
     total_count: int
