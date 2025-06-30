@@ -42,7 +42,6 @@ const UsersPage: React.FC = (): React.JSX.Element => {
 
     // Функция для создания хука запроса пользователей с указанными параметрами
     const getUsersQueryHook = React.useCallback((params: Record<string, unknown>) => {
-        // всё работает как должно, не понимаю почему возникают ошибки от инлайнера
         // eslint-disable-next-line react-hooks/rules-of-hooks
         return useGetUsers(params as GetUsersParams);
     }, []);
