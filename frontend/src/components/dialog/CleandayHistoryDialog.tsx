@@ -6,7 +6,9 @@ import {
     DialogActions,
     Button,
     Box,
-    Typography
+    Typography,
+    CircularProgress,
+    Alert
 } from '@mui/material';
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
 
@@ -26,6 +28,8 @@ interface CleandayHistoryDialogProps {
     onClose: () => void;
     cleandayName: string;
     historyEntries: CleanDayHistoryEntry[];
+    isLoading?: boolean;
+    error?: string;
 }
 
 /**
@@ -39,7 +43,9 @@ const CleandayHistoryDialog: React.FC<CleandayHistoryDialogProps> = ({
     open,
     onClose,
     cleandayName,
-    historyEntries
+    historyEntries,
+    isLoading = false,
+    error
 }: CleandayHistoryDialogProps): React.JSX.Element => {
     // Define table columns
     const columns = React.useMemo<MRT_ColumnDef<CleanDayHistoryEntry>[]>
@@ -138,21 +144,36 @@ const CleandayHistoryDialog: React.FC<CleandayHistoryDialogProps> = ({
             </DialogTitle>
             
             <DialogContent>
-                {/* Remove custom search TextField since we're using MRT's built-in search */}
-                
-                <MaterialReactTable table={table} />
-                
-                {historyEntries.length === 0 && (
+                {isLoading ? (
                     <Box sx={{ 
                         display: 'flex', 
                         justifyContent: 'center', 
                         alignItems: 'center', 
                         p: 4 
                     }}>
-                        <Typography color="text.secondary">
-                            История активности пуста
-                        </Typography>
+                        <CircularProgress />
                     </Box>
+                ) : error ? (
+                    <Alert severity="error">
+                        Ошибка загрузки истории: {error}
+                    </Alert>
+                ) : (
+                    <>
+                        <MaterialReactTable table={table} />
+                        
+                        {historyEntries.length === 0 && (
+                            <Box sx={{ 
+                                display: 'flex', 
+                                justifyContent: 'center', 
+                                alignItems: 'center', 
+                                p: 4 
+                            }}>
+                                <Typography color="text.secondary">
+                                    История активности пуста
+                                </Typography>
+                            </Box>
+                        )}
+                    </>
                 )}
             </DialogContent>
             

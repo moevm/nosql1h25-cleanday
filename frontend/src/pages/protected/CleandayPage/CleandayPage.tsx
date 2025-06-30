@@ -42,8 +42,9 @@ import CleandayCompletionDialog from "@components/dialog/CleandayCompletionDialo
 import ViewCleandayResultsDialog from '@components/dialog/ViewCleandayResultsDialog.tsx';
 import CancelCleandayDialog from '@/components/dialog/CancelCleandayDialog';
 import CleandayHistoryDialog, {CleanDayHistoryEntry} from '@/components/dialog/CleandayHistoryDialog';
-import CleandayParticipantsDialog, {CleandayParticipant} from '@/components/dialog/CleandayParticipantsDialog';
+import CleandayParticipantsDialog from '@/components/dialog/CleandayParticipantsDialog';
 import {useGetCleandayMembers} from '@hooks/cleanday/useGetCleandayMembers.tsx';
+import {useGetCleandayLogs} from '@hooks/cleanday/useGetCleandayLogs.tsx';
 
 // Temporary mock data until all API endpoints are implemented
 import {
@@ -54,6 +55,7 @@ import {
     CompletionData,
     CleandayResults
 } from "@models/deleteMeLater.ts";
+import {SortOrder} from "@api/BaseApiModel.ts";
 
 /**
  * CleandayPage: Компонент для отображения подробной информации о субботнике.
@@ -70,14 +72,14 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
         size: 100,
         sort: 'date,desc' // Сортировка комментариев по дате (новые сверху)
     };
-    
+
     // Параметры для получения участников
     const membersParams = {
         page: 0,
         size: 100,
         sort: 'firstName,asc' // Сортировка участников по имени
     };
-    
+
     // Используем новый хук для получения участников субботника
     const {
         data: membersData,
@@ -104,7 +106,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
     const [notificationSeverity, setNotificationSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('success');
 
     // Use the new hook to get location images
-    const { data: locationImages = [], isLoading: isLoadingImages, error: imagesError } = 
+    const {data: locationImages = [], isLoading: isLoadingImages, error: imagesError} =
         useGetLocationImages(cleanday?.location?.id || '');
 
     // State для галереи изображений
@@ -128,7 +130,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
         results: cleanday?.results || ['Собрано 10 мешков мусора'],
         participantsCount: cleanday?.participantsCount || 0,
         // Remove the static photo array since we'll fetch from API now
-        photos: [] 
+        photos: []
     };
 
     // Данные для требований к участию
@@ -147,43 +149,37 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
         {id: 2, firstName: 'Мария', lastName: 'Смирнова', username: 'smirnova', status: ParticipantStatus.UNKNOWN},
     ];
 
-    // Данные для записей истории
-    const [historyEntries] = useState<CleanDayHistoryEntry[]>([
-        {
-            id: 1,
-            firstName: 'Иван',
-            lastName: 'Иванов',
-            date: '2025-03-10 14:32',
-            action: 'Создание',
-            details: 'Создан субботник "Уборка сквера"'
-        },
-        {
-            id: 2,
-            firstName: 'Петр',
-            lastName: 'Петров',
-            date: '2025-03-10 15:45',
-            action: 'Присоединение',
-            details: 'Пользователь присоединился к субботнику'
-        },
-    ]);
+    // Запрос логов субботника
+    const logsParams = {
+        page: 0,
+        size: 100,
+        sort_by: 'date',  // Сортировка по дате
+        sort_order: SortOrder.desc // Сначала самые новые - lowercase is required
+    };
 
-    // Данные об участниках субботника
-    const [cleandayParticipants] = useState<CleandayParticipant[]>([
-        {
-            id: 1,
-            firstName: 'Иван',
-            lastName: 'Иванов',
-            login: 'ivanov',
-            status: ParticipationStatus.GOING
-        },
-        {
-            id: 2,
-            firstName: 'Мария',
-            lastName: 'Петрова',
-            login: 'petrova',
-            status: ParticipationStatus.GOING
-        },
-    ]);
+    const {
+        data: logsData,
+        isLoading: isLogsLoading,
+        error: logsError
+    } = useGetCleandayLogs(id, logsParams);
+
+    // Преобразование данных логов в формат для CleandayHistoryDialog
+    const historyEntries = React.useMemo(() => {
+        if (!logsData?.contents) return [];
+
+        return logsData.contents.map(log => ({
+            id: log.id,
+            date: new Date(log.date).toLocaleString('ru-RU'),
+            type: log.type,
+            action: log.type,
+            description: log.description,
+            // Исправляем извлечение имени и фамилии, учитывая оба формата именования полей
+            firstName: log.user?.firstName || '',
+            lastName: log.user?.lastName || '',
+            user: log.user?.login || 'Система',
+            details: log.comment?.text || ''
+        } as unknown as CleanDayHistoryEntry));
+    }, [logsData?.contents]);
 
     /**
      * Функция для отображения уведомления.
@@ -457,9 +453,9 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                         {/* Галерея изображений */}
                         <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                             {isLoadingImages ? (
-                                <CircularProgress size={40} />
+                                <CircularProgress size={40}/>
                             ) : imagesError ? (
-                                <Alert severity="error" sx={{ mb: 2 }}>
+                                <Alert severity="error" sx={{mb: 2}}>
                                     Ошибка загрузки изображений: {imagesError.toString()}
                                 </Alert>
                             ) : locationImages.length > 0 ? (
@@ -483,12 +479,12 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                         </IconButton>
                                     </Box>
                                     {/* Image counter below the image */}
-                                    <Typography variant="caption" sx={{ mt: 1 }}>
+                                    <Typography variant="caption" sx={{mt: 1}}>
                                         {currentPhotoIndex + 1} / {locationImages.length}
                                     </Typography>
                                     {/* Display image description */}
                                     {locationImages[currentPhotoIndex].description && (
-                                        <Typography variant="body2" sx={{ mt: 1, textAlign: 'center' }}>
+                                        <Typography variant="body2" sx={{mt: 1, textAlign: 'center'}}>
                                             {locationImages[currentPhotoIndex].description}
                                         </Typography>
                                     )}
@@ -651,9 +647,9 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Зарегистрировано участников"
-                                        value={isMembersLoading ? 'Загрузка...' : 
-                                               membersError ? 'Ошибка загрузки' : 
-                                               String(membersData?.contents?.length || 0)}
+                                        value={isMembersLoading ? 'Загрузка...' :
+                                            membersError ? 'Ошибка загрузки' :
+                                                String(membersData?.contents?.length || 0)}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
@@ -662,7 +658,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                 {/* Кнопка просмотра результатов */}
                                 <Grid item xs={12}>
                                     {/* Participant status information */}
-                                    <Typography  marginBottom={'10px'} variant="body1" gutterBottom
+                                    <Typography marginBottom={'10px'} variant="body1" gutterBottom
                                                 sx={{
                                                     cursor: 'pointer',
                                                     color: '#3C6C5FFF',
@@ -847,7 +843,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                 >
                                     {createCommentMutation.isPending ?
                                         <CircularProgress size={24}/> :
-                                        <SendIcon />
+                                        <SendIcon/>
                                     }
                                 </IconButton>
                             </Box>
@@ -875,12 +871,12 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                         {commentsData?.contents?.map((comment: Comment) => (
                                             <React.Fragment key={comment.id}>
                                                 <ListItem alignItems="flex-start" sx={{py: 1}}>
-                                                    <Box sx={{ display: 'flex', width: '100%' }}>
+                                                    <Box sx={{display: 'flex', width: '100%'}}>
                                                         {comment.author && (
                                                             <Avatar
                                                                 alt={comment.author.login || 'Аноним'}
                                                                 src={comment.author.avatarUrl}
-                                                                sx={{ mr: 2, bgcolor: '#3C6C5F' }}
+                                                                sx={{mr: 2, bgcolor: '#3C6C5F'}}
                                                             >
                                                                 {(comment.author.login || 'A')[0].toUpperCase()}
                                                             </Avatar>
@@ -974,6 +970,8 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 onClose={handleHistoryDialogClose}
                 cleandayName={cleanday.name}
                 historyEntries={historyEntries}
+                isLoading={isLogsLoading}
+                error={logsError ? String(logsError) : undefined}
             />
 
             <CleandayParticipantsDialog
