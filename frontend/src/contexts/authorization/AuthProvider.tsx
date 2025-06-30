@@ -39,10 +39,15 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
     };
 
     const logout = () => {
+        // Clear auth data
         setToken('');
         setUsername('');
         setIsAuthenticated(false);
+        
+        // Remove cookies
         Cookies.remove('access_token');
+        
+        // Navigate to home page
         navigate('/');
     };
 

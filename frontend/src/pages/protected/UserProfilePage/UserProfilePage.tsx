@@ -22,6 +22,7 @@ import {useQueryClient} from "@tanstack/react-query";
 import {fileToBase64} from "@utils/files/fileToBase64";
 import {useGetUserAvatar} from "@hooks/user/useGetUserAvatar";
 import {useGetAllCities} from "@hooks/city/useGetAllCities";
+import { useAuth } from '@hooks/authorization/useAuth'; // Add this import
 
 /**
  * Стили для аватара пользователя.
@@ -105,6 +106,9 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
     const updateUserInfo = useUpdateUserInfo(userId);
     const updateUserAvatar = useUpdateUserAvatar(userId);
 
+    // Get logout function from auth context
+    const { logout } = useAuth();
+
     // Update local state when currentUser changes
     React.useEffect(() => {
         if (currentUser) {
@@ -185,6 +189,10 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
         try {
             // Create a copy of the data to modify
             const updatedData = {...data};
+            
+            // Track if login or password was changed to show appropriate notifications
+            const isLoginChanged = updatedData.login && updatedData.login !== displayUser?.login;
+            const isPasswordChanged = !!updatedData.password;
 
             // If city is provided, convert it to city_id
             if (updatedData.city && cityNameToIdMap[updatedData.city]) {
@@ -206,11 +214,12 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
                     sex: updatedData.sex || displayUser.sex,
                     city: cityName,
                     aboutMe: updatedData.about_me !== undefined ? updatedData.about_me : displayUser.aboutMe,
+                    login: updatedData.login || displayUser.login,
                     // Keep other fields unchanged
                 });
             }
 
-            // Обновляем данные пользователя
+            // Update user information
             await updateUserInfo.mutateAsync(updatedData, {
                 onSuccess: async () => {
                     // Immediately refetch user data to get the latest from the server
@@ -218,9 +227,30 @@ const UserProfilePage: React.FC = (): React.JSX.Element => {
 
                     // Also invalidate the cache to ensure other components get updated data
                     queryClient.invalidateQueries({queryKey: ['currentUser']});
-
-                    setNotificationMessage('Профиль успешно обновлён!');
-                    setNotificationSeverity('success');
+                    
+                    // Handle different notifications based on what was updated
+                    if (isLoginChanged || isPasswordChanged) {
+                        let message = '';
+                        
+                        if (isLoginChanged && isPasswordChanged) {
+                            message = 'Логин и пароль успешно обновлены! Пожалуйста, войдите снова с новыми данными.';
+                        } else if (isLoginChanged) {
+                            message = 'Логин успешно обновлен! Пожалуйста, войдите снова с новым логином.';
+                        } else if (isPasswordChanged) {
+                            message = 'Пароль успешно обновлен! Пожалуйста, войдите снова с новым паролем.';
+                        }
+                        
+                        setNotificationMessage(message);
+                        setNotificationSeverity('success');
+                        
+                        // Set a timer to logout the user after they've seen the notification
+                        setTimeout(() => {
+                            logout(); // This will use the properly defined logout from useAuth
+                        }, 3000);
+                    } else {
+                        setNotificationMessage('Профиль успешно обновлён!');
+                        setNotificationSeverity('success');
+                    }
                 },
                 onError: (error) => {
                     console.error('Error updating profile:', error);

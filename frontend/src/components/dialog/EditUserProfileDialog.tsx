@@ -119,20 +119,29 @@ const EditUserProfileDialog: React.FC<UserProfileEditDialogProps> = ({
     const validateForm = (): boolean => {
         const newErrors: { [key: string]: string } = {};
 
-        // Проверка обязательных полей и добавление ошибок в объект newErrors
+        // Basic required fields validation
         if (!first_name) newErrors.first_name = 'Введите имя';
         if (!last_name) newErrors.last_name = 'Введите фамилию';
-        if (!login) newErrors.login = 'Введите логин';
-        if (password && password.length < 6) newErrors.password = 'Пароль слишком короткий';
-        if (password !== confirmPassword) newErrors.confirmPassword = 'Пароли не совпадают';
+        // Удаляем проверки для логина, так как поле только для чтения
+        
+        // Password validation - only check if user attempts to change it
+        if (password) {
+            if (password.length < 6) {
+                newErrors.password = 'Пароль должен содержать не менее 6 символов';
+            }
+            if (password !== confirmPassword) {
+                newErrors.confirmPassword = 'Пароли не совпадают';
+            }
+        }
+        
         if (!city) newErrors.city = 'Выберите город';
         if (!sex) newErrors.sex = 'Выберите пол';
         if (about_me.length > 500) newErrors.about_me = 'Максимум 500 символов';
 
-        // Обновление состояния формы с ошибками валидации
+        // Update form state with validation errors
         setFormState(prev => ({ ...prev, errors: newErrors }));
 
-        // Возвращаем true, если ошибок нет
+        // Return true if no errors
         return Object.keys(newErrors).length === 0;
     };
 
@@ -250,17 +259,21 @@ const EditUserProfileDialog: React.FC<UserProfileEditDialogProps> = ({
      */
     const handleSubmit = () => {
         if (validateForm()) {
-            // Создание объекта с обновленными данными профиля
+            // Создание объекта с обновленными данными профиля (без логина)
             const data: UserProfileEdit = {
-                login,
-                // Включаем пароль в данные только если он был изменен
-                password: password ? password : undefined,
+                // Удаляем login из отправляемых данных
                 first_name,
                 last_name,
                 city,
                 about_me,
                 sex,
             };
+            
+            // Only include password if it was changed and is valid
+            if (password && password === confirmPassword) {
+                data.password = password;
+            }
+            
             // Вызов функции отправки данных и закрытие диалога
             onSubmit(data);
             onClose();
@@ -367,10 +380,10 @@ const EditUserProfileDialog: React.FC<UserProfileEditDialogProps> = ({
                             label="Логин"
                             name="login"
                             value={login}
-                            onChange={handleInputChange}
+                            InputProps={{ readOnly: true }}
                             fullWidth
-                            error={!!errors.login}
-                            helperText={errors.login}
+                            // Удаляем обработку ошибок, так как поле только для чтения
+                            helperText="Логин изменить нельзя"
                         />
                     </Grid>
 
@@ -382,6 +395,7 @@ const EditUserProfileDialog: React.FC<UserProfileEditDialogProps> = ({
                             type="password"
                             value={password}
                             onChange={handleInputChange}
+                            autoComplete="new-password"
                             fullWidth
                             error={!!errors.password}
                             helperText={errors.password}
@@ -396,6 +410,7 @@ const EditUserProfileDialog: React.FC<UserProfileEditDialogProps> = ({
                             type="password"
                             value={confirmPassword}
                             onChange={handleInputChange}
+                            autoComplete="new-password"
                             fullWidth
                             error={!!errors.confirmPassword}
                             helperText={errors.confirmPassword}
