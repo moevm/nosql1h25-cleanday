@@ -1,6 +1,6 @@
-FROM arangodb:3.12 as arangodb
+FROM arangodb:3.12 AS arangodb
 
-FROM python:3.12-alpine as final
+FROM python:3.12-alpine AS final
 
 RUN apk add --no-cache \
     su-exec \
@@ -18,7 +18,6 @@ COPY --from=arangodb /etc/arangodb3 /etc/arangodb3
 COPY --from=arangodb /usr/share/arangodb3 /usr/share/arangodb3
 
 # Устанавливаем переменные окружения
-ENV ARANGO_NO_AUTH=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
