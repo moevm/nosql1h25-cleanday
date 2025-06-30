@@ -706,26 +706,19 @@ class CleandayRepo:
         page = list(map(lambda c: GetComment.model_validate(c), result_dict["page"]))
         return result_dict["count"], page
 
-    def get_raw_requirements(self, cleanday_key: str) -> Optional[list[Requirement]]:
-        if self.get_raw_by_key(cleanday_key) is None:
-            return None
-
+    def get_raw_requirements(self, cleanday_key: str) -> list[Requirement]:
+        """Get raw requirements for a cleanday."""
         cursor = self.db.aql.execute(
             """
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
             
-            FOR req IN OUTBOUND cdId has_requirement 
-                RETURN MERGE(req, {"key": req._key}) 
+            FOR req IN OUTBOUND cdId has_requirement
+                RETURN MERGE(req, {key: req._key})
             """,
             bind_vars={'cleanday_key': cleanday_key}
         )
-
-        result_list = []
-
-        for row in cursor:
-            result_list.append(Requirement.model_validate(row))
-
-        return result_list
+        
+        return [Requirement.model_validate(req) for req in cursor]
 
     def create_requirement(self, cleanday_key: str, name: str) -> Optional[Requirement]:
         if self.get_raw_by_key(cleanday_key) is None:
