@@ -713,7 +713,7 @@ class CleandayRepo:
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
             
             FOR req IN OUTBOUND cdId has_requirement
-                RETURN MERGE(req, {key: req._key})
+                RETURN MERGE(req, {"key": req._key})
             """,
             bind_vars={'cleanday_key': cleanday_key}
         )
