@@ -187,33 +187,28 @@ const ParticipationDialog: React.FC<ParticipationDialogProps> = ({
                         Подтвердите соответствие требованиям:
                     </Typography>
                     <Paper variant="outlined" sx={{ p: 2 }}>
-                        {isLoadingRequirements ? (
-                            // Показываем скелетон при загрузке требований
-                            <>
-                                <Skeleton variant="rectangular" height={40} sx={{ mb: 1 }} />
-                                <Skeleton variant="rectangular" height={40} sx={{ mb: 1 }} />
-                                <Skeleton variant="rectangular" height={40} />
-                            </>
-                        ) : requirements.length > 0 ? (
-                            // Показываем список требований
-                            requirements.map((requirement) => (
-                                <FormControlLabel
-                                    key={requirement.id}
-                                    control={
-                                        <Checkbox
-                                            checked={selectedRequirements.includes(requirement.id)}
-                                            onChange={(e) => handleRequirementChange(requirement.id, e.target.checked)}
-                                            color="primary"
-                                        />
-                                    }
-                                    label={requirement.name}
-                                    sx={{ display: 'block', my: 1 }}
-                                />
-                            ))
-                        ) : (
-                            // Если требований нет
-                            <Typography color="text.secondary" align="center" sx={{ py: 2 }}>
-                                Для этого субботника не указаны дополнительные требования
+                        {requirements && requirements.map((requirement, index) => (
+                            <FormControlLabel
+                                key={`req-${requirement.id}-${index}`}
+                                control={
+                                    <Checkbox
+                                        checked={selectedRequirements.includes(requirement.id)}
+                                        onChange={(e) => handleRequirementChange(requirement.id, e.target.checked)}
+                                        color="primary"
+                                    />
+                                }
+                                label={requirement.name}
+                                sx={{ display: 'block', my: 1 }}
+                            />
+                        ))}
+                        {isLoadingRequirements && (
+                            <Box sx={{ p: 1 }}>
+                                <Skeleton variant="rectangular" height={36} />
+                            </Box>
+                        )}
+                        {!isLoadingRequirements && requirements?.length === 0 && (
+                            <Typography color="text.secondary" sx={{ p: 1 }}>
+                                Нет требований к участию
                             </Typography>
                         )}
                     </Paper>
