@@ -88,9 +88,9 @@ async def get_cleanday(cleanday_id: str) -> GetCleanday:
 async def update_cleanday(cleanday_id: str, cleanday: UpdateCleanday,
                           current_user: User = Depends(get_current_user)) -> GetCleanday:
     trans = database.begin_transaction(read=['CleanDay', 'in_location', 'Location', 'Participation', 'User',
-                                             'has_participation', 'participation_in'],
+                                             'has_participation', 'participation_in', 'Requirement', 'has_requirement'],
                                        write=['in_location', 'CleanDay', 'Log', 'relates_to_cleanday',
-                                              'relates_to_location'])
+                                              'relates_to_location', 'Requirement', 'has_requirement'])
     try:
         cleanday_repo = CleandayRepo(trans)
         log_repo = LogRepo(trans)
@@ -106,6 +106,34 @@ async def update_cleanday(cleanday_id: str, cleanday: UpdateCleanday,
         cleanday_update = repo_model.UpdateCleanday.model_validate(cleanday_dict)
 
         cleanday_repo.update(cleanday_id, cleanday_update)
+        
+        # Обработка требований
+        if cleanday.requirements is not None:
+            # Получаем текущие требования
+            existing_reqs = cleanday_repo.get_raw_requirements(cleanday_id)
+            existing_req_names = {req.name for req in existing_reqs} if existing_reqs else set()
+            new_req_names = set(cleanday.requirements)
+            
+            # Добавляем новые требования
+            for req_name in new_req_names - existing_req_names:
+                cleanday_repo.create_requirement(cleanday_id, req_name)
+            
+            # Удаляем требования, которых больше нет
+            for req in existing_reqs:
+                if req.name not in new_req_names:
+                    cleanday_repo.delete_requirement(cleanday_id, req.key)
+            
+            # Записываем в лог обновление требований
+            log_repo.create(
+                repo_model.CreateLog(
+                    date=datetime.now(UTC),
+                    type='UpdateCleandayRequirements',
+                    description='Требования субботника обновлены',
+                    keys=repo_model.LogRelations(
+                        cleanday_key=cleanday_id
+                    )
+                )
+            )
 
         log_repo.create(
             repo_model.CreateLog(
@@ -117,22 +145,6 @@ async def update_cleanday(cleanday_id: str, cleanday: UpdateCleanday,
                 )
             )
         )
-
-        if cleanday.location_id is not None:
-            loc_res = cleanday_repo.set_location(cleanday_id, cleanday.location_id)
-            if not loc_res:
-                raise HTTPException(status_code=404, detail="Location not found")
-            log_repo.create(
-                repo_model.CreateLog(
-                    date=datetime.now(UTC),
-                    type='UpdateCleandayLocation',
-                    description='Локация субботника обновлена',
-                    keys=repo_model.LogRelations(
-                        cleanday_key=cleanday_id,
-                        location_key=cleanday.location_id
-                    )
-                )
-            )
 
     except Exception as e:
         trans.abort_transaction()

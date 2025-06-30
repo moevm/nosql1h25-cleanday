@@ -28,7 +28,7 @@ import {useUpdateCleandayInfo} from "@hooks/cleanday/useUpdateCleandayInfo";
 import {useGetAllLocation} from "@hooks/location/useGetAllLocation";
 import {useCreateLocation} from "@hooks/location/useCreateLocation";
 import Notification from '@components/Notification.tsx';
-import {CreateRequirementApiModel, RequirementApiModel, UpdateCleandayApiModel} from "@api/cleanday/models.ts";
+import {RequirementApiModel, UpdateCleandayApiModel} from "@api/cleanday/models.ts";
 
 /**
  * Интерфейс для пропсов компонента EditCleandayDialog.

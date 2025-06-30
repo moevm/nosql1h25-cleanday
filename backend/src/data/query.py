@@ -213,6 +213,7 @@ class UpdateCleanday(BaseModel):
     recommended_count: Optional[int] = None
     tags: Optional[list[CleanDayTag]] = None
     status: Optional[UpdateCleanDayStatus] = None
+    requirements: Optional[list[str]] = None
 
 
 class GetMember(GetUser):

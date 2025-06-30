@@ -15,6 +15,11 @@ export const useUpdateCleandayInfo = (cleandayId: string) => {
         url,
         {
             onError: (error) => {
+                // Don't perform global logout for 401 from this specific endpoint
+                if (error?.response?.status === 401) {
+                    // We'll handle this error in the component
+                    return;
+                }
                 console.error('Error updating cleanday information:', error);
             }
         }
