@@ -31,7 +31,7 @@ interface ImportDialogProps {
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
 
 /**
- * ImportDialog: Компонент для импорта JSON-файлов.
+ * ImportDialog: Компонент для импорта ZIP-файлов.
  * Предоставляет диалог с возможностью перетаскивания файлов или выбора через проводник.
  *
  * @param {ImportDialogProps} props - Пропсы компонента.
@@ -59,8 +59,8 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
      */
     const validateFile = (file: File): boolean => {
         // Проверка типа файла
-        if (!file.type.includes('application/json') && !file.name.endsWith('.json')) {
-            setError('Можно загружать только JSON-файлы');
+        if (!file.type.includes('application/zip') && !file.name.endsWith('.zip')) {
+            setError('Можно загружать только ZIP-файлы');
             return false;
         }
 
@@ -224,7 +224,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                         <>
                             <CloudUploadIcon color="primary" sx={{ fontSize: 60, mb: 2 }} />
                             <Typography variant="body1" gutterBottom>
-                                Перетащите JSON-файл сюда или нажмите для выбора
+                                Перетащите ZIP-файл сюда или нажмите для выбора
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                                 Максимальный размер файла: 3 МБ
@@ -238,7 +238,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileSelect}
-                    accept=".json,application/json"
+                    accept=".zip,application/zip"
                     style={{ display: 'none' }}
                 />
 

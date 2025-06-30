@@ -10,6 +10,8 @@ import {ExitToApp} from '@mui/icons-material';
 
 import LogoutConfirmationDialog from "@components/dialog/LogoutConfirmationDialog.tsx";
 import {useAuth} from "@hooks/authorization/useAuth.tsx";
+import {useGetMe} from "@hooks/authorization/useGetMe.tsx";
+import {useGetUserAvatar} from "@hooks/user/useGetUserAvatar.tsx";
 
 
 /**
@@ -23,6 +25,17 @@ import {useAuth} from "@hooks/authorization/useAuth.tsx";
 export const MenuPage = (): React.JSX.Element => {
     const {isAuthenticated, username, logout} = useAuth();
     const navigate = useNavigate(); // Используем useNavigate
+
+    // Get current user data to get the user ID
+    const { data: currentUser } = useGetMe();
+    
+    // Fetch user avatar using the ID
+    const { data: userAvatar } = useGetUserAvatar(currentUser?.id || '');
+    
+    // Determine avatar source - use the user's photo if available, otherwise undefined
+    const avatarSrc = userAvatar && userAvatar.photo !== "default_image" 
+        ? userAvatar.photo 
+        : undefined;
 
     // Состояние для диалога подтверждения выхода
     const [logoutDialogOpen, setLogoutDialogOpen] = React.useState(false);
@@ -43,15 +56,17 @@ export const MenuPage = (): React.JSX.Element => {
                 {isAuthenticated && (
                     <Toolbar>
                         <Box sx={{flexGrow: 1}}/>
-                        <Avatar style={{marginRight: '10px'}}
-                            // Аватар крепить сюда !!!
-                                onClick={() => {
-                                    {
-                                        navigate('/profile');
-                                    }
-                                }}
-                        >{username.charAt(0).toUpperCase()}
-                        </Avatar>
+                        <Avatar 
+                            style={{
+                                marginRight: '10px',
+                                width: '40px',
+                                height: '40px'
+                            }}
+                            src={avatarSrc}
+                            onClick={() => {
+                                navigate('/profile');
+                            }}
+                        />
                         <IconButton
                             size="large"
                             color="inherit"

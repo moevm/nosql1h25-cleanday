@@ -7,7 +7,7 @@ from auth.service import get_current_user
 import auth.service as auth_service
 from data.entity import User, Image
 from data.query import GetUsersParams, UserListResponse, GetUser, CleandayListResponse, PaginationParams, UpdateUser, \
-    CreateCleanday, GetExtendedUser, SetAvatar, GetCleandaysParams
+    CreateCleanday, GetExtendedUser, SetAvatar, GetCleandaysParams, UserHeatmapQuery, HeatmapResponse
 from repo.client import database
 from repo.log_repo import LogRepo
 from repo.model import CreateLog, LogRelations
@@ -160,13 +160,3 @@ async def get_user_organized_cleandays(user_id: str,
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     count, page = res
     return CleandayListResponse(cleandays=page, total_count=count)
-
-
-@router.get("/graph")
-async def get_users_graph(attribute_1: str, attribute_2: str):
-    return
-
-
-@router.put("/{user_id}/password")
-async def check_user_password(user_id: str, password: str) -> bool:
-    return True

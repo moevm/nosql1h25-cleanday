@@ -7,7 +7,7 @@ from arango.database import StandardDatabase
 
 from data.entity import CleanDay, CleanDayTag, CleanDayStatus, ParticipationType, Requirement, Image
 from data.query import GetCleanday, GetCleandaysParams, GetUser, GetMembersParams, PaginationParams, CleandayLog, \
-    GetComment, GetMember, GetCleandayLogsParams, GetCommentsParams
+    GetComment, GetMember, GetCleandayLogsParams, GetCommentsParams, CleandayHeatmapField, HeatmapEntry
 from repo import util
 from repo.client import database
 from repo.location_repo import LocationRepo
@@ -208,12 +208,18 @@ class CleandayRepo:
         if self.get_raw_by_key(cleanday_key) is None:
             return None
 
+        cleanday_dict = cleanday.model_dump(exclude_none=True)
+        if 'begin_date' in cleanday_dict:
+            cleanday_dict['begin_date'] = cleanday_dict['begin_date'].isoformat()
+        if 'end_date' in cleanday_dict:
+            cleanday_dict['end_date'] = cleanday_dict['end_date'].isoformat()
+
         cursor = self.db.aql.execute(
             """
             UPDATE @cleanday_key WITH @changes IN CleanDay
             RETURN NEW
             """,
-            bind_vars={"cleanday_key": cleanday_key, "changes": cleanday.model_dump(exclude_none=True)},
+            bind_vars={"cleanday_key": cleanday_key, "changes": cleanday_dict},
         )
 
         result_dict = cursor.next()
@@ -700,26 +706,19 @@ class CleandayRepo:
         page = list(map(lambda c: GetComment.model_validate(c), result_dict["page"]))
         return result_dict["count"], page
 
-    def get_raw_requirements(self, cleanday_key: str) -> Optional[list[Requirement]]:
-        if self.get_raw_by_key(cleanday_key) is None:
-            return None
-
+    def get_raw_requirements(self, cleanday_key: str) -> list[Requirement]:
+        """Get raw requirements for a cleanday."""
         cursor = self.db.aql.execute(
             """
             LET cdId = CONCAT("CleanDay/", @cleanday_key)
             
-            FOR req IN OUTBOUND cdId has_requirement 
-                RETURN MERGE(req, {"key": req._key}) 
+            FOR req IN OUTBOUND cdId has_requirement
+                RETURN MERGE(req, {"key": req._key})
             """,
             bind_vars={'cleanday_key': cleanday_key}
         )
-
-        result_list = []
-
-        for row in cursor:
-            result_list.append(Requirement.model_validate(row))
-
-        return result_list
+        
+        return [Requirement.model_validate(req) for req in cursor]
 
     def create_requirement(self, cleanday_key: str, name: str) -> Optional[Requirement]:
         if self.get_raw_by_key(cleanday_key) is None:
@@ -858,6 +857,10 @@ class CleandayRepo:
             img_list.append(Image.model_validate(row))
 
         return img_list
+
+    def get_heatmap(self, x_field: CleandayHeatmapField, y_field: CleandayHeatmapField, params: GetCleandaysParams) \
+            -> list[HeatmapEntry]:
+        return util.get_heatmap(self.db, x_field, y_field, params)
 
 
 if __name__ == "__main__":

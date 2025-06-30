@@ -1,8 +1,15 @@
-import {CleandayApiModel, CleandayLogApiModel, CommentApiModel, RequirementApiModel} from "@api/cleanday/models.ts";
+import {
+    CleandayApiModel,
+    CleandayLogApiModel,
+    CleandayMemberApiModel,
+    CommentApiModel,
+    RequirementApiModel
+} from "@api/cleanday/models.ts";
 import {Cleanday, CleandayLog, CleandayStatus, CleandayTag} from "@models/Cleanday.ts";
 import {locationMapper} from "@utils/location/mapper.ts";
 import {userMapper} from "@utils/user/mapper.ts";
 import {Comment} from "@models/Comment";
+import {CleandayParticipant} from "@components/dialog/CleandayParticipantsDialog.tsx";
 
 export const cleandayMapper = (apiModel: CleandayApiModel): Cleanday => {
     return {
@@ -32,11 +39,7 @@ export const cleandayMapper = (apiModel: CleandayApiModel): Cleanday => {
     };
 };
 
-export const commentMapper = (apiModel?: CommentApiModel): Comment | undefined => {
-    if (!apiModel) {
-        return undefined;
-    }
-    
+export const commentMapper = (apiModel: CommentApiModel): Comment => {
     return {
         id: apiModel.key,
         text: apiModel.text,
@@ -56,3 +59,13 @@ export const cleandayLogMapper = (apiModel: CleandayLogApiModel): CleandayLog =>
         location: apiModel.location ? locationMapper(apiModel.location) : undefined
     };
 };
+
+export const cleandayMemberMapper = (apiMember: CleandayMemberApiModel): CleandayParticipant => {
+    return {
+        id: apiMember.key,
+        firstName: apiMember.first_name,
+        lastName: apiMember.last_name,
+        login: apiMember.login,
+        status: apiMember.participation_type
+    };
+}

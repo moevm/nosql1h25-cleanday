@@ -9,7 +9,7 @@ from data.entity import CleanDayStatus, CleanDay, User, CleanDayTag, Comment
 from data.query import GetCleandaysParams, CleandayListResponse, GetCleanday, UserListResponse, GetMembersParams, \
     PaginationParams, CleandayLogListResponse, CommentListResponse, UpdateCleanday, CreateCleanday, CreateImages, \
     ImageListResponse, UpdateParticipation, CreateParticipation, CleandayResults, GetCleandayLogsParams, \
-    GetCommentsParams
+    GetCommentsParams, CreateComment, GetMembersResponse
 from repo.cleanday_repo import CleandayRepo
 from repo.client import database
 import repo.model as repo_model
@@ -88,9 +88,9 @@ async def get_cleanday(cleanday_id: str) -> GetCleanday:
 async def update_cleanday(cleanday_id: str, cleanday: UpdateCleanday,
                           current_user: User = Depends(get_current_user)) -> GetCleanday:
     trans = database.begin_transaction(read=['CleanDay', 'in_location', 'Location', 'Participation', 'User',
-                                             'has_participation', 'participation_in'],
+                                             'has_participation', 'participation_in', 'Requirement', 'has_requirement'],
                                        write=['in_location', 'CleanDay', 'Log', 'relates_to_cleanday',
-                                              'relates_to_location'])
+                                              'relates_to_location', 'Requirement', 'has_requirement'])
     try:
         cleanday_repo = CleandayRepo(trans)
         log_repo = LogRepo(trans)
@@ -106,6 +106,34 @@ async def update_cleanday(cleanday_id: str, cleanday: UpdateCleanday,
         cleanday_update = repo_model.UpdateCleanday.model_validate(cleanday_dict)
 
         cleanday_repo.update(cleanday_id, cleanday_update)
+        
+        # Обработка требований
+        if cleanday.requirements is not None:
+            # Получаем текущие требования
+            existing_reqs = cleanday_repo.get_raw_requirements(cleanday_id)
+            existing_req_names = {req.name for req in existing_reqs} if existing_reqs else set()
+            new_req_names = set(cleanday.requirements)
+            
+            # Добавляем новые требования
+            for req_name in new_req_names - existing_req_names:
+                cleanday_repo.create_requirement(cleanday_id, req_name)
+            
+            # Удаляем требования, которых больше нет
+            for req in existing_reqs:
+                if req.name not in new_req_names:
+                    cleanday_repo.delete_requirement(cleanday_id, req.key)
+            
+            # Записываем в лог обновление требований
+            log_repo.create(
+                repo_model.CreateLog(
+                    date=datetime.now(UTC),
+                    type='UpdateCleandayRequirements',
+                    description='Требования субботника обновлены',
+                    keys=repo_model.LogRelations(
+                        cleanday_key=cleanday_id
+                    )
+                )
+            )
 
         log_repo.create(
             repo_model.CreateLog(
@@ -117,22 +145,6 @@ async def update_cleanday(cleanday_id: str, cleanday: UpdateCleanday,
                 )
             )
         )
-
-        if cleanday.location_id is not None:
-            loc_res = cleanday_repo.set_location(cleanday_id, cleanday.location_id)
-            if not loc_res:
-                raise HTTPException(status_code=404, detail="Location not found")
-            log_repo.create(
-                repo_model.CreateLog(
-                    date=datetime.now(UTC),
-                    type='UpdateCleandayLocation',
-                    description='Локация субботника обновлена',
-                    keys=repo_model.LogRelations(
-                        cleanday_key=cleanday_id,
-                        location_key=cleanday.location_id
-                    )
-                )
-            )
 
     except Exception as e:
         trans.abort_transaction()
@@ -153,12 +165,12 @@ async def get_cleanday_images(cleanday_id: str) -> ImageListResponse:
 
 
 @router.get("/{cleanday_id}/members")
-async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> UserListResponse:
+async def get_cleanday_members(cleanday_id: str, query: Annotated[GetMembersParams, Query()]) -> GetMembersResponse:
     page_res = static_cleanday_repo.get_members(cleanday_id, query)
     if page_res is None:
         raise HTTPException(status_code=404, detail="Cleanday not found")
     count, page = page_res
-    return UserListResponse(users=page, total_count=count)
+    return GetMembersResponse(users=page, total_count=count)
 
 
 @router.get("/{cleanday_id}/logs")
@@ -180,10 +192,12 @@ async def get_cleanday_comments(cleanday_id: str, query: Annotated[GetCommentsPa
 
 
 @router.post("/{cleanday_id}/comments")
-async def create_cleanday_comment(cleanday_id: str, comment: str,
+async def create_cleanday_comment(cleanday_id: str, create_comment: CreateComment,
                                   current_user: User = Depends(get_current_user)) -> Comment:
     if static_cleanday_repo.get_raw_by_key(cleanday_id) is None:
         raise HTTPException(status_code=404, detail="Cleanday not found")
+
+    comment = create_comment.text
 
     trans = database.begin_transaction(
         read=['Participation', 'participation_in', 'has_participation'],
@@ -385,9 +399,4 @@ async def end_cleanday(cleanday_id: str, results: CleandayResults,
         raise e
     else:
         trans.commit_transaction()
-    return
-
-
-@router.get("/graph")
-async def get_cleanday_graph(attribute_1: str, attribute_2: str):
     return

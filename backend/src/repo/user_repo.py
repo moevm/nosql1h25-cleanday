@@ -6,7 +6,7 @@ from arango.database import StandardDatabase
 from auth.model import RegisterUser
 from data.entity import User, Image, Sex
 from data.query import GetUser, GetUsersParams, GetCleanday, PaginationParams, UserSortField, GetExtendedUser, \
-    GetCleandaysParams
+    GetCleandaysParams, UserHeatmapField, HeatmapEntry
 from repo import util
 from repo.city_repo import CityRepo
 from repo.client import database
@@ -434,6 +434,58 @@ class UserRepo:
         result_dict['key'] = result_dict['_key']
 
         return Image.model_validate(result_dict)
+
+    def get_heatmap(self, x_axis: UserHeatmapField, y_axis: UserHeatmapField,
+                    params: GetUsersParams) -> list[HeatmapEntry]:
+        bind_vars, filters = setup_get_users_params(params)
+        bind_vars.pop("offset")
+        bind_vars.pop("limit")
+
+        query = f"""
+                LET page = (FOR u in User
+                    LET userId = CONCAT("User/", u._key)
+                    LET city = FIRST(
+                        FOR city IN OUTBOUND userId lives_in
+                            LIMIT 1
+                            RETURN city
+                    )
+                    LET parCount = COUNT(
+                        FOR p IN OUTBOUND userId has_participation
+                            FOR cl_day IN OUTBOUND p participation_in
+                                RETURN cl_day
+                    )
+                    LET orgCount = COUNT(
+                        FOR p IN OUTBOUND userId has_participation
+                            FILTER p.type == "Организатор"
+                            FOR cl_day IN OUTBOUND p participation_in
+                                RETURN cl_day
+                    )
+                    LET stat = SUM(
+                        FOR p IN OUTBOUND userId has_participation
+                            RETURN p.stat
+                    )
+                    LET usr = MERGE(u, {{
+                        key: u._key,
+                        city: city.name,
+                        cleanday_count: parCount,
+                        organized_count: orgCount,
+                        stat: stat
+                    }})
+                    
+                    {'\n'.join(filters)}
+                    
+                    RETURN usr
+                )
+
+                FOR u IN page
+                    COLLECT x = TO_STRING(u.{x_axis}), y = TO_STRING(u.{y_axis}) WITH COUNT INTO count
+                    RETURN {{ x_label: x, y_label: y, count: count }}
+            """
+
+        cursor = self.db.aql.execute(query, bind_vars=bind_vars)
+        data = [HeatmapEntry.model_validate(doc) for doc in cursor]
+
+        return data
 
 
 if __name__ == "__main__":

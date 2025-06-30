@@ -17,14 +17,33 @@ edge_collections = ['authored', 'cleanday_image', 'fullfills', 'has_comment', 'h
                     'participation_in', 'relates_to_city', 'relates_to_cleanday', 'relates_to_location',
                     'relates_to_user', 'user_avatar']
 
+edge_collections2 = ['relates_to_comment']
+
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 async def apply():
     logger.info(' Applying migrations...')
+    await migration_1()
+    await migration_2()
+
+
+async def migration_2():
+    logger.info(' [2] Applying...')
+    if database.has_collection(edge_collections2[0]):
+        logger.info(' [2] Collections exist, aborting migration')
+        return
+
+    for collection in edge_collections2:
+        database.create_collection(collection, edge=True)
+
+
+async def migration_1():
+    logger.info(' [1] Applying...')
     if database.has_collection(document_collections[0]):
-        logger.info(' Collections exist, aborting migration')
+        logger.info(' [1] Collections exist, aborting migration')
         return
 
     for collection in document_collections:

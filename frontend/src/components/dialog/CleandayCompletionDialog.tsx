@@ -16,6 +16,8 @@ import {
     Divider,
     Alert,
     Checkbox,
+    CircularProgress,
+    Snackbar,
 } from '@mui/material';
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from 'material-react-table';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
@@ -27,7 +29,11 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import {CompletionData, Participant, ParticipantStatus, ParticipationStatus} from '@models/deleteMeLater.ts';
+import { CompletionData, Participant, ParticipantStatus, ParticipationStatus } from '@models/deleteMeLater.ts';
+import { useMutation } from '@tanstack/react-query';
+import axiosInstance from '@/axiosInstance.ts';
+import substituteIdToEndpoint from '@/utils/api/substituteIdToEndpoint.ts';
+import { END_CLEANDAY } from '@api/cleanday/endpoints.ts';
 
 /**
  * Интерфейс для пропсов компонента CleandayCompletionDialog
@@ -35,9 +41,15 @@ import {CompletionData, Participant, ParticipantStatus, ParticipationStatus} fro
 interface CleandayCompletionDialogProps {
     open: boolean;
     onClose: () => void;
-    onSubmit: (data: CompletionData) => void;
+    cleandayId: string; // Add this to the interface
+    onSubmit: (completionData: CompletionData) => void;
     cleandayName: string;
     participants: Participant[];
+}
+
+interface ImageWithDescription {
+    file: File;
+    description: string;
 }
 
 // Максимальный размер файла (1 МБ)
@@ -56,6 +68,7 @@ const ACCEPTED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
     open,
     onClose,
+    cleandayId, // Убедитесь, что этот пропс передан из родительского компонента
     onSubmit,
     cleandayName,
     participants,
@@ -84,7 +97,7 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
     );
     const [result, setResult] = useState<string>('');
     const [results, setResults] = useState<string[]>([]);
-    const [images, setImages] = useState<File[]>([]);
+    const [images, setImages] = useState<ImageWithDescription[]>([]);
     const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
     const [fileError, setFileError] = useState<string | null>(null);
     const [convertedStatuses, setConvertedStatuses] = useState<{ [userId: number]: ParticipantStatus }>(
@@ -96,7 +109,13 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
     );
     // Track if form has unsaved changes
     const [hasChanges, setHasChanges] = useState<boolean>(false);
-    
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [notification, setNotification] = useState<{
+        open: boolean;
+        message: string;
+        severity: 'success' | 'error';
+    }>({ open: false, message: '', severity: 'success' });
+
     // Remove custom search state as we'll use MRT's built-in search
     // const [searchText, setSearchText] = useState<string>('');
 
@@ -126,8 +145,8 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
      */
     const handleAttendanceChange = (userId: number, attended: boolean) => {
         const newConvertedStatuses = { ...convertedStatuses };
-        newConvertedStatuses[userId] = attended 
-            ? ParticipantStatus.PARTICIPATED 
+        newConvertedStatuses[userId] = attended
+            ? ParticipantStatus.PARTICIPATED
             : ParticipantStatus.NOT_PARTICIPATED;
         setConvertedStatuses(newConvertedStatuses);
         setHasChanges(true);
@@ -194,21 +213,22 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const fileList = event.target.files;
         setFileError(null);
-        
+
         if (fileList && fileList.length > 0) {
-            const validFiles: File[] = [];
-            
+            const validFiles: ImageWithDescription[] = [];
+
             // Проверяем каждый файл
             for (let i = 0; i < fileList.length; i++) {
                 const file = fileList[i];
                 if (validateFile(file)) {
-                    validFiles.push(file);
+                    // Add with empty description
+                    validFiles.push({ file, description: '' });
                 } else {
                     // При первой ошибке прекращаем обработку
                     break;
                 }
             }
-            
+
             // Добавляем только валидные файлы
             if (validFiles.length > 0) {
                 setImages(prevImages => [...prevImages, ...validFiles]);
@@ -220,7 +240,7 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
             fileInputRef.current.value = '';
         }
 
-        if (validFiles.length > 0) {
+        if (fileList && fileList.length > 0) {
             setHasChanges(true);
         }
     };
@@ -262,22 +282,110 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
     };
 
     /**
+     * Обработчик изменения описания изображения
+     */
+    const handleDescriptionChange = (index: number, description: string) => {
+        setImages(prevImages => {
+            const newImages = [...prevImages];
+            if (newImages[index]) {
+                newImages[index].description = description;
+            }
+            return newImages;
+        });
+
+        setHasChanges(true);
+    };
+
+    // Create mutation for submitting the cleanday completion
+    const endCleandayMutation = useMutation({
+        mutationFn: async (completionData: any) => {
+            return axiosInstance.post( // Using axiosInstance instead of axios
+                substituteIdToEndpoint(cleandayId, END_CLEANDAY),
+                completionData
+            );
+        },
+        onSuccess: () => {
+            setNotification({
+                open: true,
+                message: 'Субботник успешно завершен',
+                severity: 'success'
+            });
+            onClose();
+            // Refresh cleanday data if needed
+        },
+        onError: (error) => {
+            console.error('Error completing cleanday:', error);
+            setNotification({
+                open: true,
+                message: 'Ошибка при завершении субботника',
+                severity: 'error'
+            });
+        }
+    });
+
+    /**
+     * Converts File to Base64 string
+     */
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                if (typeof reader.result === 'string') {
+                    // Remove the prefix (e.g., "data:image/jpeg;base64,")
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                } else {
+                    reject(new Error('Failed to convert file to base64'));
+                }
+            };
+            reader.onerror = error => reject(error);
+        });
+    };
+
+    /**
      * Обработчик отправки формы
      */
-    const handleSubmit = () => {
-        // No need to convert statuses here anymore, as we're tracking them directly
-        const completionData: CompletionData = {
-            results,
-            images,
-            participantStatuses: convertedStatuses
-        };
-        onSubmit(completionData);
-        onClose();
+    const handleSubmit = async () => {
+        setIsSubmitting(true);
+        
+        try {
+            // Convert images to base64 format for API
+            const imagePromises = images.map(async (img) => {
+                const base64Photo = await fileToBase64(img.file);
+                return {
+                    photo: base64Photo,
+                    description: img.description || "" // Ensure description is never undefined
+                };
+            });
+
+            const imageData = await Promise.all(imagePromises);
+
+            // Get user IDs with confirmed participation
+            const participatedUserKeys = Object.entries(participantStatuses)
+                .filter(([_, status]) => status === ParticipantStatus.PARTICIPATED)
+                .map(([userId]) => userId);
+
+            // Submit to end cleanday endpoint
+            const cleandayResults = {
+                participated_user_keys: participatedUserKeys,
+                results: results,
+                images: imageData
+            };
+
+            // Use the mutation to submit the data
+            await endCleandayMutation.mutateAsync(cleandayResults);
+        } catch (error) {
+            // Error handling is done in the mutation
+            console.error('Error preparing completion data:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
-    
+
     // Remove custom search handler and filtered participants
     // as we'll use MRT's built-in search functionality
-    
+
     /**
      * Получить цвет для статуса участника
      */
@@ -318,58 +426,58 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
      * Определение столбцов для таблицы участников
      */
     const columns = useMemo<MRT_ColumnDef<Participant>[]>
-    (
-        () => [
-            {
-                id: 'firstName',
-                header: 'Имя',
-                accessorKey: 'firstName',
-                size: 120,
-            },
-            {
-                id: 'lastName',
-                header: 'Фамилия',
-                accessorKey: 'lastName',
-                size: 120,
-            },
-            {
-                accessorKey: 'username',
-                header: 'Имя пользователя',
-                size: 150,
-            },
-            {
-                id: 'planned_status',
-                header: 'Заявленный статус',
-                Cell: ({ row }) => (
-                    <Chip
-                        label={participantStatuses[row.original.id]}
-                        color={getStatusColor(participantStatuses[row.original.id])}
-                        icon={getStatusIcon(participantStatuses[row.original.id])}
-                        size="small"
-                    />
-                ),
-                size: 180,
-            },
-            {
-                id: 'actual_participation',
-                header: 'Присутствовал',
-                Cell: ({ row }) => (
-                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                        <Checkbox
-                            checked={
-                                convertedStatuses[row.original.id] === ParticipantStatus.PARTICIPATED
-                            }
-                            onChange={(e) => handleAttendanceChange(row.original.id, e.target.checked)}
-                            color="success"
-                            aria-label={`Отметить присутствие ${row.original.name}`}
+        (
+            () => [
+                {
+                    id: 'firstName',
+                    header: 'Имя',
+                    accessorKey: 'firstName',
+                    size: 120,
+                },
+                {
+                    id: 'lastName',
+                    header: 'Фамилия',
+                    accessorKey: 'lastName',
+                    size: 120,
+                },
+                {
+                    accessorKey: 'username',
+                    header: 'Имя пользователя',
+                    size: 150,
+                },
+                {
+                    id: 'planned_status',
+                    header: 'Заявленный статус',
+                    Cell: ({ row }) => (
+                        <Chip
+                            label={participantStatuses[row.original.id]}
+                            color={getStatusColor(participantStatuses[row.original.id])}
+                            icon={getStatusIcon(participantStatuses[row.original.id])}
+                            size="small"
                         />
-                    </Box>
-                ),
-                size: 120,
-            },
-        ],
-        [participantStatuses, convertedStatuses]
-    );
+                    ),
+                    size: 180,
+                },
+                {
+                    id: 'actual_participation',
+                    header: 'Присутствовал',
+                    Cell: ({ row }) => (
+                        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                            <Checkbox
+                                checked={
+                                    convertedStatuses[row.original.id] === ParticipantStatus.PARTICIPATED
+                                }
+                                onChange={(e) => handleAttendanceChange(row.original.id, e.target.checked)}
+                                color="success"
+                                aria-label={`Отметить присутствие ${row.original.name}`}
+                            />
+                        </Box>
+                    ),
+                    size: 120,
+                },
+            ],
+            [participantStatuses, convertedStatuses]
+        );
 
     /**
      * Конфигурация таблицы MaterialReactTable с включенным встроенным поиском
@@ -419,10 +527,10 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
     };
 
     return (
-        <Dialog 
-            open={open} 
-            onClose={handleClose} 
-            maxWidth="md" 
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="md"
             fullWidth
             aria-labelledby="cleanday-completion-dialog-title"
         >
@@ -440,9 +548,9 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
                         <Typography variant="h6" gutterBottom>
                             Учёт участников
                         </Typography>
-                        
+
                         {/* Remove custom search bar and use MRT's built-in search */}
-                        
+
                         <MaterialReactTable table={table} />
                     </Grid>
 
@@ -455,7 +563,7 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
                         <Typography variant="h6" gutterBottom>
                             Результаты субботника
                         </Typography>
-                        
+
                         {/* Список добавленных результатов */}
                         {results.length > 0 && (
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
@@ -470,7 +578,7 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
                                 ))}
                             </Box>
                         )}
-                        
+
                         {/* Поле для добавления результатов */}
                         <TextField
                             fullWidth
@@ -493,32 +601,42 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
                         <Typography variant="h6" gutterBottom>
                             Фотографии с субботника
                         </Typography>
-                        
+
                         <Paper variant="outlined" sx={{ p: 2 }}>
                             {images.length > 0 ? (
                                 <Box sx={{ width: '100%', position: 'relative' }}>
-                                    {/* Текущее изображение */}
-                                    <Box 
-                                        sx={{ 
-                                            height: 300, 
-                                            display: 'flex', 
-                                            justifyContent: 'center', 
+                                    {/* Current image display */}
+                                    <Box
+                                        sx={{
+                                            height: 300,
+                                            display: 'flex',
+                                            justifyContent: 'center',
                                             alignItems: 'center',
                                             mb: 2
                                         }}
                                     >
                                         <img
-                                            src={URL.createObjectURL(images[currentImageIndex])}
+                                            src={URL.createObjectURL(images[currentImageIndex].file)}
                                             alt={`Изображение ${currentImageIndex + 1}`}
-                                            style={{ 
-                                                maxHeight: '100%', 
-                                                maxWidth: '100%', 
-                                                objectFit: 'contain' 
+                                            style={{
+                                                maxHeight: '100%',
+                                                maxWidth: '100%',
+                                                objectFit: 'contain'
                                             }}
                                         />
                                     </Box>
 
-                                    {/* Навигация карусели */}
+                                    {/* Description field for current image */}
+                                    <TextField
+                                        fullWidth
+                                        label="Описание изображения"
+                                        value={images[currentImageIndex].description}
+                                        onChange={(e) => handleDescriptionChange(currentImageIndex, e.target.value)}
+                                        placeholder="Введите описание изображения"
+                                        sx={{ mb: 2 }}
+                                    />
+
+                                    {/* Carousel navigation */}
                                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
                                         <IconButton onClick={handlePrevImage} disabled={images.length <= 1}>
                                             <NavigateBeforeIcon />
@@ -529,8 +647,8 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
                                         <IconButton onClick={handleNextImage} disabled={images.length <= 1}>
                                             <NavigateNextIcon />
                                         </IconButton>
-                                        <IconButton 
-                                            color="error" 
+                                        <IconButton
+                                            color="error"
                                             onClick={() => handleDeleteImage(currentImageIndex)}
                                         >
                                             <DeleteIcon />
@@ -538,12 +656,12 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
                                     </Box>
                                 </Box>
                             ) : (
-                                <Box 
-                                    sx={{ 
-                                        height: 150, 
-                                        width: '100%', 
-                                        display: 'flex', 
-                                        justifyContent: 'center', 
+                                <Box
+                                    sx={{
+                                        height: 150,
+                                        width: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'center',
                                         alignItems: 'center',
                                         border: '2px dashed grey.300',
                                         borderRadius: 1,
@@ -556,13 +674,13 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
                                 </Box>
                             )}
 
-                            {/* Кнопка загрузки новых изображений */}
+                            {/* Image upload button */}
                             <Button
                                 variant="outlined"
                                 startIcon={<AddPhotoAlternateIcon />}
                                 onClick={handleAddImageClick}
                             >
-                                Добавить фото (PNG, JPG, до 3 МБ)
+                                Добавить фото (PNG, JPG, до 1 МБ)
                             </Button>
                             <input
                                 type="file"
@@ -572,8 +690,8 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
                                 onChange={handleFileChange}
                                 style={{ display: 'none' }}
                             />
-                            
-                            {/* Отображение ошибки файла */}
+
+                            {/* Error display */}
                             {fileError && (
                                 <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
                                     {fileError}
@@ -585,18 +703,39 @@ const CleandayCompletionDialog: React.FC<CleandayCompletionDialogProps> = ({
             </DialogContent>
 
             <DialogActions>
-                <Button onClick={handleClose} color="primary" variant="text">
+                <Button onClick={handleClose} color="inherit">
                     Отмена
                 </Button>
                 <Button 
                     onClick={handleSubmit} 
-                    color="success" 
-                    variant="contained"
-                    disabled={!hasChanges}
+                    color="primary" 
+                    variant="contained" 
+                    disabled={isSubmitting}
                 >
-                    Завершить субботник
+                    {isSubmitting ? (
+                        <>
+                            <CircularProgress size={24} color="inherit" sx={{ mr: 1 }} />
+                            Отправка...
+                        </>
+                    ) : (
+                        'Завершить субботник'
+                    )}
                 </Button>
             </DialogActions>
+
+            {/* Add notification snackbar */}
+            <Snackbar 
+                open={notification.open} 
+                autoHideDuration={6000} 
+                onClose={() => setNotification(prev => ({ ...prev, open: false }))}
+            >
+                <Alert 
+                    severity={notification.severity} 
+                    onClose={() => setNotification(prev => ({ ...prev, open: false }))}
+                >
+                    {notification.message}
+                </Alert>
+            </Snackbar>
         </Dialog>
     );
 };

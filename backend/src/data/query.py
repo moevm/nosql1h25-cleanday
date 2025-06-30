@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from data.entity import User, Sex, CleanDayStatus, CleanDayTag, Requirement, Log, Comment, ParticipationType, Location, \
-    City, Image
+    City, Image, Participation
 from repo.model import CreateImage
 
 
@@ -135,8 +135,8 @@ class GetCleandaysParams(BaseModel):
     status: Optional[list[str]] = None
     begin_date_from: Optional[datetime] = None
     begin_date_to: Optional[datetime] = None
-    end_date_from: Optional[int] = None
-    end_date_to: Optional[int] = None
+    end_date_from: Optional[datetime] = None
+    end_date_to: Optional[datetime] = None
     created_at_from: Optional[datetime] = None
     created_at_to: Optional[datetime] = None
     updated_at_from: Optional[datetime] = None
@@ -179,6 +179,7 @@ class CommentListResponse(BaseModel):
     comments: list[GetComment]
     total_count: int
 
+
 class UpdateUser(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -212,6 +213,7 @@ class UpdateCleanday(BaseModel):
     recommended_count: Optional[int] = None
     tags: Optional[list[CleanDayTag]] = None
     status: Optional[UpdateCleanDayStatus] = None
+    requirements: Optional[list[str]] = None
 
 
 class GetMember(GetUser):
@@ -313,3 +315,66 @@ class GetCommentsParams(PaginationParams):
     text: Optional[str] = None
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None
+
+
+class HeatmapEntry(BaseModel):
+    x_label: str
+    y_label: str
+    count: int
+
+
+class HeatmapResponse(BaseModel):
+    data: list[HeatmapEntry]
+
+
+class UserHeatmapField(StrEnum):
+    first_name = "first_name"
+    last_name = "last_name"
+    login = "login"
+    sex = "sex"
+    city = "city"
+    about_me = "about_me"
+    score = "score"
+    level = "level"
+    cleanday_count = "cleanday_count"
+    organized_count = "organized_count"
+    stat = "stat"
+
+
+class UserHeatmapQuery(GetUsersParams):
+    x_field: UserHeatmapField
+    y_field: UserHeatmapField
+
+
+class CleandayHeatmapField(StrEnum):
+    name = "name"
+    description = "description"
+    participant_count = "participant_count"
+    recommended_count = "recommended_count"
+    city = "city"
+    begin_date = "begin_date"
+    end_date = "end_date"
+    created_at = "created_at"
+    updated_at = "updated_at"
+    organization = "organization"
+    organizer = "organizer"
+    organizer_key = "organizer_key"
+    area = "area"
+    status = "status"
+    tag = "tags"
+    requirement = "requirements"
+    location_address = "location.address"
+
+
+class CleandayHeatmapQuery(GetCleandaysParams):
+    x_field: CleandayHeatmapField
+    y_field: CleandayHeatmapField
+
+
+class CreateComment(BaseModel):
+    text: str
+
+
+class GetMembersResponse(BaseModel):
+    users: list[GetMember]
+    total_count: int

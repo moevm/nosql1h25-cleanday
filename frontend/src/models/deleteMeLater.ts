@@ -174,19 +174,24 @@ export enum ParticipantStatus {
 
 export interface CompletionData {
     results: string[];
-    images: File[];
+    // Update to use structured image objects with descriptions
+    images: {
+        photo: string;
+        description: string;
+    }[];
     participantStatuses: { [userId: number]: ParticipantStatus };
 }
 
 
 export interface CleandayResults {
-    id: string | number;
+    id: number;
     name: string;
     date: string;
     location: string;
-    results: string[];
-    photos: string[]; // URLs изображений
     participantsCount: number;
+    results: string[];
+    // Update to support both legacy format and new format with descriptions
+    photos: Array<string | { photo: string; description: string }>;
 }
 
 

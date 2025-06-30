@@ -30,14 +30,22 @@ axiosInstance.interceptors.response.use(
     (error) => {
         // Проверяем, является ли ошибка ошибкой авторизации (401)
         if (error.response && error.response.status === 401) {
-            // Получаем текущий URL
             const currentPath = window.location.pathname;
             
-            // Не перенаправляем на главную, если пользователь на главной странице, пытается войти или зарегистрироваться
+            // Check if this is a cleanday edit operation
+            const url = error.config.url;
+            const isCleandayEditOperation = url && url.includes('/api/cleandays/') && 
+                (error.config.method === 'patch' || error.config.method === 'put');
+            
+            // Do not log out if this is a cleanday edit operation
+            if (isCleandayEditOperation) {
+                // Just let the component handle the error
+                return Promise.reject(error);
+            }
+            
+            // For other 401 errors, handle as before
             if (currentPath !== '/' && currentPath !== '/authorization' && currentPath !== '/register') {
-                // Удаляем токен из Cookie
                 Cookies.remove('access_token');
-                // Перенаправляем на страницу авторизации
                 window.location.href = '/';
             }
         }

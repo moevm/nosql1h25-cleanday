@@ -1,13 +1,15 @@
 import './CleandayPage.css';
 
-import React from 'react';
-
-import {Link} from "react-router-dom";
-
+import React, {useState} from 'react';
+import {Link, useParams} from "react-router-dom";
+import {useGetCleandayById} from '@hooks/cleanday/useGetCleandayById.tsx';
+import {useGetCleandayComments} from '@hooks/cleanday/useGetCleandayComments.tsx';
+import {useCreateComment} from '@hooks/cleanday/useCreateComment.tsx';
 import {
     Box,
     Button,
     Chip,
+    CircularProgress,
     Grid,
     IconButton,
     List,
@@ -19,6 +21,9 @@ import {
     Stepper,
     TextField,
     Typography,
+    Alert,
+    Divider,
+    Avatar,
 } from '@mui/material';
 
 import SendIcon from '@mui/icons-material/Send';
@@ -27,14 +32,21 @@ import ArrowRight from '@mui/icons-material/ArrowRight';
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 import Notification from '@components/Notification.tsx';
+import {CleandayStatus} from '@models/Cleanday.ts';
+import {useGetLocationImages} from "@hooks/location/useGetLocationImages";
+import {Comment} from '@models/Comment.ts';
 
+import EditCleandayDialog from '@components/dialog/EditCleandayDialog.tsx';
+import ParticipationDialog from "@components/dialog/ParticipationDialog.tsx";
+import CleandayCompletionDialog from "@components/dialog/CleandayCompletionDialog.tsx";
+import ViewCleandayResultsDialog from '@components/dialog/ViewCleandayResultsDialog.tsx';
+import CancelCleandayDialog from '@/components/dialog/CancelCleandayDialog';
+import CleandayHistoryDialog, {CleanDayHistoryEntry} from '@/components/dialog/CleandayHistoryDialog';
+import CleandayParticipantsDialog, {CleandayParticipant} from '@/components/dialog/CleandayParticipantsDialog';
+import {useGetCleandayMembers} from '@hooks/cleanday/useGetCleandayMembers.tsx';
+
+// Temporary mock data until all API endpoints are implemented
 import {
-    CleanDayTag,
-    Cleanday,
-    CleandayComments,
-    CleandayPics,
-    Comment,
-    Location,
     Requirement,
     ParticipationStatus,
     Participant,
@@ -43,170 +55,138 @@ import {
     CleandayResults
 } from "@models/deleteMeLater.ts";
 
-import EditCleandayDialog from '@components/dialog/EditCleandayDialog.tsx';
-import ParticipationDialog from "@components/dialog/ParticipationDialog.tsx";
-import CleandayCompletionDialog from "@components/dialog/CleandayCompletionDialog.tsx";
-import ViewCleandayResultsDialog from '@components/dialog/ViewCleandayResultsDialog.tsx';
-import CancelCleandayDialog from '@/components/dialog/CancelCleandayDialog';
-import CleandayHistoryDialog, { CleanDayHistoryEntry } from '@/components/dialog/CleandayHistoryDialog';
-import CleandayParticipantsDialog, { CleandayParticipant } from '@/components/dialog/CleandayParticipantsDialog';
-
-// TODO: Реализуйте запрос
 /**
- * Моковые данные для отображения информации о субботнике.
- * Заменить на реальную загрузку данных с сервера при интеграции с API.
- */
-const mockCleanup: Cleanday = {
-    key: '1',
-    name: 'Уборка сквера',
-    description: 'Приглашаем всех желающих принять участие в уборке нашего любимого сквера! Сделаем его чище вместе.',
-    participant_count: 15,
-    recommended_count: 20,
-    city: 'Санкт-Петербург',
-    location: {
-        address: 'Малая Монетная 52',
-        instructions: 'Встречаемся у центрального входа',
-        key: 1,
-        city: 'Санкт-Петербург',
-    },
-    begin_date: '2025-03-12T00:12:00Z',
-    end_date: '2025-03-12T00:16:00Z',
-    organizer: 'Иванов И.И.',
-    organization: 'ЭкоДвижение',
-    area: 500,
-    tags: [CleanDayTag.TRASH_COLLECTING, CleanDayTag.TRASH_SORTING, CleanDayTag.LEAF_CLEANING, CleanDayTag.GAMES_AND_CONTESTS, CleanDayTag.PLANT_CARE],
-    status: 'Запланировано',
-    requirements: ['Перчатки', 'Хорошее настроение'],
-    created_at: '2025-03-10T00:12:00Z',
-    updated_at: '2025-03-10T00:12:00Z',
-};
-
-// TODO: Реализуйте запрос
-// Mock data for CleandayResults
-const mockCleandayResults: CleandayResults = {
-    id: 1,
-    name: 'Уборка сквера',
-    date: '2025-03-12',
-    location: 'Малая Монетная 52, Санкт-Петербург',
-    results: ['Собрано 10 мешков мусора', 'Посажено 5 деревьев'],
-    photos: ['/img_1.png', '/img_2.png', '/img_3.png', '/img_4.png'],
-    participantsCount: 15,
-};
-
-
-// TODO: Реализуйте запрос
-/**
- * Моковые данные для отображения изображений субботника.
- */
-const mockCleanupPics: CleandayPics = {
-    Images: [
-        {key: '1', description: 'Пройти тут', photo: '/img_1.png'},
-        {key: '2', description: 'Еще фото', photo: '/img_2.png'},
-        {key: '3', description: 'И еще одно', photo: '/img_3.png'},
-        {key: '4', description: 'Фото 4', photo: '/img_4.png'},
-    ],
-};
-
-
-// TODO: Реализуйте запрос
-/**
- * Моковые данные для отображения комментариев к субботнику.
- */
-const mockComments: CleandayComments = {
-    comments:
-        [{
-            author: 'Имя Фамилия',
-            text: 'Очень крутой субботник, люблю убирать скверы',
-            date: '2025-03-12T10:45',
-            key: 'c1'
-        },
-            {author: 'Имя Фамилия', text: 'Присоединюсь!', date: '2025-03-12T10:45', key: 'c2'},
-        ]
-};
-
-
-// TODO: Реализуйте запрос
-/**
- * Моковые данные для выбора локаций в диалоге редактирования.
- */
-const mockLocations: Location[] = [
-    {
-        address: 'Скверик',
-        instructions: 'У фонтана',
-        key: 1,
-        city: 'Санкт-Петербург'
-    },
-    {
-        address: 'Парк Победы',
-        instructions: 'У главного входа',
-        key: 2,
-        city: 'Санкт-Петербург'
-    }
-];
-
-/**
- * CleandayPage: Компонент страницы отображения подробной информации о субботнике.
- * Отображает детальную информацию, комментарии, фотографии и предоставляет функционал
- * для редактирования и управления субботником.
+ * CleandayPage: Компонент для отображения подробной информации о субботнике.
  *
  * @returns {JSX.Element} - Возвращает JSX-элемент, представляющий страницу субботника.
  */
 const CleandayPage: React.FC = (): React.JSX.Element => {
-    // Состояние для хранения информации о субботнике
-    const [cleanup, setCleanup] = React.useState<Cleanday>(mockCleanup);
+    const {id = ''} = useParams<{ id: string }>();
+    const {data: cleanday, isLoading, error} = useGetCleandayById(id);
 
-    // Состояние для хранения изображений субботника
-    const [cleanupPics, setCleanupPics] = React.useState<CleandayPics>(mockCleanupPics);
-
-    // Состояние для хранения комментариев к субботнику
-    const [comments, setComments] = React.useState<CleandayComments>(mockComments);
-
-    // Состояние для ввода нового комментария
-    const [newComment, setNewComment] = React.useState('');
-
-    // Состояния для отображения уведомлений
-    const [notificationMessage, setNotificationMessage] = React.useState<string>('');
-    const [notificationSeverity, setNotificationSeverity] = React.useState<'success' | 'info' | 'warning' | 'error'>('success');
-
-    // Состояние для хранения индекса отображаемого фото
-    const [currentPhotoIndex, setCurrentPhotoIndex] = React.useState(0);
-
-    // Состояния для диалога требований
-    const [openReqDialog, setOpenReqDialog] = React.useState(false);
-    const [selectedRequirement, setSelectedRequirement] = React.useState<string | null>(null);
-
-    // Состояние для диалога редактирования субботника
-    const [editOpen, setEditOpen] = React.useState(false);
-
-    /**
-     * Обработчик открытия диалога редактирования субботника.
-     */
-    const handleEditOpen = () => setEditOpen(true);
-
-    /**
-     * Обработчик закрытия диалога редактирования субботника.
-     */
-    const handleEditClose = () => setEditOpen(false);
-
-
-    // TODO: Реализуйте запрос
-    /**
-     * Обработчик сохранения изменений в субботнике.
-     * Обновляет данные субботника и отображает уведомление об успехе.
-     *
-     * @param {Cleanday} updatedCleanday - Обновленные данные субботника.
-     */
-    const handleEditSave = (updatedCleanday: Cleanday) => {
-        setCleanup(updatedCleanday);
-        setEditOpen(false);
-        showNotification('Изменения сохранены', 'success');
+    // Параметры для загрузки комментариев - увеличим размер до 100
+    const commentsParams = {
+        page: 0,
+        size: 100,
+        sort: 'date,desc' // Сортировка комментариев по дате (новые сверху)
     };
+    
+    // Параметры для получения участников
+    const membersParams = {
+        page: 0,
+        size: 100,
+        sort: 'firstName,asc' // Сортировка участников по имени
+    };
+    
+    // Используем новый хук для получения участников субботника
+    const {
+        data: membersData,
+        isLoading: isMembersLoading,
+        error: membersError
+    } = useGetCleandayMembers(id, membersParams);
+
+    // Запрос комментариев с сервера
+    const {
+        data: commentsData,
+        isLoading: isCommentsLoading,
+        error: commentsError,
+        refetch: refetchComments
+    } = useGetCleandayComments(id, commentsParams);
+
+    // Инициализация хука для создания комментариев
+    const createCommentMutation = useCreateComment(id);
+
+    // State для комментариев и формы нового комментария
+    const [newComment, setNewComment] = useState('');
+
+    // State для уведомлений
+    const [notificationMessage, setNotificationMessage] = useState<string>('');
+    const [notificationSeverity, setNotificationSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('success');
+
+    // Use the new hook to get location images
+    const { data: locationImages = [], isLoading: isLoadingImages, error: imagesError } = 
+        useGetLocationImages(cleanday?.location?.id || '');
+
+    // State для галереи изображений
+    const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+    // State для диалогов
+    const [editOpen, setEditOpen] = useState(false);
+    const [participationDialogOpen, setParticipationDialogOpen] = useState(false);
+    const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+    const [resultsDialogOpen, setResultsDialogOpen] = useState(false);
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+    const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+    const [participantsDialogOpen, setParticipantsDialogOpen] = useState(false);
+
+    // Временные тестовые данные для результатов
+    const mockCleandayResults: CleandayResults = {
+        id: parseInt(cleanday?.id || '0'), // Convert string ID to number for the mock interface
+        name: cleanday?.name || 'Уборка',
+        date: cleanday?.beginDate?.toLocaleDateString() || '',
+        location: cleanday?.location?.address || '',
+        results: cleanday?.results || ['Собрано 10 мешков мусора'],
+        participantsCount: cleanday?.participantsCount || 0,
+        // Remove the static photo array since we'll fetch from API now
+        photos: [] 
+    };
+
+    // Данные для требований к участию
+    const [participationRequirements] = useState<Requirement[]>([
+        {id: 1, name: 'Перчатки'},
+        {id: 2, name: 'Хорошее настроение'},
+    ]);
+
+    // Состояние участия
+    const [participationStatus, setParticipationStatus] = useState<ParticipationStatus>(ParticipationStatus.GOING);
+    const [participationSelectedRequirements, setParticipationSelectedRequirements] = useState<number[]>([1]);
+
+    // Участники для диалога завершения
+    const participants: Participant[] = [
+        {id: 1, firstName: 'Иван', lastName: 'Иванов', username: 'ivanov', status: ParticipantStatus.UNKNOWN},
+        {id: 2, firstName: 'Мария', lastName: 'Смирнова', username: 'smirnova', status: ParticipantStatus.UNKNOWN},
+    ];
+
+    // Данные для записей истории
+    const [historyEntries] = useState<CleanDayHistoryEntry[]>([
+        {
+            id: 1,
+            firstName: 'Иван',
+            lastName: 'Иванов',
+            date: '2025-03-10 14:32',
+            action: 'Создание',
+            details: 'Создан субботник "Уборка сквера"'
+        },
+        {
+            id: 2,
+            firstName: 'Петр',
+            lastName: 'Петров',
+            date: '2025-03-10 15:45',
+            action: 'Присоединение',
+            details: 'Пользователь присоединился к субботнику'
+        },
+    ]);
+
+    // Данные об участниках субботника
+    const [cleandayParticipants] = useState<CleandayParticipant[]>([
+        {
+            id: 1,
+            firstName: 'Иван',
+            lastName: 'Иванов',
+            login: 'ivanov',
+            status: ParticipationStatus.GOING
+        },
+        {
+            id: 2,
+            firstName: 'Мария',
+            lastName: 'Петрова',
+            login: 'petrova',
+            status: ParticipationStatus.GOING
+        },
+    ]);
 
     /**
      * Функция для отображения уведомления.
-     *
-     * @param {string} message - Текст уведомления.
-     * @param {'success' | 'info' | 'warning' | 'error'} severity - Тип уведомления.
      */
     const showNotification = React.useCallback((message: string, severity: 'success' | 'info' | 'warning' | 'error') => {
         setNotificationMessage(message);
@@ -220,422 +200,222 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
         setNotificationMessage('');
     }, [setNotificationMessage]);
 
-    const [participationDialogOpen, setParticipationDialogOpen] = React.useState(false);
-    const [participationRequirements] = React.useState<Requirement[]>([
-        {id: 1, name: 'Перчатки'},
-        {id: 2, name: 'Хорошее настроение'},
-    ]);
-    const [participationStatus, setParticipationStatus] = React.useState<ParticipationStatus>(ParticipationStatus.GOING);
-    const [participationSelectedRequirements, setParticipationSelectedRequirements] = React.useState<number[]>([1]);
+    /**
+     * Обработчики для диалога редактирования.
+     */
+    const handleEditOpen = () => setEditOpen(true);
+    const handleEditClose = () => setEditOpen(false);
 
+    /**
+     * Обработчик сохранения изменений субботника.
+     */
+    const handleEditSave = (updatedCleanday: any) => {
+        // Будет заменено на реальный API-запрос
+        setEditOpen(false);
+        showNotification('Изменения сохранены', 'success');
+    };
+
+    /**
+     * Обработчики для диалога участия.
+     */
     const handleParticipationDialogOpen = () => {
         setParticipationDialogOpen(true);
     };
 
-    // Close ParticipationDialog
     const handleParticipationDialogClose = () => {
         setParticipationDialogOpen(false);
     };
 
-    // Handle submission from ParticipationDialog
+    /**
+     * Обработчик отправки данных об участии.
+     */
     const handleParticipationSubmit = (data: { status: ParticipationStatus; selectedRequirements: number[] }) => {
         setParticipationStatus(data.status);
         setParticipationSelectedRequirements(data.selectedRequirements);
-        setNotificationMessage('Участие успешно обновлено');
-        setNotificationSeverity('success');
+        showNotification('Участие успешно обновлено', 'success');
         setParticipationDialogOpen(false);
     };
 
-    const [completionDialogOpen, setCompletionDialogOpen] = React.useState(false);
-
-    // Mock participants for the dialog
-    const participants: Participant[] = [
-        { id: 1, firstName: 'Иван', lastName: 'Иванов', username: 'ivanov', status: ParticipantStatus.UNKNOWN },
-        { id: 2, firstName: 'Мария', lastName: 'Смирнова', username: 'smirnova', status: ParticipantStatus.UNKNOWN },
-        { id: 3, firstName: 'Пётр', lastName: 'Петров', username: 'petrov', status: ParticipantStatus.UNKNOWN },
-    ];
-
-    // Handler to open the completion dialog
+    /**
+     * Обработчики для диалога завершения.
+     */
     const handleOpenCompletionDialog = () => {
         setCompletionDialogOpen(true);
     };
 
-    // Handler to close the completion dialog
     const handleCloseCompletionDialog = () => {
         setCompletionDialogOpen(false);
     };
 
-    // Handler for submitting completion data
+    /**
+     * Обработчик отправки данных о завершении.
+     */
     const handleSubmitCompletionData = (data: CompletionData) => {
-        console.log('Completion Data:', data);
-        setNotificationMessage('Субботник успешно завершен!');
-        setNotificationSeverity('success');
+        showNotification('Субботник успешно завершен!', 'success');
         setCompletionDialogOpen(false);
     };
 
     /**
-     * Обработчик добавления нового комментария.
-     * Проверяет наличие текста в комментарии и добавляет его в список.
+     * Обработчик добавления нового комментария с использованием хука useCreateComment.
      */
     const handleAddComment = () => {
         if (newComment.trim()) {
-            // Создание нового комментария с текущими данными
-            const comment: Comment = {
-                key: Date.now().toString(),
-                author: 'Вы',
-                text: newComment.trim(),
-                date: new Date().toISOString(),
-            };
-
-            // Добавление комментария в начало списка
-            setComments((prevComments) => ({
-                comments: [comment, ...(prevComments.comments || [])],
-            }));
-
-            // Очистка поля ввода и отображение уведомления
-            setNewComment('');
-            showNotification('Комментарий добавлен', 'success');
+            // Вызываем мутацию для отправки комментария на сервер
+            createCommentMutation.mutate(newComment.trim(), {
+                onSuccess: async () => {
+                    // Очищаем поле ввода
+                    setNewComment('');
+                    // Обновляем список комментариев после успешного добавления
+                    await refetchComments();
+                    showNotification('Комментарий успешно добавлен', 'success');
+                },
+                onError: (error) => {
+                    console.error('Ошибка при добавлении комментария:', error);
+                    showNotification('Ошибка при добавлении комментария', 'error');
+                }
+            });
         } else {
-            // Отображение предупреждения, если комментарий пустой
             showNotification('Пожалуйста, введите комментарий', 'warning');
         }
     };
 
     /**
-     * Обработчик переключения на следующее фото в галерее.
-     * Циклически перебирает фотографии в массиве.
+     * Обработка нажатия Enter в поле комментария
+     */
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleAddComment();
+        }
+    };
+
+    /**
+     * Обработчики для навигации по фото.
      */
     const handleNextPhoto = () => {
-        setCurrentPhotoIndex((prevIndex) => (prevIndex + 1) % cleanupPics.Images.length);
+        if (locationImages.length > 0) {
+            setCurrentPhotoIndex((prevIndex) => (prevIndex + 1) % locationImages.length);
+        }
     };
 
-    /**
-     * Обработчик переключения на предыдущее фото в галерее.
-     * Циклически перебирает фотографии в массиве.
-     */
     const handlePrevPhoto = () => {
-        setCurrentPhotoIndex((prevIndex) => (prevIndex - 1 + cleanupPics.Images.length) % cleanupPics.Images.length);
+        if (locationImages.length > 0) {
+            setCurrentPhotoIndex((prevIndex) => (prevIndex - 1 + locationImages.length) % locationImages.length);
+        }
     };
 
     /**
-     * Обработчик клика по полю с количеством участников.
-     * Отображает уведомление о показе списка участников.
+     * Обработчики для диалога результатов.
      */
-    const handleClick = () => {
-        handleParticipantsDialogOpen();
-    }
+    const handleResultsDialogOpen = () => {
+        setResultsDialogOpen(true);
+    };
+
+    const handleResultsDialogClose = () => {
+        setResultsDialogOpen(false);
+    };
 
     /**
-     * Функция для определения числового значения статуса субботника.
-     * Используется для отображения прогресса в Stepper-компоненте.
-     *
-     * @param {Cleanday['status']} status - Статус субботника.
-     * @returns {number} - Числовое значение статуса (индекс шага).
+     * Обработчики для диалога отмены.
      */
-    const getStatusStep = (status: Cleanday['status']): number => {
+    const handleCancelCleandayOpen = () => {
+        setCancelDialogOpen(true);
+    };
+
+    const handleCancelCleandayClose = () => {
+        setCancelDialogOpen(false);
+    };
+
+    /**
+     * Обработчик подтверждения отмены субботника.
+     */
+    const handleCancelCleandayConfirm = () => {
+        // Будет заменено на реальный API-запрос
+        showNotification('Субботник успешно отменен', 'success');
+        setCancelDialogOpen(false);
+    };
+
+    /**
+     * Обработчики для диалога истории.
+     */
+    const handleHistoryDialogOpen = () => {
+        setHistoryDialogOpen(true);
+    };
+
+    const handleHistoryDialogClose = () => {
+        setHistoryDialogOpen(false);
+    };
+
+    /**
+     * Обработчики для диалога участников.
+     */
+    const handleParticipantsDialogOpen = () => {
+        setParticipantsDialogOpen(true);
+    };
+
+    const handleParticipantsDialogClose = () => {
+        setParticipantsDialogOpen(false);
+    };
+
+    /**
+     * Функция для определения шага статуса для stepper.
+     */
+    const getStatusStep = (status: CleandayStatus | string): number => {
         switch (status) {
-            case 'Запланировано':
+            case CleandayStatus.planned:
                 return 0;
-            case 'Проходит':
+            case CleandayStatus.onGoing:
                 return 1;
-            case 'Завершен':
+            case CleandayStatus.completed:
                 return 2;
-            case 'Отменен':
-            case 'Перенесён':
+            case CleandayStatus.cancelled:
+            case CleandayStatus.rescheduled:
             default:
                 return -1;
         }
     };
 
     /**
-     * Массив шагов для отображения в Stepper-компоненте.
-     * Отображает статусы жизненного цикла субботника с датами.
+     * Шаги статуса для stepper.
      */
     const statusSteps = [
-        {label: 'Запланирован', date: '10.03.2025 - 10:11'},
-        {label: 'Проходит', date: '~12.03.2025 - 12:00'},
-        {label: 'Завершен', date: '~12.03.2025 - 18:00'},
+        {label: 'Запланирован', date: cleanday?.createdAt?.toLocaleDateString() || ''},
+        {label: 'Проходит', date: cleanday?.beginDate?.toLocaleDateString() || ''},
+        {label: 'Завершен', date: cleanday?.endDate?.toLocaleDateString() || ''},
     ];
 
-    // Получение текущего шага для Stepper-компонента
-    const activeStep = getStatusStep(cleanup.status);
+    // Получаем активный шаг для stepper
+    const activeStep = cleanday ? getStatusStep(cleanday.status) : -1;
 
-    // Преобразование строковых дат в объекты Date для форматирования
-    const beginDate = new Date(cleanup.begin_date);
-    const endDate = new Date(cleanup.end_date);
+    // Обработка состояния загрузки
+    if (isLoading) {
+        return (
+            <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh'}}>
+                <CircularProgress/>
+            </Box>
+        );
+    }
 
-    /**
-     * Обработчик клика по требованию участия.
-     * Сохраняет выбранное требование и открывает диалог с подробной информацией.
-     *
-     * @param {string} requirement - Текст выбранного требования.
-     */
-    const handleRequirementClick = (requirement: string) => {
-        setSelectedRequirement(requirement);
-        setOpenReqDialog(true);
-    };
+    // Обработка состояния ошибки
+    if (error || !cleanday) {
+        return (
+            <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh'}}>
+                <Alert severity="error">
+                    Произошла ошибка при загрузке данных о субботнике.
+                    Пожалуйста, попробуйте позже или вернитесь к списку субботников.
+                </Alert>
+                <Button
+                    variant="contained"
+                    component={Link}
+                    to="/cleandays"
+                    sx={{mt: 2, ml: 2}}
+                >
+                    К списку субботников
+                </Button>
+            </Box>
+        );
+    }
 
-    // State for managing ViewCleandayResultsDialog
-    const [resultsDialogOpen, setResultsDialogOpen] = React.useState(false);
-
-    // Handler to open the dialog
-    const handleResultsDialogOpen = () => {
-        setResultsDialogOpen(true);
-    };
-
-    // Handler to close the dialog
-    const handleResultsDialogClose = () => {
-        setResultsDialogOpen(false);
-    };
-
-    // State for CancelCleandayDialog
-    const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
-
-    /**
-     * Handler to open the cancel cleanday dialog
-     */
-    const handleCancelCleandayOpen = () => {
-        setCancelDialogOpen(true);
-    };
-
-    /**
-     * Handler to close the cancel cleanday dialog
-     */
-    const handleCancelCleandayClose = () => {
-        setCancelDialogOpen(false);
-    };
-
-    /**
-     * Handler for confirming cleanday cancellation
-     */
-    const handleCancelCleandayConfirm = () => {
-        // TODO: Implement actual API call to cancel the cleanday
-        setCleanup({
-            ...cleanup,
-            status: 'Отменен'
-        });
-        showNotification('Субботник успешно отменен', 'success');
-    };
-
-    // State for CleandayHistoryDialog
-    const [historyDialogOpen, setHistoryDialogOpen] = React.useState(false);
-    
-    // Mock data for history entries
-    const [historyEntries] = React.useState<CleanDayHistoryEntry[]>([
-        {
-            id: 1,
-            firstName: 'Иван',
-            lastName: 'Иванов',
-            date: '2025-03-10 14:32',
-            action: 'Создание',
-            details: 'Создан субботник "Уборка сквера"'
-        },
-        {
-            id: 2,
-            firstName: 'Петров',
-            lastName: 'Петр',
-            date: '2025-03-10 15:45',
-            action: 'Присоединение',
-            details: 'Пользователь присоединился к субботнику'
-        },
-        {
-            id: 3,
-            firstName: 'Сидоров',
-            lastName: 'Сидор',
-            date: '2025-03-11 09:15',
-            action: 'Присоединение',
-            details: 'Пользователь присоединился к субботнику'
-        },
-        {
-            id: 4,
-            firstName: 'Иван',
-            lastName: 'Иванов',
-            date: '2025-03-11 10:30',
-            action: 'Редактирование',
-            details: 'Изменено описание субботника: добавлена информация о необходимом инвентаре'
-        },
-        {
-            id: 5,
-            firstName: 'Сидоров',
-            lastName: 'Сидор',
-            date: '2025-03-11 12:20',
-            action: 'Отмена участия',
-            details: 'Пользователь отменил участие в субботнике'
-        },
-        {
-            id: 6,
-            firstName: 'Смирнова',
-            lastName: 'Анна',
-            date: '2025-03-11 14:05',
-            action: 'Присоединение',
-            details: 'Пользователь присоединился к субботнику'
-        },
-        {
-            id: 7,
-            firstName: 'Иван',
-            lastName: 'Иванов',
-            date: '2025-03-11 16:40',
-            action: 'Загрузка фото',
-            details: 'Добавлены 3 новые фотографии локации'
-        },
-        {
-            id: 8,
-            firstName: 'Козлов',
-            lastName: 'Дмитрий',
-            date: '2025-03-12 08:30',
-            action: 'Присоединение',
-            details: 'Пользователь присоединился к субботнику'
-        },
-        {
-            id: 9,
-            firstName: 'Иван',
-            lastName: 'Иванов',
-            date: '2025-03-12 09:00',
-            action: 'Комментарий',
-            details: 'Добавлен комментарий: "Напоминаю всем, что встречаемся у центрального входа в сквер"'
-        }
-    ]);
-    
-    /**
-     * Handler to open the history dialog
-     */
-    const handleHistoryDialogOpen = () => {
-        setHistoryDialogOpen(true);
-    };
-    
-    /**
-     * Handler to close the history dialog
-     */
-    const handleHistoryDialogClose = () => {
-        setHistoryDialogOpen(false);
-    };
-    
-    // State for CleandayParticipantsDialog
-    const [participantsDialogOpen, setParticipantsDialogOpen] = React.useState(false);
-    
-    // Mock data for cleanday participants
-    const [cleandayParticipants] = React.useState<CleandayParticipant[]>([
-        {
-            id: 1,
-            firstName: 'Иван',
-            lastName: 'Иванов',
-            login: 'ivanov',
-            status: ParticipationStatus.GOING
-        },
-        {
-            id: 2,
-            firstName: 'Петрова',
-            lastName: 'Мария',
-            login: 'petrova',
-            status: ParticipationStatus.GOING
-        },
-        {
-            id: 3,
-            firstName: 'Сидоров',
-            lastName: 'Алексей',
-            login: 'sidorov',
-            status: ParticipationStatus.LATE
-        },
-        {
-            id: 4,
-            firstName: 'Смирнова',
-            lastName: 'Елена',
-            login: 'smirnova',
-            status: ParticipationStatus.MAYBE
-        },
-        {
-            id: 5,
-            firstName: 'Козлов',
-            lastName: 'Дмитрий',
-            login: 'kozlov',
-            status: ParticipationStatus.GOING
-        },
-        {
-            id: 6,
-            firstName: 'Новикова',
-            lastName: 'Ольга',
-            login: 'novikova',
-            status: ParticipationStatus.MAYBE
-        },
-        {
-            id: 7,
-            firstName: 'Морозов',
-            lastName: 'Павел',
-            login: 'morozov',
-            status: ParticipationStatus.GOING
-        },
-        {
-            id: 8,
-            firstName: 'Волкова',
-            lastName: 'Анна',
-            login: 'volkova',
-            status: ParticipationStatus.LATE
-        },
-        {
-            id: 9,
-            firstName: 'Лебедев',
-            lastName: 'Сергей',
-            login: 'lebedev',
-            status: ParticipationStatus.GOING
-        },
-        {
-            id: 10,
-            firstName: 'Кузнецова',
-            lastName: 'Наталья',
-            login: 'kuznetsova',
-            status: ParticipationStatus.MAYBE
-        },
-        {
-            id: 11,
-            firstName: 'Соколов',
-            lastName: 'Игорь',
-            login: 'sokolov',
-            status: ParticipationStatus.GOING
-        },
-        {
-            id: 12,
-            firstName: 'Попова',
-            lastName: 'Екатерина',
-            login: 'popova',
-            status: ParticipationStatus.GOING
-        },
-        {
-            id: 13,
-            firstName: 'Лебедева',
-            lastName: 'Татьяна',
-            login: 'lebedeva',
-            status: ParticipationStatus.MAYBE
-        },
-        {
-            id: 14,
-            firstName: 'Кузнецов',
-            lastName: 'Андрей',
-            login: 'kuznetsov',
-            status: ParticipationStatus.GOING
-        },
-        {
-            id: 15,
-            firstName: 'Соколова',
-            lastName: 'Юлия',
-            login: 'sokolova',
-            status: ParticipationStatus.GOING
-        }
-    ]);
-    
-    /**
-     * Handler to open the participants dialog
-     */
-    const handleParticipantsDialogOpen = () => {
-        setParticipantsDialogOpen(true);
-    };
-    
-    /**
-     * Handler to close the participants dialog
-     */
-    const handleParticipantsDialogClose = () => {
-        setParticipantsDialogOpen(false);
-    };
-    
     return (
         <Box className={"cleanday-box"}>
             <Box sx={{margin: '10px 0px 0px 20px'}}>
@@ -644,11 +424,11 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                     Информация о субботнике
                 </Typography>
 
-                {/* Основная сетка страницы */}
+                {/* Основная сетка */}
                 <Grid container spacing={3}>
                     {/* Левая панель с информацией о субботнике */}
                     <Grid item xs={12} md={6}>
-                        {/* Отображение статуса субботника с помощью Stepper */}
+                        {/* Статусный stepper */}
                         <Box sx={{width: '100%', mb: 2}}>
                             <Stepper activeStep={activeStep} alternativeLabel>
                                 {statusSteps.map((step, index) => (
@@ -656,9 +436,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                         <StepLabel>
                                             {step.label}
                                             <Typography variant="caption" display="block">
-                                                {index === 0 && step.date}
-                                                {index === 1 && step.date}
-                                                {index === 2 && step.date}
+                                                {step.date}
                                             </Typography>
                                         </StepLabel>
                                     </Step>
@@ -669,38 +447,60 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                             <TextField
                                 fullWidth
                                 label="Название субботника"
-                                value={cleanup.name}
+                                value={cleanday.name}
                                 InputProps={{readOnly: true}}
                                 size="small"
                                 margin={'normal'}
                             />
                         </Box>
 
-                        {/* Галерея изображений субботника с навигацией */}
+                        {/* Галерея изображений */}
                         <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-                            {cleanupPics.Images.length > 0 && (
-                                <Box sx={{display: 'flex', alignItems: 'center', mb: 2}}>
-                                    <IconButton onClick={handlePrevPhoto}>
-                                        <ArrowLeft/>
-                                    </IconButton>
-                                    <img
-                                        src={cleanupPics.Images[currentPhotoIndex].photo}
-                                        alt={cleanupPics.Images[currentPhotoIndex].description}
-                                        style={{
-                                            maxWidth: '200px',
-                                            height: '200px',
-                                            margin: '0 16px',
-                                            objectFit: 'cover'
-                                        }}
-                                    />
-                                    <IconButton onClick={handleNextPhoto}>
-                                        <ArrowRight/>
-                                    </IconButton>
+                            {isLoadingImages ? (
+                                <CircularProgress size={40} />
+                            ) : imagesError ? (
+                                <Alert severity="error" sx={{ mb: 2 }}>
+                                    Ошибка загрузки изображений: {imagesError.toString()}
+                                </Alert>
+                            ) : locationImages.length > 0 ? (
+                                <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2}}>
+                                    <Box sx={{display: 'flex', alignItems: 'center'}}>
+                                        <IconButton onClick={handlePrevPhoto}>
+                                            <ArrowLeft/>
+                                        </IconButton>
+                                        <img
+                                            src={locationImages[currentPhotoIndex].photo}
+                                            alt={locationImages[currentPhotoIndex].description}
+                                            style={{
+                                                maxWidth: '200px',
+                                                height: '200px',
+                                                margin: '0 16px',
+                                                objectFit: 'cover'
+                                            }}
+                                        />
+                                        <IconButton onClick={handleNextPhoto}>
+                                            <ArrowRight/>
+                                        </IconButton>
+                                    </Box>
+                                    {/* Image counter below the image */}
+                                    <Typography variant="caption" sx={{ mt: 1 }}>
+                                        {currentPhotoIndex + 1} / {locationImages.length}
+                                    </Typography>
+                                    {/* Display image description */}
+                                    {locationImages[currentPhotoIndex].description && (
+                                        <Typography variant="body2" sx={{ mt: 1, textAlign: 'center' }}>
+                                            {locationImages[currentPhotoIndex].description}
+                                        </Typography>
+                                    )}
                                 </Box>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    Нет фотографий локации
+                                </Typography>
                             )}
                         </Box>
 
-                        {/* Блок с подробной информацией о субботнике */}
+                        {/* Блок с подробной информацией */}
                         <Box>
                             <Typography variant="h6" gutterBottom>
                                 Общая информация
@@ -712,7 +512,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Название локации"
-                                        value={cleanup.location.address}
+                                        value={cleanday.location.address}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
@@ -721,7 +521,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Город"
-                                        value={cleanup.location.city}
+                                        value={cleanday.city}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
@@ -730,7 +530,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Адрес"
-                                        value={cleanup.location.address}
+                                        value={cleanday.location.address}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
@@ -739,7 +539,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Описание локации"
-                                        value={cleanup.location.instructions || '-'}
+                                        value={cleanday.location.instructions || '-'}
                                         InputProps={{readOnly: true}}
                                         multiline
                                         rows={2}
@@ -747,12 +547,12 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     />
                                 </Grid>
 
-                                {/* Информация о времени проведения */}
+                                {/* Информация о времени */}
                                 <Grid item xs={6}>
                                     <TextField
                                         fullWidth
                                         label="Дата начала"
-                                        value={beginDate.toLocaleDateString()}
+                                        value={cleanday.beginDate.toLocaleDateString()}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
@@ -761,7 +561,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Время начала"
-                                        value="10:00"
+                                        value={cleanday.beginDate.toLocaleTimeString()}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
@@ -770,7 +570,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Дата конца"
-                                        value={endDate.toLocaleDateString()}
+                                        value={cleanday.endDate.toLocaleDateString()}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
@@ -779,7 +579,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Время конца"
-                                        value="12:00"
+                                        value={cleanday.endDate.toLocaleTimeString()}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
@@ -790,7 +590,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Организатор"
-                                        value={cleanup.organizer}
+                                        value={cleanday.organizer}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
@@ -799,29 +599,29 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     <TextField
                                         fullWidth
                                         label="Организация"
-                                        value={cleanup.organization || '-'}
+                                        value={cleanday.organization || '-'}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
                                 </Grid>
 
-                                {/* Информация о площади уборки */}
+                                {/* Информация о площади */}
                                 <Grid item xs={12}>
                                     <TextField
                                         fullWidth
                                         label="Площадь, м²"
-                                        value={cleanup.area}
+                                        value={cleanday.area}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
                                 </Grid>
 
-                                {/* Описание субботника */}
+                                {/* Описание */}
                                 <Grid item xs={12}>
                                     <TextField
                                         fullWidth
                                         label="Описание"
-                                        value={cleanup.description}
+                                        value={cleanday.description}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                         multiline
@@ -829,20 +629,20 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     />
                                 </Grid>
 
-                                {/* Отображение тегов субботника */}
+                                {/* Теги */}
                                 <Grid item xs={12}>
                                     <Typography>Теги:</Typography>
-                                    {cleanup.tags.map((tag) => (
+                                    {cleanday.tags.map((tag) => (
                                         <Chip key={tag} label={tag} sx={{mr: 1, mb: 1}}/>
                                     ))}
                                 </Grid>
 
-                                {/* Информация о количестве участников */}
+                                {/* Информация об участниках */}
                                 <Grid item xs={6}>
                                     <TextField
                                         fullWidth
                                         label="Рекомендуемое число участников"
-                                        value={cleanup.recommended_count}
+                                        value={cleanday.recommendedParticipantsCount}
                                         InputProps={{readOnly: true}}
                                         size="small"
                                     />
@@ -850,16 +650,31 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                 <Grid item xs={6}>
                                     <TextField
                                         fullWidth
-                                        label="Зарегистрировано участников (нажмите для списка)"
-                                        value={cleanup.participant_count}
+                                        label="Зарегистрировано участников"
+                                        value={isMembersLoading ? 'Загрузка...' : 
+                                               membersError ? 'Ошибка загрузки' : 
+                                               String(membersData?.contents?.length || 0)}
                                         InputProps={{readOnly: true}}
                                         size="small"
-                                        onClick={handleClick}
                                     />
                                 </Grid>
 
-                                {/* Кнопка для просмотра итогов субботника */}
+                                {/* Кнопка просмотра результатов */}
                                 <Grid item xs={12}>
+                                    {/* Participant status information */}
+                                    <Typography  marginBottom={'10px'} variant="body1" gutterBottom
+                                                sx={{
+                                                    cursor: 'pointer',
+                                                    color: '#3C6C5FFF',
+                                                    textDecoration: 'underline',
+                                                    '&:hover': {
+                                                        color: 'darkblue',
+                                                    },
+                                                }}
+                                                onClick={handleParticipantsDialogOpen}>
+                                        Таблица участников
+                                    </Typography>
+
                                     <Button variant="contained" color="success"
                                             sx={{
                                                 backgroundColor: '#3C6C5F',
@@ -874,30 +689,19 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     >
                                         итоги субботника
                                     </Button>
-
-                                    {/* Информация о статусе участников */}
-                                    <Typography marginTop={'10px'} variant="body1" gutterBottom onClick={handleClick}>
-                                        Точно пойдут: {15} участников (нажмите для просмотра)
+                                    {/* Секция требований участия */}
+                                    <Typography variant={'h5'} sx={{mb: '10px', mt: '10px'}}>
+                                        Соответствие условиям участия:
                                     </Typography>
-                                    <Typography marginTop={'10px'} variant="body1" gutterBottom onClick={handleClick}>
-                                        Опоздают: {5} участников (нажмите для просмотра)
-                                    </Typography>
-                                    <Typography marginTop={'10px'} variant="body1" gutterBottom onClick={handleClick}>
-                                        Возможно, пойдут: {30} участников (нажмите для просмотра)
-                                    </Typography>
-
-                                    {/* Раздел с условиями участия */}
-                                    <Typography variant={'h5'} sx={{mb: '10px', mt: '10px'}}>Соответствие условиям
-                                        участия:</Typography>
-                                    {cleanup.requirements && (
+                                    {cleanday.requirements && (
                                         <List sx={{width: '100%'}}>
-                                            {cleanup.requirements.map((req, idx) => (
-                                                <ListItem key={idx} disablePadding sx={{border: 'medium'}}>
-                                                    <ListItemButton onClick={handleParticipantsDialogOpen}>
+                                            {cleanday.requirements.map((req, idx) => (
+                                                <ListItem key={req.id} disablePadding sx={{border: 'medium'}}>
+                                                    <ListItemButton>
                                                         <TextField
                                                             fullWidth
-                                                            label={"Условие " + (idx + 1) + " (нажмите для списка участников)"}
-                                                            value={req}
+                                                            label={"Условие " + (idx + 1)}
+                                                            value={req.name}
                                                             InputProps={{readOnly: true}}
                                                         />
                                                     </ListItemButton>
@@ -907,29 +711,29 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     )}
                                 </Grid>
 
-                                {/* Отображение метаданных субботника */}
+                                {/* Метаданные субботника */}
                                 <Grid item xs={12}>
                                     <Box>
                                         <Typography variant="body2" sx={{mb: 0.5}}>
-                                            Дата создания - {cleanup.created_at}
+                                            Дата создания - {cleanday.createdAt.toLocaleString()}
                                         </Typography>
                                         <Typography variant="body2" sx={{mb: 2}}>
-                                            Дата последнего изменения - {cleanup.updated_at}
+                                            Дата последнего изменения - {cleanday.updatedAt.toLocaleString()}
                                         </Typography>
                                         <Typography variant="body2" sx={{mb: 2}}>
-                                            ID: {cleanup.key}
+                                            ID: {cleanday.id}
                                         </Typography>
                                     </Box>
                                 </Grid>
 
-                                {/* Кнопки действий для управления субботником */}
+                                {/* Кнопки действий */}
                                 <Grid item xs={12}>
                                     <Button variant="contained" color="success"
                                             sx={{
                                                 height: '45px',
                                                 width: '100%',
                                             }}
-                                    onClick={handleParticipationDialogOpen}>
+                                            onClick={handleParticipationDialogOpen}>
                                         изменить участие в субботнике
                                     </Button>
                                 </Grid>
@@ -983,7 +787,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                     </Button>
                                 </Grid>
 
-                                {/* Кнопка возврата к списку субботников */}
+                                {/* Кнопка назад */}
                                 <Grid item xs={12}>
                                     <Button
                                         variant="contained"
@@ -1006,7 +810,7 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                         </Box>
                     </Grid>
 
-                    {/* Правая панель - комментарии к субботнику */}
+                    {/* Правая панель - комментарии */}
                     <Grid item xs={12} md={6}>
                         <Box sx={{
                             border: '1px solid #ccc',
@@ -1020,52 +824,120 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                                 Комментарии
                             </Typography>
 
-                            {/* Форма для добавления нового комментария */}
-                            <Box sx={{display: 'flex', alignItems: 'center'}}>
+                            {/* Форма нового комментария */}
+                            <Box sx={{display: 'flex', alignItems: 'center', mb: 2}}>
                                 <TextField
                                     fullWidth
                                     label="Новое сообщение"
                                     value={newComment}
                                     onChange={(e) => setNewComment(e.target.value)}
+                                    onKeyDown={handleKeyPress}
+                                    multiline
+                                    rows={2}
                                     size="small"
                                     sx={{mr: 1}}
+                                    disabled={createCommentMutation.isPending}
+                                    placeholder="Введите ваш комментарий здесь..."
                                 />
-                                <IconButton onClick={handleAddComment} color="primary">
-                                    <SendIcon/>
+                                <IconButton
+                                    onClick={handleAddComment}
+                                    color="primary"
+                                    disabled={createCommentMutation.isPending}
+                                    aria-label="Отправить комментарий"
+                                >
+                                    {createCommentMutation.isPending ?
+                                        <CircularProgress size={24}/> :
+                                        <SendIcon />
+                                    }
                                 </IconButton>
                             </Box>
 
-                            {/* Список существующих комментариев */}
+                            <Divider sx={{mb: 2}}/>
+
+                            {/* Список комментариев с улучшенным отображением */}
                             <Box sx={{flexGrow: 1, overflowY: 'auto', mb: 2}}>
-                                <List>
-                                    {comments.comments?.map((comment) => (
-                                        <ListItem key={comment.key} alignItems="flex-start" sx={{py: 1}}>
-                                            <ListItemText
-                                                primary={
-                                                    <Typography sx={{fontWeight: 'bold'}}>
-                                                        {comment.author} - {new Date(comment.date).toLocaleTimeString()}
-                                                    </Typography>
-                                                }
-                                                secondary={<Typography>{comment.text}</Typography>}
-                                            />
-                                        </ListItem>
-                                    ))}
-                                </List>
+                                {isCommentsLoading ? (
+                                    <Box sx={{display: 'flex', justifyContent: 'center', p: 3}}>
+                                        <CircularProgress size={24}/>
+                                    </Box>
+                                ) : commentsError ? (
+                                    <Alert severity="error" sx={{mb: 2}}>
+                                        Не удалось загрузить комментарии. Пожалуйста, попробуйте позже.
+                                    </Alert>
+                                ) : commentsData?.contents?.length === 0 ? (
+                                    <Box sx={{display: 'flex', justifyContent: 'center', p: 3}}>
+                                        <Typography color="text.secondary">
+                                            Нет комментариев. Будьте первым, кто оставит комментарий!
+                                        </Typography>
+                                    </Box>
+                                ) : (
+                                    <List>
+                                        {commentsData?.contents?.map((comment: Comment) => (
+                                            <React.Fragment key={comment.id}>
+                                                <ListItem alignItems="flex-start" sx={{py: 1}}>
+                                                    <Box sx={{ display: 'flex', width: '100%' }}>
+                                                        {comment.author && (
+                                                            <Avatar
+                                                                alt={comment.author.login || 'Аноним'}
+                                                                src={comment.author.avatarUrl}
+                                                                sx={{ mr: 2, bgcolor: '#3C6C5F' }}
+                                                            >
+                                                                {(comment.author.login || 'A')[0].toUpperCase()}
+                                                            </Avatar>
+                                                        )}
+                                                        <ListItemText
+                                                            primary={
+                                                                <Box display="flex" justifyContent="space-between">
+                                                                    <Typography sx={{fontWeight: 'bold'}}>
+                                                                        {comment.author?.login || 'Аноним'}
+                                                                    </Typography>
+                                                                    <Typography variant="body2" color="text.secondary">
+                                                                        {new Date(comment.date).toLocaleString('ru-RU', {
+                                                                            day: '2-digit',
+                                                                            month: '2-digit',
+                                                                            year: 'numeric',
+                                                                            hour: '2-digit',
+                                                                            minute: '2-digit'
+                                                                        })}
+                                                                    </Typography>
+                                                                </Box>
+                                                            }
+                                                            secondary={
+                                                                <Typography
+                                                                    component="div"
+                                                                    variant="body1"
+                                                                    sx={{
+                                                                        whiteSpace: 'pre-line',
+                                                                        mt: 1,
+                                                                        wordBreak: 'break-word'
+                                                                    }}
+                                                                >
+                                                                    {comment.text}
+                                                                </Typography>
+                                                            }
+                                                        />
+                                                    </Box>
+                                                </ListItem>
+                                                <Divider component="li"/>
+                                            </React.Fragment>
+                                        ))}
+                                    </List>
+                                )}
                             </Box>
                         </Box>
                     </Grid>
                 </Grid>
             </Box>
 
-            {/* Диалог редактирования субботника */}
+            {/* Диалоги */}
             <EditCleandayDialog
                 open={editOpen}
                 onClose={handleEditClose}
                 onSubmit={handleEditSave}
-                locations={mockLocations}
-                cleanday={cleanup}
+                locations={[]}
+                cleanday={cleanday}
             />
-            {/* ParticipationDialog */}
+
             <ParticipationDialog
                 open={participationDialogOpen}
                 onClose={handleParticipationDialogClose}
@@ -1073,53 +945,50 @@ const CleandayPage: React.FC = (): React.JSX.Element => {
                 requirements={participationRequirements}
                 initialStatus={participationStatus}
                 initialRequirements={participationSelectedRequirements}
-                cleandayName={cleanup.name}
+                cleandayName={cleanday.name}
             />
 
-            {/* CleandayCompletionDialog */}
             <CleandayCompletionDialog
                 open={completionDialogOpen}
                 onClose={handleCloseCompletionDialog}
                 onSubmit={handleSubmitCompletionData}
-                cleandayName={cleanup.name}
+                cleandayId={cleanday?.id} // Add this prop
+                cleandayName={cleanday.name}
                 participants={participants}
             />
 
-            {/* ViewCleandayResultsDialog Component */}
             <ViewCleandayResultsDialog
                 open={resultsDialogOpen}
                 onClose={handleResultsDialogClose}
                 results={mockCleandayResults}
             />
 
-            {/* CancelCleandayDialog */}
             <CancelCleandayDialog
                 open={cancelDialogOpen}
                 onClose={handleCancelCleandayClose}
                 onConfirm={handleCancelCleandayConfirm}
-                // title="Отмена субботника"
-                // message={`Вы уверены, что хотите отменить субботник "${cleanup.name}"? Это действие нельзя будет отменить.`}
             />
 
-            {/* CleandayHistoryDialog */}
             <CleandayHistoryDialog
                 open={historyDialogOpen}
                 onClose={handleHistoryDialogClose}
-                cleandayName={cleanup.name}
+                cleandayName={cleanday.name}
                 historyEntries={historyEntries}
             />
 
-            {/* CleandayParticipantsDialog */}
             <CleandayParticipantsDialog
                 open={participantsDialogOpen}
                 onClose={handleParticipantsDialogClose}
-                cleandayName={cleanup.name}
-                participants={cleandayParticipants}
+                cleandayName={cleanday.name}
+                participants={membersData?.contents || []}
             />
 
-            {/* Компонент для отображения уведомлений */}
-            <Notification message={notificationMessage} severity={notificationSeverity}
-                          onClose={handleNotificationClose}/>
+            {/* Компонент уведомлений */}
+            <Notification
+                message={notificationMessage}
+                severity={notificationSeverity}
+                onClose={handleNotificationClose}
+            />
         </Box>
     );
 };

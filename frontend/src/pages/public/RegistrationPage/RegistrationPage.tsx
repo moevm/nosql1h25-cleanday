@@ -19,8 +19,11 @@ import {
     Typography
 } from '@mui/material';
 
-import {CreateUser} from "@models/deleteMeLater.ts";
 import {City} from "@models/City.ts";
+import {AuthorizationFormDate} from "@api/authorization/models.ts";
+import {useGetRegister} from "@hooks/authorization/useGetRegister.tsx";
+import {useGetAllCities} from "@hooks/city/useGetAllCities.tsx";
+
 
 /**
  * RegistrationPage: Функциональный компонент, представляющий форму регистрации пользователя.
@@ -32,7 +35,7 @@ const RegistrationPage = (): React.JSX.Element => {
 
     const staticHelperText = "Пароль должен содержать не менее 8 символов, среди которых не менее 1 цифры, не менее 1 строчной буквы, не менее 1 прописной буквы, не менее 1 специального символа.";
 
-    const [formData, setFormData] = React.useState<CreateUser>({
+    const [formData, setFormData] = React.useState<AuthorizationFormDate>({
         firstname: '',
         lastname: '',
         login: '',
@@ -49,13 +52,7 @@ const RegistrationPage = (): React.JSX.Element => {
         password: '',
     });
 
-    const cities: City[] = [
-        {id: '1', name: 'Москва'},
-        {id: '2', name: 'Санкт-Петербург'},
-        {id: '3', name: 'Новосибирск'},
-        {id: '4', name: 'Екатеринбург'},
-        {id: '5', name: 'Казань'},
-    ];
+    const { data: cities = [], isLoading: isLoadingCities, error: citiesError } = useGetAllCities();
 
     const handleInputChange = (
         event: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
@@ -65,7 +62,7 @@ const RegistrationPage = (): React.JSX.Element => {
         const newValue = type === 'radio'
             ? name === 'gender'
                 ? value
-                : formData[name as keyof CreateUser]
+                : formData[name as keyof AuthorizationFormDate]
             : type === 'checkbox'
                 ? event.target.value
                 : value;
@@ -112,6 +109,8 @@ const RegistrationPage = (): React.JSX.Element => {
         return '';
     };
 
+    const {mutate: register, isLoading, isError, error} = useGetRegister();
+
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
@@ -120,18 +119,19 @@ const RegistrationPage = (): React.JSX.Element => {
             return;
         }
 
-        try {
-            const response = await fetch('POPA', { // Заменить endpoint
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
+        // Преобразуем данные формы для отправки в useGetRegister
+        const registrationData: AuthorizationFormDate = {
+            first_name: formData.firstname,
+            last_name: formData.lastname,
+            login: formData.login,
+            sex: formData.gender === 'male' ? 'male' : formData.gender === 'female' ? 'female' : 'other',
+            password: formData.password,
+            city_id: cities.find(city => city.name === formData.city)?.id || '',
+        };
 
-            if (response.ok) {
+        register(registrationData, {
+            onSuccess: () => {
                 console.log('RegistrationPage successful!');
-                alert("Регистрация прошла успешно!");
                 setFormData({
                     firstname: '',
                     lastname: '',
@@ -140,16 +140,8 @@ const RegistrationPage = (): React.JSX.Element => {
                     gender: 'other',
                     password: '',
                 });
-            } else {
-                console.error('RegistrationPage failed:', response.status);
-                const errorData = await response.json();
-                console.error("Error Data:", errorData);
-                alert(`Ошибка регистрации: ${response.status}`);
-            }
-        } catch (error) {
-            console.error('Error during registration:', error);
-            alert("Произошла ошибка при регистрации. Попробуйте позже.");
-        }
+            },
+        });
     };
 
     const textFieldStyle = {
@@ -280,9 +272,15 @@ const RegistrationPage = (): React.JSX.Element => {
                         fullWidth
                         variant="contained"
                         className="login-button"
+                        disabled={isLoading}
                     >
-                        Зарегистрироваться
+                        {isLoading ? "Регистрация..." : "Зарегистрироваться"}
                     </Button>
+                    {isError && (
+                        <Typography color="error">
+                            Ошибка регистрации: {error?.message || "Произошла неизвестная ошибка."}
+                        </Typography>
+                    )}
                     <Box className="login-actions">
                         <Button
                             sx={{
@@ -319,9 +317,9 @@ const RegistrationPage = (): React.JSX.Element => {
                         </Button>
                     </Box>
                 </form>
-            </Box>
-            <Box mt={4} display="flex" justifyContent="center">
-                <img src="/basementMenuImage.png" alt="Statistics Page" style={{maxWidth: '70%', height: 'auto'}}/>
+                <Box mt={4} display="flex" justifyContent="center">
+                    <img src="/basementMenuImage.png" alt="Statistics Page" style={{maxWidth: '70%', height: 'auto'}}/>
+                </Box>
             </Box>
         </Container>
     );

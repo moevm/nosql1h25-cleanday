@@ -1,11 +1,7 @@
 import {UserApiModel} from "@api/user/models.ts";
 import {User} from "@models/User.ts";
 
-export const userMapper = (apiModel?: UserApiModel): User | undefined => {
-    if (!apiModel) {
-        return undefined;
-    }
-    
+export const userMapper = (apiModel: UserApiModel): User => {
     return {
         id: apiModel.key,
         firstName: apiModel.first_name,

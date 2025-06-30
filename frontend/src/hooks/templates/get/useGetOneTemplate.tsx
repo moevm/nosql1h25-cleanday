@@ -7,7 +7,7 @@ import {BaseApiModel} from "@api/BaseApiModel.ts";
 import {BaseModel} from "@models/BaseModel.ts";
 
 /**
- * Универсальный хук для GET-запросов, использующий useQuery, с поддержкой пагинации и трансформации:
+ * Универсальный хук для GET-запросов, использующий useQuery, для получения одного объекта с поддержкой трансформации:
  */
 export function useGetOneTemplate<ApiModel = BaseApiModel, Model = BaseModel>(
     queryKey: QueryKey,
@@ -21,6 +21,7 @@ export function useGetOneTemplate<ApiModel = BaseApiModel, Model = BaseModel>(
         queryFn: async () => {
             const response = await axiosInstance.get<ApiModel>(url, {
                 params,
+                responseType: url.includes('/export') ? 'blob' : 'json', // Для экспорта используем blob
             });
             return transform ? transform(response.data) : (response.data as unknown as Model);
         },
